@@ -160,6 +160,7 @@ const CONTENT_TOKEN_DESCRIPTIONS: Record<keyof typeof TOKENS, string> = {
   destructiveContrast: "Text on destructive fills",
   success: "Success toast accent bar",
   failure: "Failure toast accent bar",
+  info: "Info toast accent bar (e.g., user-canceled download)",
   focusRing: ":focus-visible outline in injected UI",
 };
 

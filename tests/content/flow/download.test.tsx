@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ShadowMount } from "../../../src/content/modals/mount";
 import { handleDownloadClick } from "../../../src/content/flow/download";
-import { createSettingsService } from "../../../src/services/SettingsService";
-import { inMemoryStorage } from "../../../src/services/SettingsService/storage";
+import { createSettingsService } from "../../../src/services/settings/settings";
+import { inMemoryStorage } from "../../../src/services/settings/storage";
 import type { MediaResource } from "../../../src/types/instagram";
 
 function makeResource(overrides: Partial<MediaResource> = {}): MediaResource {
@@ -51,6 +51,7 @@ function setup() {
   const toast = {
     success: vi.fn(() => () => undefined),
     failure: vi.fn(() => () => undefined),
+    info: vi.fn(() => () => undefined),
     dispose: vi.fn(),
   };
   const modal = capturingMount();
@@ -183,6 +184,26 @@ describe("handleDownloadClick", () => {
     expect(download.queue).not.toHaveBeenCalled();
     expect(toast.success).not.toHaveBeenCalled();
     expect(toast.failure).not.toHaveBeenCalled();
+  });
+
+  it("fires an info toast (not failure) when the user cancels the Save As dialog", async () => {
+    const { settings, toast, mountFactory } = setup();
+    await settings.addProfile({ username: "alice", directory: "ig/alice" });
+    const settingsSnapshot = await settings.get();
+    const download = {
+      queue: vi.fn(async () => ({ ok: false as const, error: "User canceled." })),
+    };
+
+    await handleDownloadClick([makeResource()], {
+      settings,
+      download,
+      toast,
+      mountFactory,
+      settingsSnapshot,
+    });
+
+    expect(toast.failure).not.toHaveBeenCalled();
+    expect(toast.info).toHaveBeenCalledWith(expect.stringContaining("canceled"));
   });
 
   it("fires a failure toast when every download fails", async () => {

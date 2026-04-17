@@ -26,6 +26,7 @@ export const TOKENS = {
 
   success: "#1ed760",
   failure: "#e22134",
+  info: "#b3b3b3",
 
   focusRing: "#1ed760",
 } as const;

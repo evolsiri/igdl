@@ -1,7 +1,25 @@
 import { useEffect, useState } from "preact/hooks";
 import { MOTION, TOKENS } from "../tokens";
 
-export type ToastKind = "success" | "failure";
+export type ToastKind = "success" | "failure" | "info";
+
+const TOAST_ACCENT: Record<ToastKind, string> = {
+  success: TOKENS.success,
+  failure: TOKENS.failure,
+  info: TOKENS.info,
+};
+
+const TOAST_ICON: Record<ToastKind, string> = {
+  success: "✓",
+  failure: "✕",
+  info: "i",
+};
+
+const TOAST_ROLE: Record<ToastKind, "status" | "alert"> = {
+  success: "status",
+  failure: "alert",
+  info: "status",
+};
 
 export interface ToastProps {
   kind: ToastKind;
@@ -26,11 +44,11 @@ export function Toast({ kind, message, durationMs = 4000, onDismiss }: ToastProp
     };
   }, [durationMs, onDismiss]);
 
-  const accent = kind === "success" ? TOKENS.success : TOKENS.failure;
+  const accent = TOAST_ACCENT[kind];
 
   return (
     <div
-      role={kind === "failure" ? "alert" : "status"}
+      role={TOAST_ROLE[kind]}
       style={{
         position: "fixed",
         bottom: "24px",
@@ -54,7 +72,7 @@ export function Toast({ kind, message, durationMs = 4000, onDismiss }: ToastProp
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
         <span style={{ color: accent, flexShrink: 0, fontSize: "16px", lineHeight: "1" }}>
-          {kind === "success" ? "✓" : "✕"}
+          {TOAST_ICON[kind]}
         </span>
         <span style={{ flex: 1, wordBreak: "break-word" }}>{message}</span>
       </div>

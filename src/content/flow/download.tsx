@@ -1,7 +1,7 @@
 import { render } from "preact";
-import type { DownloadService } from "../../services/DownloadService";
-import type { SettingsService } from "../../services/SettingsService";
-import type { ToastService } from "../../services/ToastService";
+import type { DownloadService } from "../../services/download/download";
+import type { SettingsService } from "../../services/settings/settings";
+import type { ToastService } from "../../services/toast/toast";
 import type { MediaResource } from "../../types/instagram";
 import type { Settings } from "../../types/settings";
 import { storageCache } from "../extractors/storage";
@@ -80,11 +80,17 @@ export async function handleDownloadClick(
 
 async function downloadAll(resources: MediaResource[], deps: DownloadFlowDeps): Promise<void> {
   let successes = 0;
+  let canceled = 0;
   let firstError = "";
   for (const resource of resources) {
     const result = await deps.download.queue(resource);
-    if (result.ok) successes += 1;
-    else if (!firstError) firstError = result.error;
+    if (result.ok) {
+      successes += 1;
+    } else if (isUserCanceled(result.error)) {
+      canceled += 1;
+    } else if (!firstError) {
+      firstError = result.error;
+    }
   }
   const username = resources[0].username;
   if (firstError && successes === 0) {
@@ -95,11 +101,21 @@ async function downloadAll(resources: MediaResource[], deps: DownloadFlowDeps): 
     deps.toast.failure(`Only ${successes}/${resources.length} downloaded — ${firstError}`);
     return;
   }
+  if (canceled > 0 && successes === 0) {
+    deps.toast.info(canceled === 1 ? "Download canceled" : `${canceled} downloads canceled`);
+    return;
+  }
   deps.toast.success(
     resources.length === 1
       ? `Downloaded @${username}`
-      : `Downloaded ${resources.length} items from @${username}`,
+      : `Downloaded ${successes} items from @${username}`,
   );
+}
+
+// Chrome surfaces "User canceled" when the Save As dialog is dismissed;
+// Firefox uses similar wording. Match both without overreaching.
+function isUserCanceled(error: string): boolean {
+  return /cancel/i.test(error);
 }
 
 interface NoDirArgs {

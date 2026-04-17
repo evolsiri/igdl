@@ -39,6 +39,10 @@ export const Failure: Story = {
   args: { kind: "failure", message: "Failed to download: network error" },
 };
 
+export const Info: Story = {
+  args: { kind: "info", message: "Download canceled" },
+};
+
 export const LongMessage: Story = {
   args: {
     kind: "failure",

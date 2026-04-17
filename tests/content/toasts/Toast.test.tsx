@@ -24,6 +24,12 @@ describe("Toast", () => {
     expect(screen.getByRole("alert").textContent).toContain("✕");
   });
 
+  it("renders an info toast with the i glyph and status role", () => {
+    render(<Toast kind="info" message="Download canceled" onDismiss={() => {}} />);
+    expect(screen.getByRole("status").textContent).toContain("Download canceled");
+    expect(screen.getByRole("status").textContent).toContain("i");
+  });
+
   it("calls onDismiss after durationMs + transition tail", () => {
     const onDismiss = vi.fn();
     render(<Toast kind="success" message="x" durationMs={1000} onDismiss={onDismiss} />);
