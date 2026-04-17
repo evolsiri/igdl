@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (semver, no leading v — e.g. 1.2.3).'
+        description: "Version to release (semver, no leading v — e.g. 1.2.3)."
         required: true
         type: string
 
@@ -85,6 +85,12 @@ jobs:
 
       - name: Test
         run: pnpm run test
+
+      - name: Install Playwright chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Storybook interaction tests
+        run: pnpm run test:storybook
 
       - name: Build Chrome
         run: pnpm run build:chrome
