@@ -1,9 +1,13 @@
 {
   "manifest_version": 3,
   "name": "igdl",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Instagram and Threads media downloader with per-profile download directories.",
-  "permissions": ["storage", "unlimitedStorage", "downloads"],
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "downloads"
+  ],
   "host_permissions": [
     "https://www.instagram.com/*",
     "https://www.threads.com/*"
@@ -18,12 +22,18 @@
         "https://www.instagram.com/*",
         "https://www.threads.com/*"
       ],
-      "js": ["content.js"],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_start"
     },
     {
-      "matches": ["https://www.instagram.com/*"],
-      "js": ["inject.js"],
+      "matches": [
+        "https://www.instagram.com/*"
+      ],
+      "js": [
+        "inject.js"
+      ],
       "world": "MAIN",
       "run_at": "document_start"
     }
@@ -33,11 +43,15 @@
   },
   "options_page": "options.html",
   "externally_connectable": {
-    "matches": ["*://*.threads.com/*"]
+    "matches": [
+      "*://*.threads.com/*"
+    ]
   },
   "web_accessible_resources": [
     {
-      "resources": ["inject.js"],
+      "resources": [
+        "inject.js"
+      ],
       "matches": [
         "https://www.instagram.com/*",
         "https://www.threads.com/*"
