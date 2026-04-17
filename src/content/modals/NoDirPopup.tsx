@@ -210,6 +210,7 @@ const editRow: preact.JSX.CSSProperties = {
 
 const input: preact.JSX.CSSProperties = {
   width: "100%",
+  boxSizing: "border-box",
   padding: "10px 12px",
   border: `1px solid ${TOKENS.border}`,
   borderRadius: 0,
