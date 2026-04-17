@@ -29,7 +29,14 @@ export interface ToastService {
    */
   info(message: string): () => void;
 
-  /** Unmounts the stack and removes the shadow host. Idempotent. */
+  /**
+   * Unmounts the stack and removes the shadow host. Idempotent — safe to
+   * call during page unload even if no toasts were ever shown.
+   *
+   * @example
+   * const toast = createToastService();
+   * window.addEventListener("beforeunload", () => toast.dispose());
+   */
   dispose(): void;
 }
 
@@ -44,6 +51,12 @@ const nextId = () => `toast-${++idCounter}`;
 /**
  * Creates a ToastService backed by a lazily-created shadow-DOM mount. The
  * mount is created on first toast and kept alive across subsequent toasts.
+ *
+ * @example
+ * const toast = createToastService();
+ * toast.success("Downloaded @alice");
+ * // later, the second toast reuses the same shadow mount:
+ * toast.failure("Download failed: disk full");
  */
 export function createToastService(options: ToastServiceOptions = {}): ToastService {
   const mountFactory = options.mountFactory ?? createShadowMount;

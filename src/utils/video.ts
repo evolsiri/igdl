@@ -10,6 +10,9 @@ const EXPLORE_SENTINEL = "data-igdl-explore";
 /**
  * Adds native HTML5 `controls` to a video and a volume-change listener that
  * keeps Instagram's mute toggle in sync. Idempotent per element.
+ *
+ * @example
+ * document.querySelectorAll<HTMLVideoElement>("video").forEach(installVideoControls);
  */
 export function installVideoControls(video: HTMLVideoElement): void {
   if (video.hasAttribute(ENHANCED_SENTINEL)) return;
@@ -24,6 +27,10 @@ export function installVideoControls(video: HTMLVideoElement): void {
 /**
  * On `/explore/` pages, wrap video clicks so they navigate to the post.
  * Idempotent per element. Safe to call every poll tick.
+ *
+ * @example
+ * // From the /explore/ surface handler:
+ * document.querySelectorAll<HTMLVideoElement>("video").forEach(installExploreClickthrough);
  */
 export function installExploreClickthrough(video: HTMLVideoElement): void {
   if (video.hasAttribute(EXPLORE_SENTINEL)) return;

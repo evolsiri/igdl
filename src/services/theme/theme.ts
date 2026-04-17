@@ -54,7 +54,15 @@ export interface ThemeService {
    */
   subscribe(listener: (theme: ResolvedTheme) => void): () => void;
 
-  /** Tears down the OS-change listener and drops all subscribers. Idempotent. */
+  /**
+   * Tears down the OS-change listener and drops all subscribers. Idempotent.
+   *
+   * @example
+   * const service = createThemeService();
+   * service.apply("system");
+   * // later, on page unload:
+   * service.dispose();
+   */
   dispose(): void;
 }
 

@@ -84,6 +84,7 @@ Deeper documentation lives under [`docs/`](./docs/). Start with [`docs/README.md
 | [`docs/architecture.md`](./docs/architecture.md)  | Module boundaries, message flow, storage flow, XHR-interception layer, Threads bridge |
 | [`docs/services/<Name>.md`](./docs/services/)     | One file per service in `src/services/*`                                              |
 | [`docs/components/<Name>.md`](./docs/components/) | One file per card / modal / toast component                                           |
+| [`docs/adr/`](./docs/adr/)                        | Architecture Decision Records — load-bearing decisions, with context + consequences   |
 | [`docs/release.md`](./docs/release.md)            | Release checklist for Chrome Web Store + Mozilla AMO                                  |
 
 ## License

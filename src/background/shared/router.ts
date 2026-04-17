@@ -7,6 +7,14 @@ import { handleOpenUrl } from "./open-url";
  * Central dispatcher for `chrome.runtime.onMessage`. Maps each message type
  * to its handler. Unknown types return `{ ok: false, error }` rather than
  * throwing — keeps the message channel predictable for senders.
+ *
+ * @example
+ * chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
+ *   const message = asMessage(raw);
+ *   if (!message) return false;
+ *   routeMessage(message, deps).then(sendResponse);
+ *   return true; // async response
+ * });
  */
 export async function routeMessage(
   message: Message,
@@ -30,6 +38,12 @@ export async function routeMessage(
 /**
  * Narrow a raw `chrome.runtime.onMessage` payload into a `Message`. Returns
  * null when the payload doesn't look like one of ours.
+ *
+ * @example
+ * const message = asMessage(raw);
+ * if (message) {
+ *   routeMessage(message, deps);
+ * }
  */
 export function asMessage(raw: unknown): Message | null {
   if (!raw || typeof raw !== "object") return null;

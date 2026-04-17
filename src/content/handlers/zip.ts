@@ -50,7 +50,13 @@ function getDefaultDeps(): ZipHandlerDeps {
   return cached;
 }
 
-/** Test-only: reset the memoized default deps so the next call re-initializes them. */
+/**
+ * Test-only: reset the memoized default deps so the next call re-initializes
+ * them.
+ *
+ * @example
+ * afterEach(() => __resetZipHandlerDepsForTesting());
+ */
 export function __resetZipHandlerDepsForTesting(): void {
   cached = null;
 }
