@@ -1,6 +1,6 @@
 # igdl
 
-Chrome + Firefox MV3 browser extension (Preact + TypeScript + Tailwind v4) that downloads Instagram/Threads media with per-profile directory routing. Functional parity target: [TheKonka/instagram-download-browser-extension](https://github.com/TheKonka/instagram-download-browser-extension).
+Chrome + Firefox MV3 browser extension (Preact + TypeScript + Tailwind v4) that downloads Instagram/Threads media with per-profile directory routing. Heavily inspired by [TheKonka/instagram-download-browser-extension](https://github.com/TheKonka/instagram-download-browser-extension).
 
 ## Stack
 
@@ -55,6 +55,7 @@ Chrome + Firefox MV3 browser extension (Preact + TypeScript + Tailwind v4) that 
 ## TSDoc contract
 
 Every public service method needs a TSDoc block stating:
+
 1. What it does.
 2. How it's used, with at least one example.
 
@@ -82,21 +83,21 @@ Source for parity behavior + selectors: `https://github.com/TheKonka/instagram-d
 
 When a task crosses domains, delegate to the right specialist rather than doing it all in the main session. Prefer the project-local agent when it overlaps a global one — it knows igdl invariants.
 
-| Concern | Agent |
-|---|---|
-| General code review (5-axis + igdl invariants) | `code-reviewer` (project-local) |
-| Visual + interaction design | `ux-reviewer` (project-local) |
-| Docs coverage + TSDoc | `documentation-reviewer` (project-local) |
-| MV3 + Chrome/Firefox parity | `extension-auditor` (project-local) |
-| WCAG / keyboard / screen-reader a11y | `voltagent-qa-sec:accessibility-tester` |
-| Deep security audit | `voltagent-qa-sec:security-auditor` |
-| Perf profiling + bottleneck analysis | `voltagent-qa-sec:performance-engineer` |
-| TDD workflow | `agent-skills:test` |
-| Test framework + CI integration | `voltagent-qa-sec:test-automator` |
-| Advanced TypeScript | `voltagent-lang:typescript-pro` |
-| Preact / component patterns | `voltagent-lang:react-specialist` |
-| Browser debugging + DOM inspection | `agent-skills:browser-testing-with-devtools` |
-| Codebase exploration | `Explore` agent |
-| Implementation planning | `Plan` agent |
+| Concern                                        | Agent                                        |
+| ---------------------------------------------- | -------------------------------------------- |
+| General code review (5-axis + igdl invariants) | `code-reviewer` (project-local)              |
+| Visual + interaction design                    | `ux-reviewer` (project-local)                |
+| Docs coverage + TSDoc                          | `documentation-reviewer` (project-local)     |
+| MV3 + Chrome/Firefox parity                    | `extension-auditor` (project-local)          |
+| WCAG / keyboard / screen-reader a11y           | `voltagent-qa-sec:accessibility-tester`      |
+| Deep security audit                            | `voltagent-qa-sec:security-auditor`          |
+| Perf profiling + bottleneck analysis           | `voltagent-qa-sec:performance-engineer`      |
+| TDD workflow                                   | `agent-skills:test`                          |
+| Test framework + CI integration                | `voltagent-qa-sec:test-automator`            |
+| Advanced TypeScript                            | `voltagent-lang:typescript-pro`              |
+| Preact / component patterns                    | `voltagent-lang:react-specialist`            |
+| Browser debugging + DOM inspection             | `agent-skills:browser-testing-with-devtools` |
+| Codebase exploration                           | `Explore` agent                              |
+| Implementation planning                        | `Plan` agent                                 |
 
 The four project-local reviewers compose. On a meaty diff, run `code-reviewer`, `ux-reviewer`, `documentation-reviewer`, and `extension-auditor` in parallel (single message, multiple tool calls) rather than sequentially — their scopes don't overlap.
