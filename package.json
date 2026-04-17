@@ -19,7 +19,7 @@
     "lint": "eslint . --fix",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "test:storybook": "vitest run --project storybook",
+    "test:storybook": "STORYBOOK_TESTS=1 vitest run --project storybook",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "chromatic": "npx chromatic --project-token=chpt_04170d658051151"
