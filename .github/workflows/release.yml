@@ -1,13 +1,10 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (semver, no leading v — e.g. 1.2.3). package.json and both manifests will be synced to this version if they don''t already match.'
+        description: 'Version to release (semver, no leading v — e.g. 1.2.3).'
         required: true
         type: string
 
@@ -35,25 +32,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Determine target version
+      - name: Validate version input
         id: version
         env:
           INPUT_VERSION: ${{ inputs.version }}
-          REF_NAME: ${{ github.ref_name }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="$INPUT_VERSION"
-          else
-            VERSION="${REF_NAME#v}"
-          fi
+          VERSION="$INPUT_VERSION"
           if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "::error::Invalid version '$VERSION' — must be semver (e.g. 1.2.3)"
             exit 1
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Check tag is available (workflow_dispatch)
-        if: github.event_name == 'workflow_dispatch'
+      - name: Check tag is available
         env:
           TAG: v${{ steps.version.outputs.version }}
         run: |
@@ -62,8 +53,7 @@ jobs:
             exit 1
           fi
 
-      - name: Sync package.json + manifests to target version (workflow_dispatch)
-        if: github.event_name == 'workflow_dispatch'
+      - name: Sync package.json + manifests to target version
         env:
           TARGET: ${{ steps.version.outputs.version }}
         run: |
@@ -86,19 +76,6 @@ jobs:
               }
             }
           "
-
-      - name: Verify package.json + manifests match tag (tag push)
-        if: github.event_name == 'push'
-        env:
-          TARGET: ${{ steps.version.outputs.version }}
-        run: |
-          PKG=$(node -p "require('./package.json').version")
-          CHROME=$(node -p "require('./src/manifest/chrome.manifest.json').version")
-          FIREFOX=$(node -p "require('./src/manifest/firefox.manifest.json').version")
-          if [ "$PKG" != "$TARGET" ] || [ "$CHROME" != "$TARGET" ] || [ "$FIREFOX" != "$TARGET" ]; then
-            echo "::error::Version mismatch — tag=$TARGET package.json=$PKG chrome=$CHROME firefox=$FIREFOX"
-            exit 1
-          fi
 
       - name: Lint
         run: pnpm run lint
@@ -128,10 +105,7 @@ jobs:
         # web-ext names the output igdl-{version}.zip; standardise to igdl-firefox-{version}.zip
         run: mv "artifacts/igdl-${{ steps.version.outputs.version }}.zip" "artifacts/igdl-firefox-${{ steps.version.outputs.version }}.zip"
 
-      - name: Commit version sync + tag (workflow_dispatch)
-        # Uses the default GITHUB_TOKEN — pushes made with it will NOT
-        # re-trigger the tag-push workflow above, so no duplicate runs.
-        if: github.event_name == 'workflow_dispatch'
+      - name: Commit version sync + tag
         env:
           TAG: v${{ steps.version.outputs.version }}
           TARGET: ${{ steps.version.outputs.version }}
