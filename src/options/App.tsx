@@ -10,7 +10,6 @@ import type { ThemeService } from "../services/theme/theme";
 import type { ProfileDirectoriesSort, Settings, ThemeSetting } from "../types/settings";
 import { AppearanceCard } from "./components/cards/AppearanceCard";
 import { DownloadsCard } from "./components/cards/DownloadsCard";
-import { HowItWorksCard } from "./components/cards/HowItWorksCard";
 import { NeverAskCard } from "./components/cards/NeverAskCard";
 import { ProfileDirectoriesCard } from "./components/cards/ProfileDirectoriesCard";
 import { ResetAllCard } from "./components/cards/ResetAllCard";
@@ -95,8 +94,6 @@ export function App({ settingsService, mediaCacheService, themeService }: AppPro
           entries={settings.neverAskProfiles}
           onRemove={handleRemoveNeverAsk}
         />
-
-        <HowItWorksCard />
 
         <ResetAllCard onReset={handleReset} />
       </div>

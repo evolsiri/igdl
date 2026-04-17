@@ -31,7 +31,6 @@ The tables below are the canonical index. If a file listed here does not exist y
 | [`components/DownloadsCard.md`](./components/DownloadsCard.md) | `src/options/components/cards/DownloadsCard.tsx` |
 | [`components/ProfileDirectoriesCard.md`](./components/ProfileDirectoriesCard.md) | `src/options/components/cards/ProfileDirectoriesCard.tsx` |
 | [`components/NeverAskCard.md`](./components/NeverAskCard.md) | `src/options/components/cards/NeverAskCard.tsx` |
-| [`components/HowItWorksCard.md`](./components/HowItWorksCard.md) | `src/options/components/cards/HowItWorksCard.tsx` |
 | [`components/ResetAllCard.md`](./components/ResetAllCard.md) | `src/options/components/cards/ResetAllCard.tsx` |
 | [`components/AddProfileModal.md`](./components/AddProfileModal.md) | `src/options/components/modals/AddProfileModal.tsx` |
 | [`components/SortableTableHeader.md`](./components/SortableTableHeader.md) | `src/options/components/SortableTableHeader.tsx` |

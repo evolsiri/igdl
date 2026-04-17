@@ -575,11 +575,6 @@ const COMPONENT_GROUPS: readonly ComponentGroup[] = [
         storyPath: "Options / Cards / DownloadsCard",
       },
       {
-        name: "HowItWorksCard",
-        summary: "Accordion of explainers for core behaviors.",
-        storyPath: "Options / Cards / HowItWorksCard",
-      },
-      {
         name: "NeverAskCard",
         summary: "Manage the never-ask profile list.",
         storyPath: "Options / Cards / NeverAskCard",
