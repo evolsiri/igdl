@@ -37,8 +37,9 @@ export interface ZipService {
   /**
    * Fetches every entry's URL sequentially and streams each response into a
    * fresh `ZipWriter`, producing a single `application/zip` `Blob`. Fetches
-   * use `credentials: "include"` to match the reference extension's behavior
-   * against Instagram CDN URLs.
+   * run with `credentials: "omit"` — Instagram CDN URLs are signed/public
+   * and the CDN does not return `Access-Control-Allow-Credentials`, so a
+   * credentialed fetch would fail CORS with a NetworkError.
    *
    * Rejects on:
    *   - empty entry list
@@ -81,7 +82,7 @@ export function createZipService(options: ZipServiceOptions = {}): ZipService {
       const writer = writerFactory();
       try {
         for (const entry of entries) {
-          const response = await fetchImpl(entry.url, { credentials: "include" });
+          const response = await fetchImpl(entry.url, { credentials: "omit" });
           if (!response.ok) {
             throw new Error(
               `ZipService.build: fetch ${entry.url} returned ${response.status}`,

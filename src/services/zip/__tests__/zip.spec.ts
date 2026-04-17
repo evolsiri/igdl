@@ -30,7 +30,7 @@ describe("ZipService", () => {
       await expect(service.build([])).rejects.toThrow(/no entries/);
     });
 
-    it("fetches each URL with credentials: 'include'", async () => {
+    it("fetches each URL with credentials: 'omit' to avoid CORS credentialed-mode failures", async () => {
       const fetchImpl = fetchStub({
         "https://cdn.example/a.jpg": { body: "a" },
       });
@@ -41,7 +41,7 @@ describe("ZipService", () => {
       }).calls;
       expect(calls).toHaveLength(1);
       expect(calls[0][0]).toBe("https://cdn.example/a.jpg");
-      expect(calls[0][1]?.credentials).toBe("include");
+      expect(calls[0][1]?.credentials).toBe("omit");
     });
 
     it("produces a zip blob whose entries match the requested filenames + contents", async () => {

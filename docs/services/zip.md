@@ -33,7 +33,7 @@ Options:
 
 ### `ZipService.build(entries)`
 
-Fetches every entry's URL sequentially with `credentials: "include"` (matches the reference extension's behavior against Instagram CDN URLs) and streams each response blob into the writer with the supplied inner filename. Rejects on:
+Fetches every entry's URL sequentially with `credentials: "omit"` — Instagram CDN URLs are signed/public and the CDN does not return `Access-Control-Allow-Credentials`, so a credentialed fetch fails CORS with a NetworkError. Streams each response blob into the writer with the supplied inner filename. Rejects on:
 
 - empty entry list (`ZipService.build: no entries`)
 - non-2xx response (`ZipService.build: fetch <url> returned <status>`)
@@ -87,7 +87,7 @@ The click handler additionally rejects non-carousel posts (single-media posts) w
 
 ## Tests
 
-- `src/services/zip/__tests__/zip.spec.ts` — `build` covers: empty list, happy path reads back the zip with `ZipReader`, non-2xx rejection, network-error wrapping, writer closes on failure, original error propagates when close also throws, `credentials: "include"` is passed.
+- `src/services/zip/__tests__/zip.spec.ts` — `build` covers: empty list, happy path reads back the zip with `ZipReader`, non-2xx rejection, network-error wrapping, writer closes on failure, original error propagates when close also throws, `credentials: "omit"` is passed.
 - `src/services/zip/__tests__/download.spec.ts` — `triggerAnchorDownload` covers: anchor creation + attributes, DOM removal after click, 100ms `URL.revokeObjectURL`, zero-byte blob.
 - `src/content/handlers/__tests__/zip.spec.ts` — `zipOnClicked` covers: carousel happy path (entries + outer filename match), non-carousel rejection, missing article rejection, missing info rejection, build-failure propagates as failure toast, empty-owner fallback to `instagram`, video-item URL extraction.
 - `src/content/__tests__/button.spec.ts` — routing regression: `.zip-btn` click invokes `zipOnClicked` and bypasses `postOnClicked`; `.download-btn` click still routes through the per-surface table.
