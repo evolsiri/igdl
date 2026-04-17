@@ -50,7 +50,7 @@ describe("filterByQuery", () => {
   ];
 
   it("returns matching rows preserving input order", () => {
-    const out = filterByQuery(rows, "ali", (r) => `${r.username} ${r.dir ?? r.directory}`);
+    const out = filterByQuery(rows, "ali", (r) => `${r.username} ${r.directory}`);
     expect(out).toEqual([rows[0], rows[2]]);
   });
 

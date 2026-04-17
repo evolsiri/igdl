@@ -12,6 +12,7 @@ function makeDeps(overrides: Partial<ZipHandlerDeps> = {}): ZipHandlerDeps {
   const toast: ToastService = {
     success: vi.fn(() => () => undefined),
     failure: vi.fn(() => () => undefined),
+    info: vi.fn(() => () => undefined),
     dispose: vi.fn(),
   };
   return {
