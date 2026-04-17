@@ -1,0 +1,36 @@
+import { cleanup, render, screen } from "@testing-library/preact";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Toast } from "../../../src/content/toasts/Toast";
+
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  cleanup();
+});
+
+describe("Toast", () => {
+  it("renders a success toast with the checkmark glyph and message", () => {
+    render(<Toast kind="success" message="Downloaded alice.jpg" onDismiss={() => {}} />);
+    expect(screen.getByRole("status").textContent).toContain("Downloaded alice.jpg");
+    expect(screen.getByRole("status").textContent).toContain("✓");
+  });
+
+  it("renders a failure toast with the x glyph and alert role", () => {
+    render(<Toast kind="failure" message="boom" onDismiss={() => {}} />);
+    expect(screen.getByRole("alert").textContent).toContain("boom");
+    expect(screen.getByRole("alert").textContent).toContain("✕");
+  });
+
+  it("calls onDismiss after durationMs + transition tail", () => {
+    const onDismiss = vi.fn();
+    render(<Toast kind="success" message="x" durationMs={1000} onDismiss={onDismiss} />);
+    expect(onDismiss).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(999);
+    expect(onDismiss).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(300);
+    expect(onDismiss).toHaveBeenCalled();
+  });
+});

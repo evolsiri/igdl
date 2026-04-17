@@ -1,0 +1,59 @@
+{
+  "manifest_version": 3,
+  "name": "igdl",
+  "version": "0.1.0",
+  "description": "Instagram and Threads media downloader with per-profile download directories.",
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "downloads",
+    "webRequest",
+    "webRequestBlocking",
+    "webRequestFilterResponse"
+  ],
+  "host_permissions": [
+    "https://www.instagram.com/*",
+    "https://www.threads.com/*"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.instagram.com/*",
+        "https://www.threads.com/*"
+      ],
+      "js": ["content.js", "loader.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_title": "igdl"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "externally_connectable": {
+    "matches": ["*://*.threads.com/*"]
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["inject.js"],
+      "matches": [
+        "https://www.instagram.com/*",
+        "https://www.threads.com/*"
+      ]
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "igdl@evolsiri.local",
+      "strict_min_version": "115.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  }
+}

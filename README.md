@@ -1,0 +1,91 @@
+# igdl
+
+An Instagram and Threads media downloader extension for Chrome and Firefox, with per-profile download directories, a polished settings page, and more. Heavily inspired by [instagram-download-browser-extension](https://github.com/TheKonka/instagram-download-browser-extension).
+
+## Browser extension
+
+Pre-built zips for each release are attached to the [latest GitHub Release](https://github.com/evolsiri/igdl/releases/latest).
+
+### Chrome
+
+1. Download **`igdl-chrome-<version>.zip`** from the [latest release](https://github.com/evolsiri/igdl/releases/latest).
+2. Unzip it to a folder you won't move or delete (e.g. `~/extensions/igdl-chrome/`). Chrome loads the extension from this folder every startup.
+3. Open `chrome://extensions/` and enable **Developer mode** (top right).
+4. Click **Load unpacked** and select the unzipped folder.
+5. Pin the igdl icon to the toolbar. Click it to open the settings page.
+
+To update, download the new zip, replace the folder contents, then click **Reload** on the extension card in `chrome://extensions/`.
+
+### Firefox
+
+1. Download **`igdl-firefox-<version>.zip`** from the [latest release](https://github.com/evolsiri/igdl/releases/latest).
+2. Open `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on…** and select the downloaded `.zip` (no need to unzip).
+4. Click the igdl toolbar icon to open the settings page.
+
+Temporary add-ons are removed when Firefox restarts — reload the zip after each restart. A signed Mozilla AMO build for persistent install is planned.
+
+## Development
+
+### Requirements
+
+- Node.js 20 or newer
+- pnpm 9 or newer
+- Chrome for `build:chrome` / Chrome Web Store distribution
+- Firefox 115 or newer for `build:firefox` / Mozilla AMO distribution
+
+### Install
+
+```bash
+pnpm install
+```
+
+### Commands
+
+| Command                    | What it does                                                                          |
+| -------------------------- | ------------------------------------------------------------------------------------- |
+| `pnpm run dev`             | Vite dev server for iterating on the options page in isolation                        |
+| `pnpm run dev:chrome`      | Watch-mode build into `dist/chrome/`; reload unpacked in `chrome://extensions/`       |
+| `pnpm run dev:firefox`     | `web-ext run` auto-reloads a disposable Firefox profile against `dist/firefox/`       |
+| `pnpm run build`           | Production build for both browsers                                                    |
+| `pnpm run build:chrome`    | Production build to `dist/chrome/`                                                    |
+| `pnpm run build:firefox`   | Production build to `dist/firefox/`                                                   |
+| `pnpm run package:chrome`  | Zip `dist/chrome/` to `artifacts/igdl-chrome-<version>.zip` (Chrome Web Store upload) |
+| `pnpm run package:firefox` | `web-ext build` to `artifacts/igdl-firefox-<version>.xpi` (Mozilla AMO upload)        |
+| `pnpm run preview`         | Vite preview server                                                                   |
+| `pnpm run lint`            | ESLint (zero warnings required)                                                       |
+| `pnpm run test`            | Vitest headless                                                                       |
+
+### Load unpacked — Chrome
+
+1. `pnpm run build:chrome`
+2. Open `chrome://extensions/` and enable **Developer mode** (top right).
+3. Click **Load unpacked** and select the `dist/chrome/` directory.
+4. Pin the igdl icon to the toolbar. Clicking it opens the options page in a new tab.
+
+For iteration, leave `pnpm run dev:chrome` running — it rebuilds on file change; you still click **Reload** on the extension card in `chrome://extensions/` to pick up changes.
+
+### Load unpacked — Firefox
+
+1. `pnpm run build:firefox`
+2. Open `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on…** and select `dist/firefox/manifest.json`.
+4. Click the igdl toolbar icon to open the options page.
+
+Or run `pnpm run dev:firefox` to launch a disposable Firefox profile that auto-reloads on every rebuild.
+
+### Docs
+
+Deeper documentation lives under [`docs/`](./docs/). Start with [`docs/README.md`](./docs/README.md) for the full index.
+
+| Path                                              | What's in it                                                                          |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| [`docs/README.md`](./docs/README.md)              | Canonical index of every doc below                                                    |
+| [`docs/architecture.md`](./docs/architecture.md)  | Module boundaries, message flow, storage flow, XHR-interception layer, Threads bridge |
+| [`docs/services/<Name>.md`](./docs/services/)     | One file per service in `src/services/*`                                              |
+| [`docs/components/<Name>.md`](./docs/components/) | One file per card / modal / toast component                                           |
+| [`docs/release.md`](./docs/release.md)            | Release checklist for Chrome Web Store + Mozilla AMO                                  |
+
+## License
+
+MIT © 2026 evolsiri. See [`LICENSE`](./LICENSE).
