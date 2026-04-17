@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/preact-vite";
 import { useState } from "preact/hooks";
 import { expect, fn, userEvent, within } from "storybook/test";
 import type { AddProfileInput, UpdateProfileInput } from "../../../../services/settings/settings";
-import type { ProfileDirEntry } from "../../../../types/settings";
+import type { ProfileDirEntry, ProfileDirectoriesSort } from "../../../../types/settings";
+import { PROFILE_DIRECTORIES_DEFAULT_SORT } from "../../../../types/settings";
 import { ProfileDirectoriesCard } from "../ProfileDirectoriesCard";
 
 const SAMPLE_PROFILES: ProfileDirEntry[] = [
@@ -39,17 +40,25 @@ const meta: Meta<typeof ProfileDirectoriesCard> = {
   parameters: { layout: "padded" },
   args: {
     baseDirectory: "instagram",
+    sort: { ...PROFILE_DIRECTORIES_DEFAULT_SORT },
     onAdd: fn(),
     onUpdate: fn(),
     onDelete: fn(),
+    onSortChange: fn(),
   },
   render: (args) => {
     const [profiles, setProfiles] = useState<ProfileDirEntry[]>(args.profiles);
+    const [sort, setSort] = useState<ProfileDirectoriesSort>(args.sort);
     return (
       <div class="max-w-5xl mx-auto">
         <ProfileDirectoriesCard
           profiles={profiles}
           baseDirectory={args.baseDirectory}
+          sort={sort}
+          onSortChange={(next) => {
+            setSort(next);
+            args.onSortChange(next);
+          }}
           onAdd={async (input: AddProfileInput) => {
             const next: ProfileDirEntry = {
               username: input.username,
@@ -126,4 +135,25 @@ export const LightMode: Story = {
 export const DarkMode: Story = {
   args: { profiles: SAMPLE_PROFILES },
   parameters: { forceTheme: "dark", backgrounds: { default: "dark" } },
+};
+
+export const SortedByUsernameAsc: Story = {
+  args: {
+    profiles: SAMPLE_PROFILES,
+    sort: { key: "username", direction: "asc" },
+  },
+};
+
+export const SortedByDownloadsDesc: Story = {
+  args: {
+    profiles: SAMPLE_PROFILES,
+    sort: { key: "downloadCount", direction: "desc" },
+  },
+};
+
+export const SortedByLastDownloadAsc: Story = {
+  args: {
+    profiles: SAMPLE_PROFILES,
+    sort: { key: "lastDownloadAt", direction: "asc" },
+  },
 };

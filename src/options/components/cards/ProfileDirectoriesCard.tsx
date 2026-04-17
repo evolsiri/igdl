@@ -1,20 +1,29 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { AddProfileInput, UpdateProfileInput } from "../../../services/settings/settings";
-import type { ProfileDirEntry } from "../../../types/settings";
+import type {
+  ProfileDirEntry,
+  ProfileDirectoriesSort,
+  ProfileDirectoriesSortKey,
+} from "../../../types/settings";
+import { PROFILE_DIRECTORIES_DEFAULT_SORT } from "../../../types/settings";
 import { filterByQuery } from "../../../utils/search";
 import { Card } from "../Card";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { ResetButton } from "../ResetButton";
 import { SearchInput } from "../SearchInput";
+import { SortableTableHeader } from "../SortableTableHeader";
 import { AddProfileModal } from "../modals/AddProfileModal";
 import { formatRelativeDate, formatShortDate } from "./_format";
+import { sortProfiles } from "./profileSort";
 
 export interface ProfileDirectoriesCardProps {
   profiles: ProfileDirEntry[];
   baseDirectory: string;
+  sort: ProfileDirectoriesSort;
   onAdd: (input: AddProfileInput) => Promise<ProfileDirEntry>;
   onUpdate: (username: string, fields: UpdateProfileInput) => Promise<ProfileDirEntry>;
   onDelete: (username: string) => Promise<void>;
+  onSortChange: (sort: ProfileDirectoriesSort) => void;
 }
 
 type EditField = "username" | "directory";
@@ -27,9 +36,11 @@ interface EditingState {
 export function ProfileDirectoriesCard({
   profiles,
   baseDirectory,
+  sort,
   onAdd,
   onUpdate,
   onDelete,
+  onSortChange,
 }: ProfileDirectoriesCardProps) {
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<EditingState | null>(null);
@@ -41,6 +52,14 @@ export function ProfileDirectoriesCard({
     () => filterByQuery(profiles, query, (p) => `${p.username} ${p.directory}`),
     [profiles, query],
   );
+  const visible = useMemo(() => sortProfiles(filtered, sort), [filtered, sort]);
+
+  function handleSort(key: ProfileDirectoriesSortKey, direction: "asc" | "desc"): void {
+    onSortChange({ key, direction });
+  }
+  function handleClearSort(): void {
+    onSortChange({ ...PROFILE_DIRECTORIES_DEFAULT_SORT });
+  }
 
   useEffect(() => {
     if (!error) return;
@@ -141,22 +160,57 @@ export function ProfileDirectoriesCard({
             <thead>
               <tr class="text-left text-xs font-medium text-muted uppercase tracking-wide border-b border-border">
                 <th class="py-2 pr-3 w-[4%]" aria-label="Instagram" />
-                <th class="py-2 px-3 w-[20%]">Username</th>
-                <th class="py-2 px-3 w-[38%]">Directory</th>
-                <th
-                  class="py-2 px-3 text-right w-[6%]"
-                  aria-label="Download count"
-                  title="Download count"
-                >
-                  #
-                </th>
-                <th class="py-2 px-3 w-[12%]">Last download</th>
-                <th class="py-2 px-3 w-[12%]">Added on</th>
+                <SortableTableHeader
+                  label="Username"
+                  sortKey="username"
+                  activeSortKey={sort.key}
+                  activeDirection={sort.direction}
+                  onSort={handleSort}
+                  onClear={handleClearSort}
+                  thClass="w-[20%]"
+                />
+                <SortableTableHeader
+                  label="Directory"
+                  sortKey="directory"
+                  activeSortKey={sort.key}
+                  activeDirection={sort.direction}
+                  onSort={handleSort}
+                  onClear={handleClearSort}
+                  thClass="w-[38%]"
+                />
+                <SortableTableHeader
+                  label="#"
+                  sortKey="downloadCount"
+                  activeSortKey={sort.key}
+                  activeDirection={sort.direction}
+                  onSort={handleSort}
+                  onClear={handleClearSort}
+                  thClass="text-right w-[6%]"
+                  align="right"
+                />
+                <SortableTableHeader
+                  label="Last download"
+                  sortKey="lastDownloadAt"
+                  activeSortKey={sort.key}
+                  activeDirection={sort.direction}
+                  onSort={handleSort}
+                  onClear={handleClearSort}
+                  thClass="w-[12%]"
+                />
+                <SortableTableHeader
+                  label="Added on"
+                  sortKey="addedAt"
+                  activeSortKey={sort.key}
+                  activeDirection={sort.direction}
+                  onSort={handleSort}
+                  onClear={handleClearSort}
+                  thClass="w-[12%]"
+                />
                 <th class="py-2 pl-3 w-[8%]" aria-label="Actions" />
               </tr>
             </thead>
             <tbody>
-              {filtered.map((row) => (
+              {visible.map((row) => (
                 <ProfileRow
                   key={row.username}
                   row={row}

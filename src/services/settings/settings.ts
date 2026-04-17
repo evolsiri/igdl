@@ -1,5 +1,6 @@
 import type {
   NeverAskEntry,
+  ProfileDirectoriesSort,
   ProfileDirEntry,
   Settings,
 } from "../../types/settings";
@@ -96,6 +97,16 @@ export interface SettingsService {
    * await service.incrementDownload("alice");
    */
   incrementDownload(username: string): Promise<void>;
+
+  /**
+   * Persists the active sort for the Profile Directories table. The table
+   * reads this back via the Settings snapshot and applies it to rows after
+   * search filtering, so results always respect the user's chosen sort.
+   *
+   * @example
+   * await service.setProfileDirectoriesSort({ key: "username", direction: "asc" });
+   */
+  setProfileDirectoriesSort(sort: ProfileDirectoriesSort): Promise<void>;
 
   /**
    * Adds a profile to the never-ask list. If the profile had a directory row,
@@ -259,6 +270,11 @@ export function createSettingsService(options: SettingsServiceOptions = {}): Set
       const nextList = [...current.profileDirectories];
       nextList[index] = updated;
       await save({ ...current, profileDirectories: nextList });
+    },
+
+    async setProfileDirectoriesSort(sort) {
+      const current = await load();
+      await save({ ...current, profileDirectoriesSort: sort });
     },
 
     async addNeverAsk(username) {

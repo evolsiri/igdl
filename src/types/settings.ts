@@ -29,10 +29,35 @@ export interface Settings {
 
   // Profile Directories
   profileDirectories: ProfileDirEntry[];
+  profileDirectoriesSort: ProfileDirectoriesSort;
 
   // Never-Ask Profiles
   neverAskProfiles: NeverAskEntry[];
 }
+
+/** Columns the Profile Directories table can be sorted by. Closed union. */
+export type ProfileDirectoriesSortKey =
+  | "username"
+  | "directory"
+  | "downloadCount"
+  | "lastDownloadAt"
+  | "addedAt";
+
+export type SortDirection = "asc" | "desc";
+
+export interface ProfileDirectoriesSort {
+  key: ProfileDirectoriesSortKey;
+  direction: SortDirection;
+}
+
+/**
+ * Default sort for the Profile Directories table: most-recently-added first.
+ * Clicking an already-active sort arrow reverts the table to this.
+ */
+export const PROFILE_DIRECTORIES_DEFAULT_SORT: ProfileDirectoriesSort = {
+  key: "addedAt",
+  direction: "desc",
+};
 
 export interface ProfileDirEntry {
   username: string;

@@ -7,7 +7,7 @@ import type {
 } from "../services/settings/settings";
 import { SETTINGS_DEFAULTS } from "../services/settings/schema";
 import type { ThemeService } from "../services/theme/theme";
-import type { Settings, ThemeSetting } from "../types/settings";
+import type { ProfileDirectoriesSort, Settings, ThemeSetting } from "../types/settings";
 import { AppearanceCard } from "./components/cards/AppearanceCard";
 import { DownloadsCard } from "./components/cards/DownloadsCard";
 import { HowItWorksCard } from "./components/cards/HowItWorksCard";
@@ -59,6 +59,8 @@ export function App({ settingsService, mediaCacheService, themeService }: AppPro
   const handleUpdateProfile = (username: string, fields: UpdateProfileInput) =>
     settingsService.updateProfile(username, fields);
   const handleDeleteProfile = (username: string) => settingsService.deleteProfile(username);
+  const handleSortProfiles = (sort: ProfileDirectoriesSort) =>
+    settingsService.setProfileDirectoriesSort(sort);
   const handleRemoveNeverAsk = (username: string) => settingsService.removeNeverAsk(username);
   const handleReset = async () => {
     await settingsService.resetAll();
@@ -82,9 +84,11 @@ export function App({ settingsService, mediaCacheService, themeService }: AppPro
         <ProfileDirectoriesCard
           profiles={settings.profileDirectories}
           baseDirectory={settings.baseDirectory || SETTINGS_DEFAULTS.baseDirectory}
+          sort={settings.profileDirectoriesSort}
           onAdd={handleAddProfile}
           onUpdate={handleUpdateProfile}
           onDelete={handleDeleteProfile}
+          onSortChange={handleSortProfiles}
         />
 
         <NeverAskCard

@@ -9,7 +9,7 @@ Owns the user-facing settings blob at `chrome.storage.local["igdl_settings"]`. E
 | `src/services/settings/settings.ts` | Public API + `createSettingsService`. |
 | `src/services/settings/schema.ts` | `SETTINGS_DEFAULTS`, `normalize`, `migrate` (forward-only). |
 | `src/services/settings/storage.ts` | `KvStorage` interface, `chromeStorageLocal()`, `inMemoryStorage()` for tests. Shared with `MediaCacheService`. |
-| `src/types/settings.ts` | `Settings`, `ProfileDirEntry`, `NeverAskEntry`, `ThemeSetting`. |
+| `src/types/settings.ts` | `Settings`, `ProfileDirEntry`, `NeverAskEntry`, `ThemeSetting`, `ProfileDirectoriesSort`. |
 
 ## Public API
 
@@ -63,6 +63,14 @@ Removes a row. No-op if the username isn't present.
 ### `incrementDownload(username): Promise<void>`
 
 Bumps `downloadCount` and updates `lastDownloadAt`. No-op when the profile has no row (user downloaded to the default directory).
+
+### `setProfileDirectoriesSort(sort): Promise<void>`
+
+Persists the active sort for the Profile Directories table (`{ key, direction }`). The card reads this back via the Settings snapshot and applies it to rows after filtering, so search respects the chosen sort. Default is `{ key: "addedAt", direction: "desc" }` — most recently added on top.
+
+```ts
+await service.setProfileDirectoriesSort({ key: "username", direction: "asc" });
+```
 
 ### `addNeverAsk(username) / removeNeverAsk(username): Promise<void>`
 

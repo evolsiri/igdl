@@ -34,6 +34,7 @@ The tables below are the canonical index. If a file listed here does not exist y
 | [`components/HowItWorksCard.md`](./components/HowItWorksCard.md) | `src/options/components/cards/HowItWorksCard.tsx` |
 | [`components/ResetAllCard.md`](./components/ResetAllCard.md) | `src/options/components/cards/ResetAllCard.tsx` |
 | [`components/AddProfileModal.md`](./components/AddProfileModal.md) | `src/options/components/modals/AddProfileModal.tsx` |
+| [`components/SortableTableHeader.md`](./components/SortableTableHeader.md) | `src/options/components/SortableTableHeader.tsx` |
 
 ## Components — injected on Instagram / Threads
 

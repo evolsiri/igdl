@@ -12,9 +12,11 @@ Third card on the options page. Manages the per-profile download directories —
 interface ProfileDirectoriesCardProps {
   profiles: ProfileDirEntry[];
   baseDirectory: string;
+  sort: ProfileDirectoriesSort;
   onAdd: (input: AddProfileInput) => Promise<ProfileDirEntry>;
   onUpdate: (username: string, fields: UpdateProfileInput) => Promise<ProfileDirEntry>;
   onDelete: (username: string) => Promise<void>;
+  onSortChange: (sort: ProfileDirectoriesSort) => void;
 }
 ```
 
@@ -40,6 +42,10 @@ A seventh column holds the per-row delete button.
 - **Collision or empty username** → error banner surfaces the service's thrown error for ~5s, then clears.
 - **Delete button** → `ConfirmDialog` with destructive styling → `onDelete(username)`.
 - **Add button** (in the card header) → opens `AddProfileModal` pre-populated with `<baseDirectory>/`.
+- **Sort arrows** (stacked up/down, to the left of each sortable column label) →
+  up = asc, down = desc. Clicking the already-active arrow reverts to the default
+  sort (`addedAt` desc, i.e. "most recently added on top"). Search filters apply
+  first and sort runs on the filtered rows, so the two compose cleanly.
 
 ## Empty + filtered states
 
@@ -64,3 +70,4 @@ A seventh column holds the per-row delete button.
 
 - The per-row edit state lives at the card level (`editing: { username, field, draft } | null`), and each row is a stateless `ProfileRow` component that receives `editing | null`. Only the editing row mounts the input; the rest render buttons that look like cells.
 - Timestamps use `_format.ts`'s `formatShortDate` helper (dayjs `YYYY-MM-DD HH:mm`) so the column widths stay predictable.
+- Sort state lives in `Settings` (not in the card) so it persists across reloads. The card is stateless w.r.t. sort — it reads the current sort from props and calls `onSortChange` for updates. The pure comparator is `sortProfiles` in `./profileSort.ts`.

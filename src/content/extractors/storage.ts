@@ -73,6 +73,7 @@ class StorageCache {
       enableVideoControls: true,
       enableExploreVideoClickthrough: false,
       profileDirectories: [],
+      profileDirectoriesSort: { key: "addedAt", direction: "desc" },
       neverAskProfiles: [],
     };
     this.settings = toReferenceShape(this.canonical);

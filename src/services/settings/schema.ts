@@ -1,9 +1,13 @@
 import type {
   NeverAskEntry,
+  ProfileDirectoriesSort,
+  ProfileDirectoriesSortKey,
   ProfileDirEntry,
   Settings,
+  SortDirection,
   ThemeSetting,
 } from "../../types/settings";
+import { PROFILE_DIRECTORIES_DEFAULT_SORT } from "../../types/settings";
 
 /**
  * v1 default Settings blob. `SettingsService.resetAll()` writes this verbatim.
@@ -27,11 +31,20 @@ export const SETTINGS_DEFAULTS: Settings = {
   enableVideoControls: true,
   enableExploreVideoClickthrough: false,
   profileDirectories: [],
+  profileDirectoriesSort: { ...PROFILE_DIRECTORIES_DEFAULT_SORT },
   neverAskProfiles: [],
 };
 
 const CURRENT_SCHEMA_VERSION = 1 as const;
 const VALID_THEMES: readonly ThemeSetting[] = ["system", "light", "dark"];
+const VALID_SORT_KEYS: readonly ProfileDirectoriesSortKey[] = [
+  "username",
+  "directory",
+  "downloadCount",
+  "lastDownloadAt",
+  "addedAt",
+];
+const VALID_SORT_DIRECTIONS: readonly SortDirection[] = ["asc", "desc"];
 
 /**
  * Strips a value of anything that isn't a valid Settings shape, replacing
@@ -88,6 +101,7 @@ export function normalize(input: unknown): Settings {
       SETTINGS_DEFAULTS.enableExploreVideoClickthrough,
     ),
     profileDirectories: normalizeProfileDirectories(input.profileDirectories),
+    profileDirectoriesSort: normalizeProfileDirectoriesSort(input.profileDirectoriesSort),
     neverAskProfiles: normalizeNeverAskProfiles(input.neverAskProfiles),
   };
 }
@@ -165,6 +179,18 @@ function normalizeProfileDirectories(v: unknown): ProfileDirEntry[] {
     });
   }
   return out;
+}
+
+function normalizeProfileDirectoriesSort(v: unknown): ProfileDirectoriesSort {
+  if (!isRecord(v)) return { ...PROFILE_DIRECTORIES_DEFAULT_SORT };
+  return {
+    key: pickEnum(v.key, VALID_SORT_KEYS, PROFILE_DIRECTORIES_DEFAULT_SORT.key),
+    direction: pickEnum(
+      v.direction,
+      VALID_SORT_DIRECTIONS,
+      PROFILE_DIRECTORIES_DEFAULT_SORT.direction,
+    ),
+  };
 }
 
 function normalizeNeverAskProfiles(v: unknown): NeverAskEntry[] {

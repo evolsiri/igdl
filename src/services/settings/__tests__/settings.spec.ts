@@ -317,6 +317,49 @@ describe("normalize()", () => {
     expect(out.profileDirectories).toHaveLength(1);
     expect(out.profileDirectories[0].username).toBe("alice");
   });
+  it("defaults profileDirectoriesSort when missing", () => {
+    const out = normalize({ theme: "light" } as unknown);
+    expect(out.profileDirectoriesSort).toEqual({ key: "addedAt", direction: "desc" });
+  });
+
+  it("preserves a valid profileDirectoriesSort", () => {
+    const out = normalize({
+      profileDirectoriesSort: { key: "username", direction: "asc" },
+    } as unknown);
+    expect(out.profileDirectoriesSort).toEqual({ key: "username", direction: "asc" });
+  });
+
+  it("coerces an invalid profileDirectoriesSort to the default", () => {
+    const out = normalize({
+      profileDirectoriesSort: { key: "bogus", direction: "sideways" },
+    } as unknown);
+    expect(out.profileDirectoriesSort).toEqual({ key: "addedAt", direction: "desc" });
+  });
+});
+
+describe("setProfileDirectoriesSort", () => {
+  it("persists the chosen sort and round-trips via get()", async () => {
+    const { service } = setup();
+    await service.setProfileDirectoriesSort({ key: "username", direction: "asc" });
+    const s = await service.get();
+    expect(s.profileDirectoriesSort).toEqual({ key: "username", direction: "asc" });
+  });
+
+  it("overwrites an existing sort", async () => {
+    const { service } = setup();
+    await service.setProfileDirectoriesSort({ key: "downloadCount", direction: "desc" });
+    await service.setProfileDirectoriesSort({ key: "addedAt", direction: "desc" });
+    const s = await service.get();
+    expect(s.profileDirectoriesSort).toEqual({ key: "addedAt", direction: "desc" });
+  });
+
+  it("defaults to addedAt/desc for blobs saved before this field existed", async () => {
+    const { service } = setup({
+      initial: { schemaVersion: 1, theme: "dark" /* no profileDirectoriesSort */ },
+    });
+    const s = await service.get();
+    expect(s.profileDirectoriesSort).toEqual({ key: "addedAt", direction: "desc" });
+  });
 });
 
 describe("migrate()", () => {
