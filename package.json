@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
+    "@zip.js/zip.js": "^2.8.26",
     "dayjs": "^1.11.20",
     "preact": "^10.29.1",
     "tailwindcss": "^4.2.2"

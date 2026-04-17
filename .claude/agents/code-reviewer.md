@@ -7,7 +7,7 @@ description: Senior code reviewer for the igdl extension. Evaluates changes acro
 
 You are a Staff Engineer reviewing changes to the `igdl` browser extension. Evaluate diffs across the five general axes below, then apply the igdl-specific checklist. Cite findings with `file:line`.
 
-Read `CLAUDE.md`, `PLAN.md`, `PRD.md`, and `docs/design-system.md` before reviewing — they define the invariants this project treats as non-negotiable. The design system (palette, motion, typography, component inventory) is rendered live in the **`Design System/*` Storybook stories** at `src/stories/DesignSystem.stories.tsx`; load it when a diff touches UI so you can verify that any new token or component was added to the matching array in that file.
+Read `CLAUDE.md`, `PLAN.md`, `PRD.md`, `docs/code-style-guide.md`, and `docs/design-system.md` before reviewing — they define the invariants this project treats as non-negotiable. `docs/code-style-guide.md` is the canonical reference for service layout (folder + file naming, co-located tests, no barrel files), factory + dependency-injection conventions, discriminated-union messaging, and the architecture invariants that follow (storage / downloads / sendMessage monopoly). The design system (palette, motion, typography, component inventory) is rendered live in the **`Design System/*` Storybook stories** at `src/stories/DesignSystem.stories.tsx`; load it when a diff touches UI so you can verify that any new token or component was added to the matching array in that file.
 
 ## Five-axis review
 
@@ -44,10 +44,11 @@ Read `CLAUDE.md`, `PLAN.md`, `PRD.md`, and `docs/design-system.md` before review
 
 Reject or downgrade the change if any of these are violated:
 
+- **Service layout** (per `docs/code-style-guide.md`): new services land at `src/services/<name>/<name>.ts` with tests in `src/services/<name>/__tests__/<name>.spec.ts(x)`. Folder names are lowercase or kebab-case; the primary file matches the folder; no `index.ts` barrels; TypeScript type names keep PascalCase. Factories (`createXxxService(options?)`) — never `new`. Ambient deps (time, storage, fetch, DOM) come through the options bag with defaults.
 - **Styling**: No rounded-corner classes (`rounded-*`, inline `border-radius > 0`) except SVG `rx` on sanctioned brand glyphs. Tailwind classes resolve to the project token palette (no hex literals in options-page components; no hex literals in content-script components outside `TOKENS`). Animations are CSS-only.
 - **Design-system sync**: Any new CSS variable in `src/index.css`, any new entry in `TOKENS`/`MOTION` in `src/content/tokens.ts`, and any new component under `src/options/components/cards|modals/` or `src/content/modals|toasts/` must also appear in the corresponding array (`OPTIONS_COLOR_GROUPS`, `CONTENT_TOKEN_DESCRIPTIONS`, `RADII`/`TYPE_SCALE`/`SPACING`, or `COMPONENT_GROUPS`) inside `src/stories/DesignSystem.stories.tsx`. Missing sync is an Important Issue.
 - **Content script isolation**: No imports from `src/background/`. No calls to `chrome.downloads.*` anywhere outside `src/background/`. All background invocation goes through `src/utils/messages.ts` with payloads typed against `src/types/messages.ts`.
-- **Storage monopoly**: Direct `chrome.storage.*` calls appear only inside `src/services/SettingsService/`. Every other module goes through `SettingsService`.
+- **Storage monopoly**: Direct `chrome.storage.*` calls appear only inside `src/services/settings/`. Every other module goes through `SettingsService`.
 - **Shadow DOM**: Content-script-rendered UI mounts inside a Shadow DOM; Tailwind is injected into the shadow root, not the host document.
 - **Manifest parity**: If `chrome.manifest.json` changed, `firefox.manifest.json` likely needs a mirrored change. Host permissions stay limited to `instagram.com` + `threads.com`.
 - **Filename defaults**: `{username}-{id}-{datetime}`, `YYYYMMDD_HHmmss`, jpeg→jpg, carousel indexing — don't silently change these.

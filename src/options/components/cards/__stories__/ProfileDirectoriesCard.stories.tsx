@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/preact-vite";
 import { useState } from "preact/hooks";
 import { expect, fn, userEvent, within } from "storybook/test";
-import type { AddProfileInput, UpdateProfileInput } from "../../../../services/SettingsService";
+import type { AddProfileInput, UpdateProfileInput } from "../../../../services/settings/settings";
 import type { ProfileDirEntry } from "../../../../types/settings";
 import { ProfileDirectoriesCard } from "../ProfileDirectoriesCard";
 

@@ -16,11 +16,12 @@ The tables below are the canonical index. If a file listed here does not exist y
 
 | Doc | Source |
 |---|---|
-| [`services/SettingsService.md`](./services/SettingsService.md) | `src/services/SettingsService/` |
-| [`services/MediaCacheService.md`](./services/MediaCacheService.md) | `src/services/MediaCacheService/` |
-| [`services/DownloadService.md`](./services/DownloadService.md) | `src/services/DownloadService/` |
-| [`services/ThemeService.md`](./services/ThemeService.md) | `src/services/ThemeService/` |
-| [`services/ToastService.md`](./services/ToastService.md) | `src/services/ToastService/` |
+| [`services/settings.md`](./services/settings.md) | `src/services/settings/` |
+| [`services/media-cache.md`](./services/media-cache.md) | `src/services/media-cache/` |
+| [`services/download.md`](./services/download.md) | `src/services/download/` |
+| [`services/theme.md`](./services/theme.md) | `src/services/theme/` |
+| [`services/toast.md`](./services/toast.md) | `src/services/toast/` |
+| [`services/zip.md`](./services/zip.md) | `src/services/zip/` |
 
 ## Components — options page
 

@@ -21,6 +21,7 @@ import { profileOnClicked } from "./handlers/profile";
 import { handleProfileReel } from "./handlers/profile-reel";
 import { reelsOnClicked } from "./handlers/reels";
 import { storyOnClicked } from "./handlers/stories";
+import { zipOnClicked } from "./handlers/zip";
 import { handleThreadsButton } from "./threads/button";
 
 export const CLASS_CUSTOM_BUTTON = "igdl-custom-btn";
@@ -171,6 +172,14 @@ export function onClickHandler(currentTarget: Element, saveAs = false): void {
 
   if (window.location.origin === "https://www.threads.com") {
     handleThreadsButton(currentTarget, saveAs);
+    return;
+  }
+
+  // ZIP button has a completely different pipeline (fetches every carousel
+  // item, builds a .zip in content, anchor-click downloads). Short-circuit
+  // before the per-surface routing table below.
+  if (currentTarget.classList.contains("zip-btn")) {
+    void zipOnClicked(currentTarget);
     return;
   }
 

@@ -8,8 +8,8 @@ The raw-cache helpers are module-private; handlers use the resolver API only (TA
 
 | Path | Role |
 |---|---|
-| `src/services/MediaCacheService/index.ts` | Public resolver API + ingestion entry point + lifecycle. |
-| `src/services/MediaCacheService/keys.ts` | Cache-key constants + `ALL_CACHE_KEYS`. |
+| `src/services/media-cache/media-cache.ts` | Public resolver API + ingestion entry point + lifecycle. |
+| `src/services/media-cache/keys.ts` | Cache-key constants + `ALL_CACHE_KEYS`. |
 | `src/types/media-cache.ts` | Cache-payload shapes. |
 | `src/types/instagram.ts` | `MediaResource` + `MediaType`. |
 
@@ -77,6 +77,6 @@ All keys prefixed with `igdl_cache_`:
 
 ## Tests
 
-`tests/services/MediaCacheService.test.ts` — 36 cases. Per resolver: cache hit, cache miss, malformed payload. Ingestion dispatch for each supported endpoint. `clearAll` scoping + idempotency.
+`src/services/media-cache/__tests__/media-cache.spec.ts` — 36 cases. Per resolver: cache hit, cache miss, malformed payload. Ingestion dispatch for each supported endpoint. `clearAll` scoping + idempotency.
 
 Seed `inMemoryStorage()` directly with the cache-key shape to set up a hit-path test. The service's resolver methods don't care how data got into storage — they only read.

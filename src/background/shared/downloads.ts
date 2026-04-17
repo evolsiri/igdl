@@ -1,4 +1,4 @@
-import { buildFullPath } from "../../services/DownloadService/naming";
+import { buildFullPath } from "../../services/download/naming";
 import type { Message, MessageResponse } from "../../types/messages";
 import type { BackgroundDeps } from "./deps";
 

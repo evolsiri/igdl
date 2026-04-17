@@ -36,10 +36,10 @@ This document describes how `igdl`'s modules interact at runtime. It covers the 
 ### Who owns what
 
 - **`chrome.downloads.*`** — only `src/background/shared/downloads.ts` calls it. Enforced by the `code-reviewer` agent.
-- **`chrome.storage.*`** — only `src/services/SettingsService/storage.ts` and (via the same adapter) `src/services/MediaCacheService/index.ts` call it. Everyone else goes through the services.
+- **`chrome.storage.*`** — only `src/services/settings/storage.ts` and (via the same adapter) `src/services/media-cache/media-cache.ts` call it. Everyone else goes through the services.
 - **`chrome.runtime.sendMessage`** — only `src/utils/messages.ts` and `src/background/shared/router.ts` call it. Callers use the typed wrapper.
 - **DOM mutation** — only content-script handlers + Preact render. Shadow-DOM boundaries keep injected UI isolated.
-- **Theme class toggling** — only `src/services/ThemeService/index.ts`. It never touches storage (`SettingsService` does, and notifies via `subscribe`).
+- **Theme class toggling** — only `src/services/theme/theme.ts`. It never touches storage (`SettingsService` does, and notifies via `subscribe`).
 
 ## Message bus
 
@@ -50,7 +50,6 @@ All cross-context communication flows through `chrome.runtime.sendMessage`. Payl
 | `DOWNLOAD_MEDIA` | content script, options page | background | Kick off a `chrome.downloads.download` for one resource. Optional `saveAs?: boolean` triggers the OS Save As dialog. |
 | `OPEN_URL` | content script | background | Opens the URL in a new tab (Open-in-new-tab icon). |
 | `XHR_SNAPSHOT` | background (Firefox) | content script | Forwards a decoded XHR response captured by `webRequest`. |
-| `ZIP_BUILD` | content script (Firefox) | background | Firefox-only — background bundles carousel items via zip.js. |
 
 Every handler returns a `MessageResponse<T>`:
 ```ts
@@ -108,7 +107,7 @@ Two distinct concerns, both on `chrome.storage.local`:
 ### Media caches (7 keys)
 
 - Prefix: `igdl_cache_`
-- Keys: `idToUsernameMap`, `userProfilePicUrl`, `storiesReelsMedia`, `reelsEdgesData`, `postMedia`, `highlightMedia`, `threadsPostMedia` — see `src/services/MediaCacheService/keys.ts`.
+- Keys: `idToUsernameMap`, `userProfilePicUrl`, `storiesReelsMedia`, `reelsEdgesData`, `postMedia`, `highlightMedia`, `threadsPostMedia` — see `src/services/media-cache/keys.ts`.
 - Cleared on `chrome.runtime.onStartup` (TAC-5.4) — caches are ephemeral.
 - Writes only via `MediaCacheService.ingestXhrSnapshot(endpoint, body)` (TAC-5.5).
 - Reads only via the resolver API (`resolveMediaFor*` + `getUsernameForPost`); raw-cache helpers are module-private (TAC-4.7).
@@ -207,7 +206,7 @@ Chrome's SW may terminate any time; every handler is idempotent and reads author
 | Background form | `service_worker` (module) | `scripts` array |
 | Page-world XHR patch | `content_scripts` w/ `world: "MAIN"` | `content/loader.ts` injects `<script>` |
 | API-response fallback | N/A | `webRequest.filterResponseData` |
-| Carousel ZIP build | Content script (`content/zip.ts` — stub) | Background `ZIP_BUILD` handler (stub) |
+| Carousel ZIP build | Content script (`ZipService` + anchor-click, no background involvement) | Content script (`ZipService` + anchor-click, no background involvement) |
 | Options surface | `options_page` | `options_ui` with `open_in_tab: true` |
 | Extra permissions | — | `webRequest`, `webRequestBlocking`, `webRequestFilterResponse` |
 | Store distribution | `.zip` → Chrome Web Store | `.xpi`/`.zip` via `web-ext build` → AMO |
@@ -216,7 +215,7 @@ Chrome's SW may terminate any time; every handler is idempotent and reads author
 
 - Run options-page bootstrap: `src/options/main.tsx` → `App.tsx`.
 - Handle an incoming download request on the wire: `src/background/shared/router.ts`.
-- Decide where a file lands on disk: `src/services/DownloadService/naming.ts`.
+- Decide where a file lands on disk: `src/services/download/naming.ts`.
 - Resolve a post's author username at click time: `MediaCacheService.getUsernameForPost(postId)` (PLAN round 7 decision 30).
 - Decide whether to show the no-directory popup: `src/content/flow/download.tsx` — `handleDownloadClick`.
 

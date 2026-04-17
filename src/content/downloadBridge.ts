@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
-import { createDownloadService } from "../services/DownloadService";
-import { createSettingsService } from "../services/SettingsService";
-import { createToastService } from "../services/ToastService";
+import { createDownloadService } from "../services/download/download";
+import { createSettingsService } from "../services/settings/settings";
+import { createToastService } from "../services/toast/toast";
 import type { MediaResource, MediaType } from "../types/instagram";
 import { handleDownloadClick, type DownloadFlowDeps } from "./flow/download";
 import type { DownloadParams } from "./extractors/filename";

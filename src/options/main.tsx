@@ -1,8 +1,8 @@
 import { render } from "preact";
 import "../index.css";
-import { createMediaCacheService } from "../services/MediaCacheService";
-import { createSettingsService } from "../services/SettingsService";
-import { createThemeService } from "../services/ThemeService";
+import { createMediaCacheService } from "../services/media-cache/media-cache";
+import { createSettingsService } from "../services/settings/settings";
+import { createThemeService } from "../services/theme/theme";
 import { App } from "./App";
 
 const mount = document.getElementById("root");

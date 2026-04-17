@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createToastService } from "../../src/services/ToastService";
-import type { ShadowMount } from "../../src/content/modals/mount";
+import { createToastService } from "../toast";
+import type { ShadowMount } from "../../../content/modals/mount";
 
 function fakeMount(): ShadowMount {
   const host = document.createElement("div");

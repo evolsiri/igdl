@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createThemeService, type ThemeSetting } from "../../src/services/ThemeService";
+import { createThemeService, type ThemeSetting } from "../theme";
 
 type MqlListener = (event: MediaQueryListEvent) => void;
 
@@ -31,7 +31,7 @@ function createFakeMatchMedia(initial = false): {
     dispatchEvent: () => true,
     setMatches(value: boolean) {
       matches = value;
-      mql.matches = value;
+      (mql as { matches: boolean }).matches = value;
     },
     emit() {
       const event = { matches, media: mql.media } as MediaQueryListEvent;

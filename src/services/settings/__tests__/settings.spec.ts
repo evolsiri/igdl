@@ -3,16 +3,13 @@ import {
   createSettingsService,
   SETTINGS_KEY,
   type SettingsService,
-} from "../../src/services/SettingsService";
+} from "../settings";
 import {
   SETTINGS_DEFAULTS,
   migrate,
   normalize,
-} from "../../src/services/SettingsService/schema";
-import {
-  inMemoryStorage,
-  type KvStorage,
-} from "../../src/services/SettingsService/storage";
+} from "../schema";
+import { inMemoryStorage, type KvStorage } from "../storage";
 
 function setup(options: { initial?: unknown; nowStart?: number } = {}): {
   service: SettingsService;

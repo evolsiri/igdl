@@ -1,5 +1,5 @@
-import { createMediaCacheService } from "../services/MediaCacheService";
-import { createSettingsService } from "../services/SettingsService";
+import { createMediaCacheService } from "../services/media-cache/media-cache";
+import { createSettingsService } from "../services/settings/settings";
 import { registerSharedBackground } from "./shared/register";
 
 /**

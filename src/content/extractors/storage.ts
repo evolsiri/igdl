@@ -2,7 +2,7 @@ import type { Settings } from "../../types/settings";
 import {
   createSettingsService,
   type SettingsService,
-} from "../../services/SettingsService";
+} from "../../services/settings/settings";
 
 /**
  * Reference-shaped settings projection. The ported handlers read these keys

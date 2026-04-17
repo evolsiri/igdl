@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import type { AddProfileInput, UpdateProfileInput } from "../../../services/SettingsService";
+import type { AddProfileInput, UpdateProfileInput } from "../../../services/settings/settings";
 import type { ProfileDirEntry } from "../../../types/settings";
 import { filterByQuery } from "../../../utils/search";
 import { Card } from "../Card";

@@ -31,7 +31,7 @@ Chrome + Firefox MV3 browser extension (Preact + TypeScript + Tailwind v4) that 
 
 - Content scripts **never** call `chrome.downloads.*` directly. They send typed messages to the background worker, which owns all download invocation.
 - **All injected UI** (modals, toasts, anything content-script-rendered) mounts inside a **Shadow DOM** so Tailwind styles don't leak into Instagram and Instagram styles don't leak in.
-- **All storage access** (read + write) goes through `SettingsService`. Direct `chrome.storage.*` calls outside `src/services/SettingsService/` are prohibited.
+- **All storage access** (read + write) goes through `SettingsService`. Direct `chrome.storage.*` calls outside `src/services/settings/` are prohibited.
 - `ThemeService` toggles a root class only; it persists via `SettingsService`, never direct storage.
 - Messages between content ↔ background are typed via the union in `src/types/messages.ts`. Send them via the wrapper in `src/utils/messages.ts`, not raw `chrome.runtime.sendMessage`.
 
@@ -40,13 +40,13 @@ Chrome + Firefox MV3 browser extension (Preact + TypeScript + Tailwind v4) that 
 - **Preact components (options page)**: `src/options/components/` (cards under `cards/`, modals under `modals/`).
 - **Preact components (injected)**: `src/content/modals/` and `src/content/toasts/`.
 - **Utilities**: `src/utils/`.
-- **Services**: `src/services/<ServiceName>/` — each with `index.ts` + supporting files.
+- **Services**: `src/services/<name>/<name>.ts` — lowercase/kebab folder, primary entry file named to match the folder (no `index.ts` barrels). Tests co-located in `src/services/<name>/__tests__/<name>.spec.ts(x)`. See `docs/code-style-guide.md`.
 - **Types**: `src/types/`.
 - **Manifests**: `src/manifest/chrome.manifest.json` and `src/manifest/firefox.manifest.json`.
 
 ## Docs contract
 
-- Every service in `src/services/*` has a matching `docs/services/<Name>.md`.
+- Every service in `src/services/*` has a matching `docs/services/<name>.md` (same lowercase/kebab name as the service folder).
 - Every Preact component in `src/options/components/cards|modals/`, `src/content/modals/`, `src/content/toasts/` has a matching `docs/components/<Name>.md`.
 - `docs/README.md` is the index; keep it synced.
 - `docs/architecture.md` describes module boundaries, message flow, and storage flow.

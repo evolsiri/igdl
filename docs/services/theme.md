@@ -8,7 +8,7 @@ Per TAC-4.4, `ThemeService` does not touch storage. The options page reads `sett
 
 | Path | Role |
 |---|---|
-| `src/services/ThemeService/index.ts` | Full implementation + `ThemeServiceOptions` for test injection. |
+| `src/services/theme/theme.ts` | Full implementation + `ThemeServiceOptions` for test injection. |
 
 ## Public API
 
@@ -45,7 +45,7 @@ createThemeService({
 });
 ```
 
-Tests pass a fake `matchMedia` that exposes `.setMatches(value) / .emit()` so the OS-change path is deterministic. See `tests/services/ThemeService.test.ts` for the pattern.
+Tests pass a fake `matchMedia` that exposes `.setMatches(value) / .emit()` so the OS-change path is deterministic. See `src/services/theme/__tests__/theme.spec.ts` for the pattern.
 
 ## Consumers
 
@@ -53,7 +53,7 @@ Tests pass a fake `matchMedia` that exposes `.setMatches(value) / .emit()` so th
 
 ## Tests
 
-`tests/services/ThemeService.test.ts` — 16 cases:
+`src/services/theme/__tests__/theme.spec.ts` — 16 cases:
 - `resolve()` for every preference × OS state combination.
 - `.dark` class toggling.
 - OS listener attach/detach as preference toggles between `system` and explicit values.

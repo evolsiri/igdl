@@ -6,9 +6,9 @@ Owns the user-facing settings blob at `chrome.storage.local["igdl_settings"]`. E
 
 | Path | Role |
 |---|---|
-| `src/services/SettingsService/index.ts` | Public API + `createSettingsService`. |
-| `src/services/SettingsService/schema.ts` | `SETTINGS_DEFAULTS`, `normalize`, `migrate` (forward-only). |
-| `src/services/SettingsService/storage.ts` | `KvStorage` interface, `chromeStorageLocal()`, `inMemoryStorage()` for tests. Shared with `MediaCacheService`. |
+| `src/services/settings/settings.ts` | Public API + `createSettingsService`. |
+| `src/services/settings/schema.ts` | `SETTINGS_DEFAULTS`, `normalize`, `migrate` (forward-only). |
+| `src/services/settings/storage.ts` | `KvStorage` interface, `chromeStorageLocal()`, `inMemoryStorage()` for tests. Shared with `MediaCacheService`. |
 | `src/types/settings.ts` | `Settings`, `ProfileDirEntry`, `NeverAskEntry`, `ThemeSetting`. |
 
 ## Public API
@@ -94,6 +94,6 @@ off();
 
 ## Tests
 
-`tests/services/SettingsService.test.ts` — 30+ cases covering CRUD, migration forward-step scaffolding, idempotent reset, cross-context subscribe via external storage writes, never-ask add/remove, case-insensitive username semantics.
+`src/services/settings/__tests__/settings.spec.ts` — 30+ cases covering CRUD, migration forward-step scaffolding, idempotent reset, cross-context subscribe via external storage writes, never-ask add/remove, case-insensitive username semantics.
 
 Inject an `inMemoryStorage()` (from `storage.ts`) when writing new tests — never hit `chrome.storage.local` from a test environment.

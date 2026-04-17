@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/preact";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DownloadsCard } from "../../src/options/components/cards/DownloadsCard";
-import { SETTINGS_DEFAULTS } from "../../src/services/SettingsService/schema";
+import { SETTINGS_DEFAULTS } from "../../src/services/settings/schema";
 import type { Settings } from "../../src/types/settings";
 
 afterEach(cleanup);

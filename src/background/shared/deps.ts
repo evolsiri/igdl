@@ -1,5 +1,5 @@
-import type { MediaCacheService } from "../../services/MediaCacheService";
-import type { SettingsService } from "../../services/SettingsService";
+import type { MediaCacheService } from "../../services/media-cache/media-cache";
+import type { SettingsService } from "../../services/settings/settings";
 
 /**
  * Dependencies handed to every background handler. Tests inject stubs;

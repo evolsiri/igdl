@@ -20,10 +20,6 @@ export async function routeMessage(
     case "XHR_SNAPSHOT":
       await deps.mediaCache.ingestXhrSnapshot(message.endpoint, message.body);
       return { ok: true, data: null };
-    case "ZIP_BUILD":
-      // Firefox registers a real handler for this; Chrome handles zip in the
-      // content script per PLAN.md round 6 decision 26.
-      return { ok: false, error: "ZIP_BUILD not handled in this background" };
     default: {
       const _exhaustive: never = message;
       return { ok: false, error: `unknown message type: ${String((_exhaustive as { type?: unknown }).type)}` };
@@ -40,12 +36,7 @@ export function asMessage(raw: unknown): Message | null {
   const candidate = raw as { type?: unknown };
   if (typeof candidate.type !== "string") return null;
   const t = candidate.type;
-  if (
-    t === "DOWNLOAD_MEDIA" ||
-    t === "OPEN_URL" ||
-    t === "XHR_SNAPSHOT" ||
-    t === "ZIP_BUILD"
-  ) {
+  if (t === "DOWNLOAD_MEDIA" || t === "OPEN_URL" || t === "XHR_SNAPSHOT") {
     return raw as Message;
   }
   return null;

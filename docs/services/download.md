@@ -6,8 +6,8 @@ Thin client-side service that content scripts and the options page use to reques
 
 | Path | Role |
 |---|---|
-| `src/services/DownloadService/index.ts` | `DownloadService` interface + `createDownloadService` — sends DOWNLOAD_MEDIA. |
-| `src/services/DownloadService/naming.ts` | `buildFilename`, `resolveDirectory`, `buildFullPath` — pure, fully unit-tested. |
+| `src/services/download/download.ts` | `DownloadService` interface + `createDownloadService` — sends DOWNLOAD_MEDIA. |
+| `src/services/download/naming.ts` | `buildFilename`, `resolveDirectory`, `buildFullPath` — pure, fully unit-tested. |
 
 ## Client API
 
@@ -81,5 +81,5 @@ content handler ─▶ DownloadService.queue ─▶ sendMessage(DOWNLOAD_MEDIA)
 
 ## Tests
 
-- `tests/services/DownloadService/naming.test.ts` — exhaustive template / extension / index / dir-resolution cases.
+- `src/services/download/__tests__/naming.spec.ts` — exhaustive template / extension / index / dir-resolution cases.
 - `tests/background/downloads.test.ts` — end-to-end for `handleDownloadMedia` (chrome.downloads.download + settings increment + error path + alwaysPromptSaveAs respected).

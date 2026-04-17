@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { handleDownloadMedia } from "../../src/background/shared/downloads";
-import { createMediaCacheService } from "../../src/services/MediaCacheService";
-import { createSettingsService } from "../../src/services/SettingsService";
-import { inMemoryStorage } from "../../src/services/SettingsService/storage";
+import { createMediaCacheService } from "../../src/services/media-cache/media-cache";
+import { createSettingsService } from "../../src/services/settings/settings";
+import { inMemoryStorage } from "../../src/services/settings/storage";
 
 function setup() {
   const storage = inMemoryStorage();

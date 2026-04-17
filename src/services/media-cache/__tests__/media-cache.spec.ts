@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   createMediaCacheService,
   type MediaCacheService,
-} from "../../src/services/MediaCacheService";
-import { ALL_CACHE_KEYS, CACHE_KEYS } from "../../src/services/MediaCacheService/keys";
+} from "../media-cache";
+import { ALL_CACHE_KEYS, CACHE_KEYS } from "../keys";
 import {
   inMemoryStorage,
   type KvStorage,
-} from "../../src/services/SettingsService/storage";
+} from "../../settings/storage";
 
 function setup(seed: Record<string, unknown> = {}): {
   cache: MediaCacheService;

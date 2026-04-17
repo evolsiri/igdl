@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/preact-vite";
 import { useState } from "preact/hooks";
 import { expect, fn, userEvent, within } from "storybook/test";
-import { SETTINGS_DEFAULTS } from "../../../../services/SettingsService/schema";
+import { SETTINGS_DEFAULTS } from "../../../../services/settings/schema";
 import type { Settings } from "../../../../types/settings";
 import { DownloadsCard } from "../DownloadsCard";
 

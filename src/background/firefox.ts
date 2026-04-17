@@ -1,5 +1,5 @@
-import { createMediaCacheService } from "../services/MediaCacheService";
-import { createSettingsService } from "../services/SettingsService";
+import { createMediaCacheService } from "../services/media-cache/media-cache";
+import { createSettingsService } from "../services/settings/settings";
 import { registerSharedBackground } from "./shared/register";
 
 /**
@@ -10,7 +10,10 @@ import { registerSharedBackground } from "./shared/register";
  *    call is installed below; per-endpoint decoders and `XHR_SNAPSHOT`
  *    forwarding to the active Instagram tab's content script are not yet
  *    implemented.
- *  - `ZIP_BUILD` handler — stub; zip.js integration is not yet implemented.
+ *
+ * Zip assembly lives entirely in the content script (see
+ * `src/services/zip/`), so there is no background-side zip handler
+ * on either Chrome or Firefox.
  */
 
 const deps = {

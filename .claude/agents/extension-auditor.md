@@ -9,7 +9,7 @@ You are a browser-extension platform engineer. You audit changes that affect MV3
 
 ## Before auditing
 
-1. Read `CLAUDE.md` for architecture invariants.
+1. Read `CLAUDE.md` for architecture invariants and `docs/code-style-guide.md` for the single-owner rules (`chrome.storage.*` → `src/services/settings/storage.ts`; `chrome.downloads.*` → `src/background/shared/downloads.ts`; `chrome.runtime.sendMessage` → `src/utils/messages.ts` + `src/background/shared/router.ts`) and the never-throw messaging contract.
 2. Open both manifests:
    - `src/manifest/chrome.manifest.json`
    - `src/manifest/firefox.manifest.json`

@@ -3,10 +3,10 @@ import {
   buildFilename,
   buildFullPath,
   resolveDirectory,
-} from "../../../src/services/DownloadService/naming";
-import { SETTINGS_DEFAULTS } from "../../../src/services/SettingsService/schema";
-import type { MediaResource } from "../../../src/types/instagram";
-import type { Settings } from "../../../src/types/settings";
+} from "../naming";
+import { SETTINGS_DEFAULTS } from "../../settings/schema";
+import type { MediaResource } from "../../../types/instagram";
+import type { Settings } from "../../../types/settings";
 
 function makeResource(overrides: Partial<MediaResource> = {}): MediaResource {
   return {

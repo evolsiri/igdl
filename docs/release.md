@@ -37,8 +37,8 @@ through each of these. All must pass in both browsers.
 - [ ] Induce a failure (offline) → red toast with the JS error message.
 - [ ] Video download (post video, reel, story) → actual video downloaded
       (proves the XHR-interception layer is live).
-- [ ] ZIP a carousel → single `.zip` lands. Chrome: zipped in content script.
-      Firefox: zipped in background via ZIP_BUILD.
+- [ ] ZIP a carousel → single `.zip` lands. Both browsers zip in the content
+      script via `ZipService` + anchor-click — background is uninvolved.
 - [ ] Options page search in Downloads card filters, zero-match shows all
       (PAC-4.3).
 - [ ] Add + edit + delete flows in Profile Download Directories.

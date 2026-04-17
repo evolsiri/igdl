@@ -9,7 +9,7 @@ You enforce the documentation contract defined in `PLAN.md` TAC-6 and the TSDoc 
 
 ## Before reviewing
 
-1. Read `CLAUDE.md` for the docs + TSDoc contracts.
+1. Read `CLAUDE.md` for the docs + TSDoc contracts and `docs/code-style-guide.md` for the canonical service + doc naming scheme (lowercase/kebab folder, matching `docs/services/<name>.md`, TSDoc `@example` on every exported service function).
 2. List the current source tree under:
    - `src/services/*` (every directory is a service)
    - `src/options/components/cards/`

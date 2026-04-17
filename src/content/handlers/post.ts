@@ -159,11 +159,6 @@ export async function postOnClicked(target: HTMLAnchorElement, saveAs = false): 
     const articleNode = getParentArticleNode(target);
     if (!articleNode) throw new Error("cannot find article node");
 
-    if (target.className.includes("zip-btn")) {
-      reportFailure("ZIP download not yet implemented in this build");
-      return;
-    }
-
     const data = await postGetUrl(articleNode);
     if (!data?.url) throw new Error("post cannot get url");
 

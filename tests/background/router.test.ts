@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { asMessage, routeMessage } from "../../src/background/shared/router";
-import { createMediaCacheService } from "../../src/services/MediaCacheService";
-import { createSettingsService } from "../../src/services/SettingsService";
-import { inMemoryStorage } from "../../src/services/SettingsService/storage";
+import { createMediaCacheService } from "../../src/services/media-cache/media-cache";
+import { createSettingsService } from "../../src/services/settings/settings";
+import { inMemoryStorage } from "../../src/services/settings/storage";
 
 function setup() {
   const storage = inMemoryStorage();
@@ -25,12 +25,20 @@ describe("asMessage()", () => {
     expect(asMessage(raw)).toBe(raw);
   });
 
-  it.each(["OPEN_URL", "XHR_SNAPSHOT", "ZIP_BUILD"])(
+  it.each(["OPEN_URL", "XHR_SNAPSHOT"])(
     "accepts %s as a known type",
     (type) => {
       expect(asMessage({ type })).not.toBeNull();
     },
   );
+
+  it("returns null for the retired ZIP_BUILD type", () => {
+    // Zip assembly moved fully into the content script, so ZIP_BUILD is no
+    // longer a cross-context message. Regression guard: senders that still
+    // post it must get the same "unknown type" treatment as any other
+    // garbage payload.
+    expect(asMessage({ type: "ZIP_BUILD" })).toBeNull();
+  });
 
   it("returns null for unknown types", () => {
     expect(asMessage({ type: "NOT_A_THING" })).toBeNull();
@@ -102,12 +110,4 @@ describe("routeMessage()", () => {
     expect(cache?.alice).toBe("https://x/a.jpg");
   });
 
-  it("returns an error response for ZIP_BUILD (no Chrome handler)", async () => {
-    const { deps } = setup();
-    const response = await routeMessage(
-      { type: "ZIP_BUILD", items: [], outFilename: "x.zip" },
-      deps,
-    );
-    expect(response.ok).toBe(false);
-  });
 });

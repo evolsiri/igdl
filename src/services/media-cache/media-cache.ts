@@ -8,7 +8,7 @@ import type {
   ThreadsPostMedia,
   UserProfilePicUrl,
 } from "../../types/media-cache";
-import { chromeStorageLocal, type KvStorage } from "../SettingsService/storage";
+import { chromeStorageLocal, type KvStorage } from "../settings/storage";
 import { ALL_CACHE_KEYS, CACHE_KEYS } from "./keys";
 
 export interface MediaCacheServiceOptions {

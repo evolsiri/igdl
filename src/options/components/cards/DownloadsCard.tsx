@@ -1,6 +1,6 @@
 import { Fragment } from "preact";
 import { useState } from "preact/hooks";
-import { SETTINGS_DEFAULTS } from "../../../services/SettingsService/schema";
+import { SETTINGS_DEFAULTS } from "../../../services/settings/schema";
 import type { Settings } from "../../../types/settings";
 import { matchesQuery } from "../../../utils/search";
 import { Card } from "../Card";

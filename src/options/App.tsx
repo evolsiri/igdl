@@ -1,12 +1,12 @@
 import { useEffect, useState } from "preact/hooks";
-import type { MediaCacheService } from "../services/MediaCacheService";
+import type { MediaCacheService } from "../services/media-cache/media-cache";
 import type {
   AddProfileInput,
   SettingsService,
   UpdateProfileInput,
-} from "../services/SettingsService";
-import { SETTINGS_DEFAULTS } from "../services/SettingsService/schema";
-import type { ThemeService } from "../services/ThemeService";
+} from "../services/settings/settings";
+import { SETTINGS_DEFAULTS } from "../services/settings/schema";
+import type { ThemeService } from "../services/theme/theme";
 import type { Settings, ThemeSetting } from "../types/settings";
 import { AppearanceCard } from "./components/cards/AppearanceCard";
 import { DownloadsCard } from "./components/cards/DownloadsCard";

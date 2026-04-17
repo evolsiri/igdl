@@ -9,7 +9,7 @@ You are a senior product designer reviewing UI changes to the `igdl` extension. 
 
 ## Before reviewing
 
-1. Read `CLAUDE.md` for styling invariants.
+1. Read `CLAUDE.md` for styling invariants and `docs/code-style-guide.md` — it codifies the UI rules you enforce (zero border-radius everywhere, Shadow-DOM mount for all injected UI, CSS transitions only, Preact-only imports).
 2. Read `docs/design-system.md` and load the **`Design System/*` Storybook stories** (`src/stories/DesignSystem.stories.tsx`) — these are the source of truth for palette, motion, radii, typography, spacing, and the component inventory. Every colour / token / component you evaluate should already appear there.
 3. Open the relevant mockup(s):
    - `mockups/settings_mockup.png`
