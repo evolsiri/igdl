@@ -17,6 +17,7 @@
     "package:firefox": "TARGET=firefox node scripts/package.mjs",
     "preview": "vite preview",
     "lint": "eslint . --fix",
+    "typecheck": "tsc -b",
     "test": "vitest run",
     "test:storybook": "vitest run --project storybook",
     "storybook": "storybook dev -p 6006",
