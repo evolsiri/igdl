@@ -47,7 +47,7 @@ Generic over `K` so different tables can share the component without leaking eac
 
 ## Tests
 
-`tests/components/SortableTableHeader.test.tsx` — 10 cases covering label rendering, arrow routing, `onClear` on active-arrow clicks, `aria-sort`, `aria-pressed`, and the active-vs-inactive class.
+`src/options/components/__tests__/SortableTableHeader.spec.tsx` — 10 cases covering label rendering, arrow routing, `onClear` on active-arrow clicks, `aria-sort`, `aria-pressed`, and the active-vs-inactive class.
 
 ## Consumers
 

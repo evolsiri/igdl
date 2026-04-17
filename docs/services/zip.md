@@ -89,5 +89,5 @@ The click handler additionally rejects non-carousel posts (single-media posts) w
 
 - `src/services/zip/__tests__/zip.spec.ts` — `build` covers: empty list, happy path reads back the zip with `ZipReader`, non-2xx rejection, network-error wrapping, writer closes on failure, original error propagates when close also throws, `credentials: "include"` is passed.
 - `src/services/zip/__tests__/download.spec.ts` — `triggerAnchorDownload` covers: anchor creation + attributes, DOM removal after click, 100ms `URL.revokeObjectURL`, zero-byte blob.
-- `tests/content/handlers/zip.test.ts` — `zipOnClicked` covers: carousel happy path (entries + outer filename match), non-carousel rejection, missing article rejection, missing info rejection, build-failure propagates as failure toast, empty-owner fallback to `instagram`, video-item URL extraction.
-- `tests/content/button.test.ts` — routing regression: `.zip-btn` click invokes `zipOnClicked` and bypasses `postOnClicked`; `.download-btn` click still routes through the per-surface table.
+- `src/content/handlers/__tests__/zip.spec.ts` — `zipOnClicked` covers: carousel happy path (entries + outer filename match), non-carousel rejection, missing article rejection, missing info rejection, build-failure propagates as failure toast, empty-owner fallback to `instagram`, video-item URL extraction.
+- `src/content/__tests__/button.spec.ts` — routing regression: `.zip-btn` click invokes `zipOnClicked` and bypasses `postOnClicked`; `.download-btn` click still routes through the per-surface table.

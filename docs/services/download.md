@@ -82,4 +82,4 @@ content handler ─▶ DownloadService.queue ─▶ sendMessage(DOWNLOAD_MEDIA)
 ## Tests
 
 - `src/services/download/__tests__/naming.spec.ts` — exhaustive template / extension / index / dir-resolution cases.
-- `tests/background/downloads.test.ts` — end-to-end for `handleDownloadMedia` (chrome.downloads.download + settings increment + error path + alwaysPromptSaveAs respected).
+- `src/background/shared/__tests__/downloads.spec.ts` — end-to-end for `handleDownloadMedia` (chrome.downloads.download + settings increment + error path + alwaysPromptSaveAs respected).

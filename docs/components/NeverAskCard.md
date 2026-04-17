@@ -29,7 +29,7 @@ Zero-match renders all entries (PAC-4.6) — matches DownloadsCard's behavior.
 
 ## Tests
 
-`tests/components/NeverAskCard.test.tsx` — 6 cases:
+`src/options/components/cards/__tests__/NeverAskCard.spec.tsx` — 6 cases:
 - Empty state.
 - Entries render with timestamp.
 - Search filters entries.

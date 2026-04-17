@@ -52,7 +52,7 @@ Mounted inside a Shadow DOM via `createShadowMount()`. Uses inline styles from `
 
 ## Tests
 
-`tests/content/modals/NoDirPopup.test.tsx` — covers render, each choice button, the edit-mode flow, empty submit, Escape cancel, tooltip hover on both info glyphs, and the removed prompt copy.
+`src/content/modals/__tests__/NoDirPopup.spec.tsx` — covers render, each choice button, the edit-mode flow, empty submit, Escape cancel, tooltip hover on both info glyphs, and the removed prompt copy.
 
 ## Design notes
 

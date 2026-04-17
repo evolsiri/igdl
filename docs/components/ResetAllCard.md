@@ -29,7 +29,7 @@ interface ResetAllCardProps {
 
 ## Tests
 
-`tests/components/ResetAllCard.test.tsx` — 3 cases:
+`src/options/components/cards/__tests__/ResetAllCard.spec.tsx` — 3 cases:
 - Button click opens the confirm dialog.
 - Confirm fires `onReset`.
 - Cancel does not fire `onReset`.

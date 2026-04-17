@@ -27,4 +27,4 @@ interface AppearanceCardProps {
 
 ## Tests
 
-`tests/components/AppearanceCard.test.tsx` — 2 cases: renders all three radios with correct checked state; `onChange` fires with the clicked value.
+`src/options/components/cards/__tests__/AppearanceCard.spec.tsx` — 2 cases: renders all three radios with correct checked state; `onChange` fires with the clicked value.

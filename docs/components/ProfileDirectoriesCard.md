@@ -54,7 +54,7 @@ A seventh column holds the per-row delete button.
 
 ## Tests
 
-`tests/components/ProfileDirectoriesCard.test.tsx` — 11 cases:
+`src/options/components/cards/__tests__/ProfileDirectoriesCard.spec.tsx` — 11 cases:
 - Empty state.
 - Add button opens the modal.
 - Rows render with username / directory / download count.

@@ -42,7 +42,7 @@ Renders the newest toast at the very bottom and each older one offset up by 4px.
 
 ## Tests
 
-`tests/content/toasts/Toast.test.tsx` — 3 cases:
+`src/content/toasts/__tests__/Toast.spec.tsx` — 3 cases:
 - Success renders checkmark + `status` role.
 - Failure renders × + `alert` role.
 - `onDismiss` fires at `durationMs + transition tail`.

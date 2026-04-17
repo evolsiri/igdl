@@ -27,7 +27,7 @@ interface AddProfileModalProps {
 
 ## Tests
 
-`tests/components/AddProfileModal.test.tsx` — 5 cases:
+`src/options/components/modals/__tests__/AddProfileModal.spec.tsx` — 5 cases:
 - Directory input pre-populated with `initialDirectory`.
 - Empty username shows validation error.
 - Submit sends trimmed username + directory.

@@ -64,7 +64,7 @@ Tests pass a fake mount that records `render` calls without actually mounting Pr
 - `dispose()` idempotent.
 - Returned dismiss function is callable without throwing.
 
-`tests/content/toasts/Toast.test.tsx`:
+`src/content/toasts/__tests__/Toast.spec.tsx`:
 - Success vs failure glyph + ARIA role differences.
 - Auto-dismiss after `durationMs + transition tail`.
 

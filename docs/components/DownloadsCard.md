@@ -45,7 +45,7 @@ Each item has a per-row reset that calls `onPatch({ [field]: SETTINGS_DEFAULTS[f
 
 ## Tests
 
-`tests/components/DownloadsCard.test.tsx` — 5 cases:
+`src/options/components/cards/__tests__/DownloadsCard.spec.tsx` — 5 cases:
 - Renders every labeled setting.
 - Search filters to matching items.
 - Zero-match renders all (PAC-4.3 behavior verified).
