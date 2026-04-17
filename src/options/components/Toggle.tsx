@@ -27,7 +27,10 @@ export function Toggle({
   return (
     <div class="flex items-start gap-3 py-3 border-t border-border first:border-t-0">
       <div class="flex items-start gap-3 flex-1 min-w-0">
-        <span class="relative inline-block w-10 h-6 shrink-0 mt-0.5">
+        <label
+          for={inputId}
+          class="relative inline-block w-10 h-6 shrink-0 mt-0.5 cursor-pointer"
+        >
           <input
             id={inputId}
             type="checkbox"
@@ -39,7 +42,7 @@ export function Toggle({
           />
           <span class="absolute inset-0 bg-border transition-colors duration-200 peer-checked:bg-accent peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent" />
           <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-bg shadow-sm transition-transform duration-200 ease-out peer-checked:translate-x-4" />
-        </span>
+        </label>
         <div class="flex-1 min-w-0">
           <label
             for={inputId}
