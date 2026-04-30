@@ -105,6 +105,40 @@ items.
 - [ ] Update listing text + screenshots.
 - [ ] Submit for review.
 
+### Mozilla AMO — signed XPI for self-distribution (alternative)
+
+For builds you want to ship outside the public AMO catalog (sideload, direct
+download from a private link), sign locally instead of uploading the `.zip`:
+
+1. Generate AMO API credentials at
+   <https://addons.mozilla.org/developers/addon/api/key/>.
+2. Export them, or place them in `.env` at the repo root (gitignored
+   via `*.local`):
+
+   ```dotenv
+   FIREFOX_API_KEY=user:12345678:42 # fake api key for the sake of this example
+   FIREFOX_API_SECRET=mysecrethere
+   ```
+
+   Env vars are intentionally browser-prefixed (`FIREFOX_*`) — the wrapper
+   script translates them to `web-ext`'s native `WEB_EXT_API_KEY` /
+   `WEB_EXT_API_SECRET` only inside the child process.
+
+3. Build then sign:
+
+   ```sh
+   pnpm run build:firefox
+   pnpm run sign:firefox                       # unlisted (self-distribution, default)
+   pnpm run sign:firefox -- --channel=listed   # public AMO listing (queued for review)
+   ```
+
+4. The signed file lands at `artifacts/igdl-firefox-<version>.xpi` and can be
+   installed permanently in Firefox via `about:addons → ⚙ → Install Add-on
+From File…`.
+
+`gecko.id = igdl@evolsiri.local` is what AMO uses to identify the addon — do
+not change it between releases (see Notes below).
+
 ## 7. Post-release
 
 - [ ] Verify the auto-update picks up the new version on an already-installed
