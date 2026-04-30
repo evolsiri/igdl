@@ -18,12 +18,21 @@ To update, download the new zip, replace the folder contents, then click **Reloa
 
 ### Firefox
 
+**Permanent install (recommended)** — signed by Mozilla, survives Firefox restarts.
+
+1. Download **`igdl-firefox-<version>.xpi`** from the [latest release](https://github.com/evolsiri/igdl/releases/latest).
+2. Open `about:addons` → click the gear icon ⚙ in the top right → **Install Add-on From File…**.
+3. Pick the downloaded `.xpi` and confirm the install prompt.
+4. Click the igdl toolbar icon to open the settings page.
+
+To update, download the new `.xpi` from the latest release and install it the same way — Firefox replaces the previous version in place.
+
+**Temporary install (fallback)** — if a given release only attaches the `.zip`, or you just want a one-off run. Add-ons installed this way disappear on Firefox restart.
+
 1. Download **`igdl-firefox-<version>.zip`** from the [latest release](https://github.com/evolsiri/igdl/releases/latest).
 2. Open `about:debugging#/runtime/this-firefox`.
 3. Click **Load Temporary Add-on…** and select the downloaded `.zip` (no need to unzip).
 4. Click the igdl toolbar icon to open the settings page.
-
-Temporary add-ons are removed when Firefox restarts — reload the zip after each restart. A signed Mozilla AMO build for persistent install is planned.
 
 ## Development
 
@@ -51,7 +60,9 @@ pnpm install
 | `pnpm run build:chrome`    | Production build to `dist/chrome/`                                                    |
 | `pnpm run build:firefox`   | Production build to `dist/firefox/`                                                   |
 | `pnpm run package:chrome`  | Zip `dist/chrome/` to `artifacts/igdl-chrome-<version>.zip` (Chrome Web Store upload) |
-| `pnpm run package:firefox` | `web-ext build` to `artifacts/igdl-firefox-<version>.xpi` (Mozilla AMO upload)        |
+| `pnpm run package:firefox` | `web-ext build` to `artifacts/igdl-firefox-<version>.zip` (Mozilla AMO upload)        |
+| `pnpm run sign:firefox`    | Sign `dist/firefox/` via the AMO API to `artifacts/igdl-firefox-<version>.xpi`        |
+| `pnpm run rc:firefox`      | End-to-end Firefox release candidate: bump version → build → package → sign → tag    |
 | `pnpm run preview`         | Vite preview server                                                                   |
 | `pnpm run lint`            | ESLint (zero warnings required)                                                       |
 | `pnpm run test`            | Vitest headless                                                                       |
