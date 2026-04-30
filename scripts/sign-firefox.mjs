@@ -25,11 +25,42 @@
  *   pnpm run sign:firefox -- --channel=listed
  */
 
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadDotEnv, requireFirefoxSigningEnv } from "./lib/firefox-env.mjs";
+
+/**
+ * Exit code emitted when AMO rejects the upload because the requested
+ * version already exists. rc:firefox watches for this code so it can decide
+ * whether to bump-and-retry per --incrementOnConflict.
+ */
+const EXIT_VERSION_CONFLICT = 2;
+
+/**
+ * Run a child process while streaming its stdout/stderr to the terminal AND
+ * capturing the combined output for post-hoc inspection. spawnSync can't tee,
+ * so we use spawn and pipe through a Promise.
+ */
+function runTee(cmd, args, options) {
+  return new Promise((resolve) => {
+    const child = spawn(cmd, args, {
+      ...options,
+      stdio: ["inherit", "pipe", "pipe"],
+    });
+    let combined = "";
+    child.stdout.on("data", (chunk) => {
+      process.stdout.write(chunk);
+      combined += chunk.toString("utf-8");
+    });
+    child.stderr.on("data", (chunk) => {
+      process.stderr.write(chunk);
+      combined += chunk.toString("utf-8");
+    });
+    child.on("close", (status) => resolve({ status, combined }));
+  });
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -99,8 +130,12 @@ if (lint.status !== 0) {
 // ─── 8. Sign (credentials passed via env, NEVER CLI args) ───────────────────
 //      Process arg lists (/proc/<pid>/cmdline) are world-readable on Linux;
 //      env stays in the process. web-ext picks WEB_EXT_API_KEY/SECRET from env.
+//
+//      Output is tee'd so we can both display it live AND scan for AMO's
+//      "Version X already exists." conflict, which we surface as a distinct
+//      exit code so rc:firefox can decide whether to bump-and-retry.
 console.log(`\n→ web-ext sign --channel=${channel} dist/firefox`);
-const sign = spawnSync(
+const sign = await runTee(
   "pnpm",
   [
     "exec",
@@ -113,9 +148,19 @@ const sign = spawnSync(
     "--channel",
     channel,
   ],
-  { stdio: "inherit", env: childEnv },
+  { env: childEnv },
 );
 if (sign.status !== 0) {
+  // AMO conflict shape:
+  //   "version": [
+  //     "Version 1.0.4 already exists."
+  //   ]
+  if (/Version\s+[\d.]+\s+already exists\./i.test(sign.combined)) {
+    console.error(
+      `\n[sign:firefox] AMO rejected upload: version already exists. (exit ${EXIT_VERSION_CONFLICT})`,
+    );
+    process.exit(EXIT_VERSION_CONFLICT);
+  }
   console.error(`\n[sign:firefox] web-ext sign failed.`);
   process.exit(sign.status ?? 1);
 }
