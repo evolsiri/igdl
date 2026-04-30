@@ -35,7 +35,7 @@
  * On any non-conflict pipeline-step failure: reverts the version bump
  * (`git checkout -- <files>`) so the working tree is clean for re-run.
  *
- * On success: creates `chore: release <version>` commit + annotated
+ * On success: creates `release: <version>` commit + annotated
  * `v<version>` tag locally. Tag push is intentionally NOT automatic.
  *
  * Usage:
@@ -304,7 +304,7 @@ if (bumpedAny) {
   spawnSync("git", ["add", ...versionedFiles], { cwd: root, stdio: "inherit" });
   const commit = spawnSync(
     "git",
-    ["commit", "-m", `chore: release ${version}`],
+    ["commit", "-m", `release: ${version}`],
     { cwd: root, stdio: "inherit" },
   );
   if (commit.status !== 0) {
