@@ -296,8 +296,8 @@ async function init(): Promise<void> {
   }, 3 * 1000);
   // Run immediately so users don't wait 3s on a fresh load.
   processPage();
-  document.body?.addEventListener("click", handleGlobalClick);
-  document.body?.addEventListener("contextmenu", handleGlobalContextMenu);
+  document.addEventListener("click", handleGlobalClick);
+  document.addEventListener("contextmenu", handleGlobalContextMenu);
 }
 
 void init();
