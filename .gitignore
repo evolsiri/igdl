@@ -18,8 +18,9 @@ artifacts/
 # Coverage output
 coverage/
 
-# Claude Code local overrides (shared config stays in .claude/settings.json)
+# Claude Code local overrides
 .claude/settings.local.json
+.claude/settings.json
 
 # Editor directories and files
 .vscode/*
