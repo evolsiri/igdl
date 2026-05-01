@@ -76,17 +76,13 @@ function processPage(): void {
         likeBtn &&
         articleList[i].getElementsByClassName(CLASS_CUSTOM_BUTTON).length === 0
       ) {
-        addCustomBtn(
-          likeBtn.parentElement?.parentElement?.parentElement?.parentElement
-            ?.parentElement?.parentElement?.parentElement as Element | null,
-          iconColor,
-        );
+        const target = likeBtn.parentElement?.parentElement?.parentElement?.parentElement
+          ?.parentElement?.parentElement?.parentElement as Element | null;
+        addCustomBtn(target, iconColor);
       }
     }
-  }
-
-  // post detail
-  if (pathname.startsWith("/p/") || isPostDetailWithNameInUrl || isReelDetailWithNameInUrl) {
+  } else if (pathname.startsWith("/p/") || isPostDetailWithNameInUrl || isReelDetailWithNameInUrl) {
+    // post detail
     handleVideo();
     const dialogNode = document.querySelector<HTMLDivElement>('div[role="dialog"]');
     const wrapperNode = dialogNode ?? document.querySelector<HTMLElement>("section main");
@@ -126,10 +122,8 @@ function processPage(): void {
         iconColor,
       );
     }
-  }
-
-  // stories
-  if (pathname.startsWith("/stories/")) {
+  } else if (pathname.startsWith("/stories/")) {
+    // stories
     const node = document
       .querySelector("section")
       ?.querySelector<HTMLImageElement>('img[decoding="sync"]')?.nextSibling;
@@ -163,10 +157,8 @@ function processPage(): void {
         videos[i].onvolumechange = handleStoriesVideoVolumeChange;
       }
     }
-  }
-
-  // reels feed
-  if (pathname.startsWith("/reels/")) {
+  } else if (pathname.startsWith("/reels/")) {
+    // reels feed
     if (storageCache.settings.setting_enable_video_controls) {
       const videos = document.querySelectorAll("video");
       for (let i = 0; i < videos.length; i++) {
@@ -194,10 +186,8 @@ function processPage(): void {
         );
       }
     }
-  }
-
-  // reel detail
-  if (pathname.startsWith("/reel/")) {
+  } else if (pathname.startsWith("/reel/")) {
+    // reel detail
     handleVideo();
     const dialogNode = document.querySelector<HTMLDivElement>('div[role="dialog"]');
     const node = dialogNode || document;
@@ -219,7 +209,7 @@ function processPage(): void {
     }
   }
 
-  // profile avatar
+  // profile avatar (runs on all paths)
   const profileHeader = document.querySelector(
     "section>main>div>header>section:nth-child(2)",
   );
@@ -284,21 +274,19 @@ function handleGlobalClick(e: MouseEvent): void {
 }
 
 function init(): void {
-  // StorageCache has safe defaults; don't block startup on chrome.storage
-  // resolving — in Firefox MV3 the storage API can hang at document_start
-  // while the background service worker is still initialising.
   void initStorageCache().catch(() => undefined);
+  prewarmModalMount();
+
+  // Early burst: scan every 2s for the first 10s to catch late React renders,
+  // then the steady-state 3s interval takes over.
+  let earlyCount = 0;
+  const earlyTimer = setInterval(() => {
+    processPage();
+    if (++earlyCount >= 5) clearInterval(earlyTimer);
+  }, 2000);
 
   setInterval(processPage, 3 * 1000);
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      prewarmModalMount();
-      processPage();
-    }, { once: true });
-  } else {
-    prewarmModalMount();
-    processPage();
-  }
+  processPage();
   document.addEventListener("click", handleGlobalClick);
   document.addEventListener("contextmenu", handleGlobalContextMenu);
 }

@@ -42,7 +42,9 @@ function patchXhr(
   onSnapshot: (s: XhrSnapshot) => void,
   shouldCapture: (endpoint: string, contentType: string) => boolean,
 ): void {
-  const Original = (globalThis as unknown as { XMLHttpRequest?: typeof XMLHttpRequest }).XMLHttpRequest;
+  const Original = (
+    globalThis as unknown as { XMLHttpRequest?: typeof XMLHttpRequest }
+  ).XMLHttpRequest;
   if (!Original) return;
 
   const originalOpen = Original.prototype.open;
@@ -93,31 +95,37 @@ function patchFetch(
   onSnapshot: (s: XhrSnapshot) => void,
   shouldCapture: (endpoint: string, contentType: string) => boolean,
 ): void {
-  const originalFetch = (globalThis as unknown as { fetch?: typeof fetch }).fetch;
+  const originalFetch = (globalThis as unknown as { fetch?: typeof fetch })
+    .fetch;
   if (!originalFetch) return;
 
-  (globalThis as unknown as { fetch: typeof fetch }).fetch = async function patchedFetch(
-    input: RequestInfo | URL,
-    init?: RequestInit,
-  ): Promise<Response> {
-    const response = await originalFetch.call(globalThis, input as RequestInfo, init);
-    try {
-      const endpoint = resolveEndpoint(input, response);
-      const contentType = response.headers.get("content-type") ?? "";
-      if (!shouldCapture(endpoint, contentType)) return response;
-      const cloned = response.clone();
-      // Fire-and-forget — don't await; don't let our work delay the caller.
-      cloned.json().then(
-        (body) => onSnapshot({ endpoint, body }),
-        () => {
-          /* swallow */
-        },
+  (globalThis as unknown as { fetch: typeof fetch }).fetch =
+    async function patchedFetch(
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ): Promise<Response> {
+      const response = await originalFetch.call(
+        globalThis,
+        input as RequestInfo,
+        init,
       );
-    } catch {
-      /* swallow */
-    }
-    return response;
-  };
+      try {
+        const endpoint = resolveEndpoint(input, response);
+        const contentType = response.headers.get("content-type") ?? "";
+        if (!shouldCapture(endpoint, contentType)) return response;
+        const cloned = response.clone();
+        // Fire-and-forget — don't await; don't let our work delay the caller.
+        cloned.json().then(
+          (body) => onSnapshot({ endpoint, body }),
+          () => {
+            /* swallow */
+          },
+        );
+      } catch {
+        /* swallow */
+      }
+      return response;
+    };
 }
 
 function resolveEndpoint(input: RequestInfo | URL, response: Response): string {

@@ -98,7 +98,14 @@ body {
   padding: 0;
   background-color: var(--color-bg);
   color: var(--color-fg);
-  font-family: "Circular", "Circular Std", system-ui, -apple-system, "Segoe UI", "Helvetica Neue", sans-serif;
+  font-family:
+    "Circular",
+    "Circular Std",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    "Helvetica Neue",
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

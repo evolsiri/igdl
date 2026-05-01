@@ -7,9 +7,7 @@
     "storage",
     "unlimitedStorage",
     "downloads",
-    "webRequest",
-    "webRequestBlocking",
-    "webRequestFilterResponse"
+    "webRequest"
   ],
   "host_permissions": [
     "https://www.instagram.com/*",
@@ -30,7 +28,7 @@
         "content.js",
         "loader.js"
       ],
-      "run_at": "document_start"
+      "run_at": "document_idle"
     }
   ],
   "action": {
@@ -39,11 +37,6 @@
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true
-  },
-  "externally_connectable": {
-    "matches": [
-      "*://*.threads.com/*"
-    ]
   },
   "web_accessible_resources": [
     {
@@ -59,12 +52,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "igdl@evolsiri.local",
-      "strict_min_version": "115.0",
-      "data_collection_permissions": {
-        "required": [
-          "none"
-        ]
-      }
+      "strict_min_version": "115.0"
     }
   }
 }

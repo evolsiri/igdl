@@ -10,6 +10,7 @@
     "dev": "vite",
     "dev:chrome": "TARGET=chrome node scripts/build.mjs --watch",
     "dev:firefox": "pnpm exec web-ext run --source-dir=dist/firefox",
+    "dev:firefox:win": "node scripts/watch-firefox-win.mjs",
     "build": "pnpm run build:chrome && pnpm run build:firefox",
     "build:chrome": "tsc -b && TARGET=chrome node scripts/build.mjs",
     "build:firefox": "tsc -b && TARGET=firefox node scripts/build.mjs",

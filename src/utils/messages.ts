@@ -24,6 +24,9 @@ export async function sendMessage<T = unknown>(
     }
     return { ok: false, error: "malformed response from background" };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
   }
 }
