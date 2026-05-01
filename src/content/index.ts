@@ -283,11 +283,14 @@ function handleGlobalClick(e: MouseEvent): void {
   onClickHandler(btn);
 }
 
-async function init(): Promise<void> {
-  await initStorageCache();
+function init(): void {
+  // StorageCache has safe defaults; don't block startup on chrome.storage
+  // resolving — in Firefox MV3 the storage API can hang at document_start
+  // while the background service worker is still initialising.
+  void initStorageCache().catch(() => undefined);
+
   prewarmModalMount();
   setInterval(processPage, 3 * 1000);
-  // Run immediately so users don't wait 3s on a fresh load.
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", processPage, { once: true });
   } else {
@@ -297,4 +300,4 @@ async function init(): Promise<void> {
   document.addEventListener("contextmenu", handleGlobalContextMenu);
 }
 
-void init();
+init();
