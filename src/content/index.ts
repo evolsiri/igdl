@@ -286,16 +286,13 @@ function handleGlobalClick(e: MouseEvent): void {
 async function init(): Promise<void> {
   await initStorageCache();
   prewarmModalMount();
-  setInterval(() => {
-    const g = window as unknown as { requestIdleCallback?: (cb: () => void) => void };
-    if (typeof g.requestIdleCallback === "function") {
-      g.requestIdleCallback(processPage);
-    } else {
-      processPage();
-    }
-  }, 3 * 1000);
+  setInterval(processPage, 3 * 1000);
   // Run immediately so users don't wait 3s on a fresh load.
-  processPage();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", processPage, { once: true });
+  } else {
+    processPage();
+  }
   document.addEventListener("click", handleGlobalClick);
   document.addEventListener("contextmenu", handleGlobalContextMenu);
 }

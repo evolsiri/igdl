@@ -29,12 +29,7 @@ function modalMountFactory(): ShadowMount {
   const m = _prewarmedMount ?? createShadowMount();
   _prewarmedMount = null;
   const reprewarm = () => { _prewarmedMount = createShadowMount(); };
-  const g = window as unknown as { requestIdleCallback?: (cb: () => void) => void };
-  if (typeof g.requestIdleCallback === "function") {
-    g.requestIdleCallback(reprewarm);
-  } else {
-    setTimeout(reprewarm, 0);
-  }
+  setTimeout(reprewarm, 0);
   return m;
 }
 
