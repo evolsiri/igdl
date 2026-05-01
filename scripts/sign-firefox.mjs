@@ -134,6 +134,12 @@ if (lint.status !== 0) {
 //      Output is tee'd so we can both display it live AND scan for AMO's
 //      "Version X already exists." conflict, which we surface as a distinct
 //      exit code so rc:firefox can decide whether to bump-and-retry.
+
+// Snapshot existing XPIs so we can identify the newly downloaded one after signing.
+const xpisBefore = new Set(
+  fs.readdirSync(artifactsDir).filter((f) => f.endsWith(".xpi")),
+);
+
 console.log(`\n→ web-ext sign --channel=${channel} dist/firefox`);
 const sign = await runTee(
   "pnpm",
@@ -166,25 +172,38 @@ if (sign.status !== 0) {
 }
 
 // ─── 9. Rename to match the existing artifact naming convention ─────────────
-//      web-ext drops the signed file as `igdl-<version>.xpi`; the rest of the
-//      pipeline (release.yml, docs/release.md) uses `igdl-firefox-<version>`.
-const defaultXpi = path.join(artifactsDir, `igdl-${version}.xpi`);
+//      AMO names the downloaded XPI after the internal add-on ID, not the
+//      manifest name, so we can't predict the exact filename. Instead we diff
+//      the artifacts dir before/after signing to find the new file.
 const finalXpi = path.join(artifactsDir, `igdl-firefox-${version}.xpi`);
-if (fs.existsSync(defaultXpi)) {
+const newXpis = fs
+  .readdirSync(artifactsDir)
+  .filter((f) => f.endsWith(".xpi") && !xpisBefore.has(f));
+
+if (newXpis.length === 1) {
+  const downloadedXpi = path.join(artifactsDir, newXpis[0]);
   fs.rmSync(finalXpi, { force: true });
-  fs.renameSync(defaultXpi, finalXpi);
+  fs.renameSync(downloadedXpi, finalXpi);
   console.log(
     `\n✓ Signed Firefox extension → ${path.relative(root, finalXpi)}\n`,
   );
-} else if (channel === "listed") {
-  console.log(
-    `\n✓ Submitted to AMO for listed-channel review.` +
-      `\n  Signed XPI lands in artifacts/ once Mozilla approves.` +
-      `\n  Track at https://addons.mozilla.org/developers/\n`,
-  );
+} else if (newXpis.length === 0) {
+  if (channel === "listed") {
+    console.log(
+      `\n✓ Submitted to AMO for listed-channel review.` +
+        `\n  Signed XPI lands in artifacts/ once Mozilla approves.` +
+        `\n  Track at https://addons.mozilla.org/developers/\n`,
+    );
+  } else {
+    console.warn(
+      `\n⚠ Sign succeeded but no new .xpi appeared in artifacts/.` +
+        `\n  Inspect artifacts/ for the actual filename.\n`,
+    );
+  }
 } else {
   console.warn(
-    `\n⚠ Sign succeeded but ${path.relative(root, defaultXpi)} not found.` +
-      `\n  Inspect artifacts/ for the actual filename.\n`,
+    `\n⚠ Sign succeeded but multiple new .xpi files appeared — not renaming:`,
   );
+  for (const f of newXpis) console.warn(`    ${f}`);
+  console.warn();
 }
