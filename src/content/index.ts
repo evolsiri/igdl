@@ -289,11 +289,14 @@ function init(): void {
   // while the background service worker is still initialising.
   void initStorageCache().catch(() => undefined);
 
-  prewarmModalMount();
   setInterval(processPage, 3 * 1000);
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", processPage, { once: true });
+    document.addEventListener("DOMContentLoaded", () => {
+      prewarmModalMount();
+      processPage();
+    }, { once: true });
   } else {
+    prewarmModalMount();
     processPage();
   }
   document.addEventListener("click", handleGlobalClick);
