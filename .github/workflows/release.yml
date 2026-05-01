@@ -105,6 +105,12 @@ jobs:
         # web-ext names the output igdl-{version}.zip; standardise to igdl-firefox-{version}.zip
         run: mv "artifacts/igdl-${{ steps.version.outputs.version }}.zip" "artifacts/igdl-firefox-${{ steps.version.outputs.version }}.zip"
 
+      - name: Sign Firefox (AMO unlisted)
+        env:
+          FIREFOX_API_KEY: ${{ secrets.FIREFOX_API_KEY }}
+          FIREFOX_API_SECRET: ${{ secrets.FIREFOX_API_SECRET }}
+        run: pnpm run sign:firefox
+
       - name: Commit version sync + tag
         env:
           TAG: v${{ steps.version.outputs.version }}
@@ -129,3 +135,4 @@ jobs:
           files: |
             artifacts/igdl-chrome-*.zip
             artifacts/igdl-firefox-*.zip
+            artifacts/igdl-firefox-*.xpi
