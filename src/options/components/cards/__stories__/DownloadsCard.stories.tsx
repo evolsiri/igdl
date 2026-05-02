@@ -36,7 +36,6 @@ export const CustomizedSettings: Story = {
     settings: {
       ...SETTINGS_DEFAULTS,
       defaultDownloadDirectory: "instagram/downloads",
-      baseDirectory: "instagram",
       prefix: "ig",
       alwaysPromptSaveAs: true,
       filenameTemplate: "{id}-{username}",

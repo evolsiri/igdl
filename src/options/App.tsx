@@ -5,7 +5,6 @@ import type {
   SettingsService,
   UpdateProfileInput,
 } from "../services/settings/settings";
-import { SETTINGS_DEFAULTS } from "../services/settings/schema";
 import type { ThemeService } from "../services/theme/theme";
 import type { ProfileDirectoriesSort, Settings, ThemeSetting } from "../types/settings";
 import { AppearanceCard } from "./components/cards/AppearanceCard";
@@ -82,7 +81,7 @@ export function App({ settingsService, mediaCacheService, themeService }: AppPro
 
         <ProfileDirectoriesCard
           profiles={settings.profileDirectories}
-          baseDirectory={settings.baseDirectory || SETTINGS_DEFAULTS.baseDirectory}
+          defaultDirectory={settings.defaultDownloadDirectory}
           sort={settings.profileDirectoriesSort}
           onAdd={handleAddProfile}
           onUpdate={handleUpdateProfile}

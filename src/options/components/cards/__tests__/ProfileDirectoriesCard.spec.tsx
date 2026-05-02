@@ -24,7 +24,7 @@ function makeEntry(overrides: Partial<ProfileDirEntry> = {}): ProfileDirEntry {
 function defaultProps(sort: ProfileDirectoriesSort = { ...PROFILE_DIRECTORIES_DEFAULT_SORT }) {
   return {
     profiles: [] as ProfileDirEntry[],
-    baseDirectory: "instagram",
+    defaultDirectory: "instagram",
     sort,
     onAdd: vi.fn(async () => makeEntry()),
     onUpdate: vi.fn(async () => makeEntry()),

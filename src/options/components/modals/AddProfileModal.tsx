@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "preact/hooks";
 
 export interface AddProfileModalProps {
   open: boolean;
-  /** Pre-populates the directory input; typically `baseDirectory + "/"`. */
+  /** Pre-populates the directory input; typically `defaultDownloadDirectory + "/"`. */
   initialDirectory: string;
   onSubmit: (input: { username: string; directory: string }) => Promise<void> | void;
   onCancel: () => void;

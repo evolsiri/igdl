@@ -59,7 +59,6 @@ class StorageCache {
       schemaVersion: 1,
       theme: "system",
       defaultDownloadDirectory: "instagram",
-      baseDirectory: "instagram",
       prefix: "instagram",
       alwaysPromptSaveAs: false,
       filenameTemplate: "{username}-{id}-{datetime}",

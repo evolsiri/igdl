@@ -37,19 +37,6 @@ export function DownloadsCard({ settings, onPatch }: DownloadsCardProps) {
       ),
     },
     {
-      key: "baseDirectory",
-      tokens: "base directory add profile modal pre-populate",
-      render: () => (
-        <TextField
-          label="Base directory"
-          description="Prefills the directory input when you add a new profile."
-          value={settings.baseDirectory}
-          onChange={(v) => onPatch({ baseDirectory: v })}
-          resetValue={SETTINGS_DEFAULTS.baseDirectory}
-        />
-      ),
-    },
-    {
       key: "prefix",
       tokens: "prefix popup right-click on-page modal",
       render: () => (

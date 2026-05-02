@@ -18,7 +18,7 @@ import { sortProfiles } from "./profileSort";
 
 export interface ProfileDirectoriesCardProps {
   profiles: ProfileDirEntry[];
-  baseDirectory: string;
+  defaultDirectory: string;
   sort: ProfileDirectoriesSort;
   onAdd: (input: AddProfileInput) => Promise<ProfileDirEntry>;
   onUpdate: (username: string, fields: UpdateProfileInput) => Promise<ProfileDirEntry>;
@@ -35,7 +35,7 @@ interface EditingState {
 
 export function ProfileDirectoriesCard({
   profiles,
-  baseDirectory,
+  defaultDirectory,
   sort,
   onAdd,
   onUpdate,
@@ -231,7 +231,7 @@ export function ProfileDirectoriesCard({
 
       <AddProfileModal
         open={showAdd}
-        initialDirectory={`${baseDirectory}/`}
+        initialDirectory={`${defaultDirectory}/`}
         onSubmit={handleAdd}
         onCancel={() => setShowAdd(false)}
       />

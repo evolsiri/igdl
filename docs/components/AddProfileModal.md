@@ -11,7 +11,7 @@ Dialog opened from `ProfileDirectoriesCard`'s "+ Add profile" button. Collects `
 ```ts
 interface AddProfileModalProps {
   open: boolean;
-  initialDirectory: string;              // typically `${baseDirectory}/`
+  initialDirectory: string;              // typically `${defaultDownloadDirectory}/`
   onSubmit: (input: { username: string; directory: string }) => Promise<void> | void;
   onCancel: () => void;
 }

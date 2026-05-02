@@ -11,7 +11,7 @@ Third card on the options page. Manages the per-profile download directories —
 ```ts
 interface ProfileDirectoriesCardProps {
   profiles: ProfileDirEntry[];
-  baseDirectory: string;
+  defaultDirectory: string;
   sort: ProfileDirectoriesSort;
   onAdd: (input: AddProfileInput) => Promise<ProfileDirEntry>;
   onUpdate: (username: string, fields: UpdateProfileInput) => Promise<ProfileDirEntry>;
@@ -41,7 +41,7 @@ A seventh column holds the per-row delete button.
 - **Escape** → discards the draft, exits edit mode.
 - **Collision or empty username** → error banner surfaces the service's thrown error for ~5s, then clears.
 - **Delete button** → `ConfirmDialog` with destructive styling → `onDelete(username)`.
-- **Add button** (in the card header) → opens `AddProfileModal` pre-populated with `<baseDirectory>/`.
+- **Add button** (in the card header) → opens `AddProfileModal` pre-populated with `<defaultDirectory>/` (sourced from `defaultDownloadDirectory`).
 - **Sort arrows** (stacked up/down, to the left of each sortable column label) →
   up = asc, down = desc. Clicking the already-active arrow reverts to the default
   sort (`addedAt` desc, i.e. "most recently added on top"). Search filters apply

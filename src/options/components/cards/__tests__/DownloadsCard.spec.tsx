@@ -11,11 +11,10 @@ function makeSettings(overrides: Partial<Settings> = {}): Settings {
 }
 
 describe("DownloadsCard", () => {
-  it("renders all 14 settings by default", () => {
+  it("renders all 13 settings by default", () => {
     render(<DownloadsCard settings={makeSettings()} onPatch={() => {}} />);
-    // 14 settings = 4 text fields + 10 toggles (labels appear exactly once each)
+    // 13 settings = 3 text fields + 10 toggles (labels appear exactly once each)
     expect(screen.getByLabelText("Default download directory")).toBeTruthy();
-    expect(screen.getByLabelText("Base directory")).toBeTruthy();
     expect(screen.getByLabelText("Prefix")).toBeTruthy();
     expect(screen.getByLabelText("Always prompt Save As")).toBeTruthy();
     expect(screen.getByLabelText("Filename template")).toBeTruthy();

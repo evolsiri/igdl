@@ -1,6 +1,6 @@
 # DownloadsCard
 
-Second card on the options page. Hosts all 14 Downloads settings per PAC-5 with a per-card searchable list (PAC-4.3).
+Second card on the options page. Hosts all 13 Downloads settings per PAC-5 with a per-card searchable list (PAC-4.3).
 
 ## Source
 
@@ -20,19 +20,18 @@ interface DownloadsCardProps {
 | # | Field | Control | Default |
 |---|---|---|---|
 | 1 | `defaultDownloadDirectory` | TextField | `"instagram"` |
-| 2 | `baseDirectory` | TextField | `"instagram"` |
-| 3 | `prefix` | TextField | `"instagram"` |
-| 4 | `alwaysPromptSaveAs` | Toggle | `false` |
-| 5 | `filenameTemplate` | TextField | `"{username}-{id}-{datetime}"` |
-| 6 | `datetimeFormat` | TextField | `"YYYYMMDD_HHmmss"` |
-| 7 | `enableDatetimeFormat` | Toggle | `true` |
-| 8 | `replaceJpegWithJpg` | Toggle | `true` |
-| 9 | `useCarouselIndexing` | Toggle | `true` |
-| 10 | `showOpenInNewTabIcon` | Toggle | `true` |
-| 11 | `showZipDownloadIcon` | Toggle | `true` |
-| 12 | `enableThreadsSupport` | Toggle | `true` |
-| 13 | `enableVideoControls` | Toggle | `true` |
-| 14 | `enableExploreVideoClickthrough` | Toggle | `false` |
+| 2 | `prefix` | TextField | `"instagram"` |
+| 3 | `alwaysPromptSaveAs` | Toggle | `false` |
+| 4 | `filenameTemplate` | TextField | `"{username}-{id}-{datetime}"` |
+| 5 | `datetimeFormat` | TextField | `"YYYYMMDD_HHmmss"` |
+| 6 | `enableDatetimeFormat` | Toggle | `true` |
+| 7 | `replaceJpegWithJpg` | Toggle | `true` |
+| 8 | `useCarouselIndexing` | Toggle | `true` |
+| 9 | `showOpenInNewTabIcon` | Toggle | `true` |
+| 10 | `showZipDownloadIcon` | Toggle | `true` |
+| 11 | `enableThreadsSupport` | Toggle | `true` |
+| 12 | `enableVideoControls` | Toggle | `true` |
+| 13 | `enableExploreVideoClickthrough` | Toggle | `false` |
 
 Each item has a per-row reset that calls `onPatch({ [field]: SETTINGS_DEFAULTS[field] })` (PAC-4.5).
 

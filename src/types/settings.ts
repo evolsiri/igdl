@@ -13,7 +13,6 @@ export interface Settings {
 
   // Downloads
   defaultDownloadDirectory: string;
-  baseDirectory: string;
   prefix: string;
   alwaysPromptSaveAs: boolean;
   filenameTemplate: string;

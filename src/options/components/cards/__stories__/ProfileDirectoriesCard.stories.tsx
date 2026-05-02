@@ -39,7 +39,7 @@ const meta: Meta<typeof ProfileDirectoriesCard> = {
   tags: ["autodocs"],
   parameters: { layout: "padded" },
   args: {
-    baseDirectory: "instagram",
+    defaultDirectory: "instagram",
     sort: { ...PROFILE_DIRECTORIES_DEFAULT_SORT },
     onAdd: fn(),
     onUpdate: fn(),
@@ -53,7 +53,7 @@ const meta: Meta<typeof ProfileDirectoriesCard> = {
       <div class="max-w-5xl mx-auto">
         <ProfileDirectoriesCard
           profiles={profiles}
-          baseDirectory={args.baseDirectory}
+          defaultDirectory={args.defaultDirectory}
           sort={sort}
           onSortChange={(next) => {
             setSort(next);
