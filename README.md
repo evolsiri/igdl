@@ -85,6 +85,24 @@ For iteration, leave `pnpm run dev:chrome` running — it rebuilds on file chang
 
 Or run `pnpm run dev:firefox` to launch a disposable Firefox profile that auto-reloads on every rebuild.
 
+#### Developing on WSL2
+
+`web-ext run` and `pnpm run dev:firefox` don't work from WSL2 because Firefox for Windows can't read files from the WSL filesystem (`\\wsl.localhost\...` paths). Use the dedicated watch script instead:
+
+```bash
+pnpm run dev:firefox:win
+```
+
+This builds `dist/firefox/` and copies it to `C:\temp\igdl-ext\` on every `src/` change. Load it once in Firefox:
+
+1. Open `about:debugging#/runtime/this-firefox`
+2. Click **Load Temporary Add-on…** → select `C:\temp\igdl-ext\manifest.json`
+3. After each save, click **Reload** on the extension card — the watch script copies the new build automatically.
+
+> **Pitfall — addon ID conflict:** if you previously installed a signed XPI of igdl (`igdl@evolsiri.local`), Firefox will load both the signed and temporary extensions under the same ID. Remove the signed version from `about:addons` before loading the temp extension to avoid silent conflicts where one disables the other.
+
+> **Pitfall — Firefox manifest properties:** `externally_connectable` is Chrome-only. Including it in `firefox.manifest.json` causes Firefox to silently refuse to inject content scripts (no error, no warning beyond the manifest parse log). Keep Firefox-incompatible properties out of `firefox.manifest.json` even if they look harmless.
+
 ### Docs
 
 Deeper documentation lives under [`docs/`](./docs/). Start with [`docs/README.md`](./docs/README.md) for the full index.
