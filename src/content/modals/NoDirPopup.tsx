@@ -19,6 +19,9 @@ export interface NoDirPopupProps {
  * On-page popup shown when the user clicks the download button on a profile
  * that has no configured directory AND isn't on the never-ask list
  * (PAC-2.4). Presents exactly three buttons per PAC-2.5 / 2.6 / 2.7.
+ *
+ * Mounted inside a Shadow DOM — uses inline styles from `../tokens.ts` because
+ * Tailwind is not available in the shadow root.
  */
 export function NoDirPopup({
   username,

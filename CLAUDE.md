@@ -47,7 +47,8 @@ Chrome + Firefox MV3 browser extension (Preact + TypeScript + Tailwind v4) that 
 ## Docs contract
 
 - Every service in `src/services/*` has a matching `docs/services/<name>.md` (same lowercase/kebab name as the service folder).
-- Every Preact component in `src/options/components/cards|modals/`, `src/content/modals/`, `src/content/toasts/` has a matching `docs/components/<Name>.md`.
+- Component documentation lives in the component file itself as a doc block above the component — not in a separate file.
+- No ADRs. Architectural decisions belong in commit messages, PR descriptions, or comments in the relevant code.
 - `docs/README.md` is the index; keep it synced.
 - `docs/architecture.md` describes module boundaries, message flow, and storage flow.
 - `docs/design-system.md` indexes the design system. Source of truth is the `Design System/*` Storybook story at `src/stories/DesignSystem.stories.tsx` — any new colour token, motion value, typography size, or component must update the story's corresponding array in the same PR.

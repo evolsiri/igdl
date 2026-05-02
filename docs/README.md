@@ -1,6 +1,6 @@
 # igdl docs
 
-This folder documents the internals of the `igdl` browser extension. Every service under `src/services/*` has a dedicated doc, and every card / modal / toast Preact component does too. Architecture-wide concerns live in `architecture.md`; cross-cutting concerns and process docs have their own files; significant decisions are recorded as ADRs under `adr/`.
+This folder documents the internals of the `igdl` browser extension. Every service under `src/services/*` has a dedicated doc. Architecture-wide concerns live in `architecture.md`; cross-cutting concerns and process docs have their own files.
 
 The tables below are the canonical index. If a file listed here does not exist yet, the corresponding source code has not shipped.
 
@@ -39,27 +39,3 @@ The tables below are the canonical index. If a file listed here does not exist y
 | [`services/theme.md`](./services/theme.md) | `src/services/theme/` |
 | [`services/toast.md`](./services/toast.md) | `src/services/toast/` |
 | [`services/zip.md`](./services/zip.md) | `src/services/zip/` |
-
-## Components — options page
-
-| Doc | Source |
-|---|---|
-| [`components/AppearanceCard.md`](./components/AppearanceCard.md) | `src/options/components/cards/AppearanceCard.tsx` |
-| [`components/DownloadsCard.md`](./components/DownloadsCard.md) | `src/options/components/cards/DownloadsCard.tsx` |
-| [`components/ProfileDirectoriesCard.md`](./components/ProfileDirectoriesCard.md) | `src/options/components/cards/ProfileDirectoriesCard.tsx` |
-| [`components/NeverAskCard.md`](./components/NeverAskCard.md) | `src/options/components/cards/NeverAskCard.tsx` |
-| [`components/ResetAllCard.md`](./components/ResetAllCard.md) | `src/options/components/cards/ResetAllCard.tsx` |
-| [`components/AddProfileModal.md`](./components/AddProfileModal.md) | `src/options/components/modals/AddProfileModal.tsx` |
-| [`components/ConfirmDialog.md`](./components/ConfirmDialog.md) | `src/options/components/ConfirmDialog.tsx` |
-| [`components/SortableTableHeader.md`](./components/SortableTableHeader.md) | `src/options/components/SortableTableHeader.tsx` |
-
-## Components — injected on Instagram / Threads
-
-| Doc | Source |
-|---|---|
-| [`components/NoDirPopup.md`](./components/NoDirPopup.md) | `src/content/modals/NoDirPopup.tsx` |
-| [`components/Toast.md`](./components/Toast.md) | `src/content/toasts/Toast.tsx` |
-
-## Decisions
-
-See [`adr/README.md`](./adr/README.md) for the decision log and template. The six initial records cover zero border-radius, Shadow DOM isolation, page-world XHR patching, the service-owner pattern, co-located tests, and the two-manifest lockstep.

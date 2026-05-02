@@ -29,6 +29,10 @@ export interface ToastProps {
   onDismiss: () => void;
 }
 
+/**
+ * Use `ToastService` to push toasts — don't mount `Toast` directly outside tests.
+ * Each instance manages its own dismiss timer; no external tracking needed.
+ */
 export function Toast({ kind, message, durationMs = 4000, onDismiss }: ToastProps) {
   const [visible, setVisible] = useState(false);
 

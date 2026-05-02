@@ -8,6 +8,12 @@ export interface AddProfileModalProps {
   onCancel: () => void;
 }
 
+/**
+ * Opens via `showModal()` (falls back to the `open` attribute in jsdom).
+ * On open: resets `directory` to `initialDirectory` and auto-focuses the
+ * username input on the next frame. Esc closes via the native `close` event,
+ * which routes to `onCancel`.
+ */
 export function AddProfileModal({
   open,
   initialDirectory,
