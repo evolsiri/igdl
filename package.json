@@ -1,7 +1,7 @@
 {
   "name": "igdl",
   "private": true,
-  "version": "1.0.11",
+  "version": "1.0.14",
   "description": "Instagram / Threads media downloader extension for Chrome and Firefox.",
   "license": "MIT",
   "author": "evolsiri",
