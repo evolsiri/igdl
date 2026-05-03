@@ -79,6 +79,7 @@ success) and `#f9035e` (destructive) are fixed across themes.
 | Scaffold a new service or component               | `service-implementer`                        |
 | Instagram DOM / selector / XHR-bridge fixes       | `instagram-dom-engineer`                     |
 | Release: version bump, sign, tag                  | `release-engineer`                           |
+| `.claude/` config / agent-file drift              | `claude-config-reviewer`                     |
 | WCAG / screen-reader audit                        | `voltagent-qa-sec:accessibility-tester`      |
 | Threat-modeling / supply-chain audit              | `voltagent-qa-sec:security-auditor`          |
 | Runtime verification (Chrome / Firefox)           | `chrome-devtools-mcp:chrome-devtools`        |
@@ -88,3 +89,7 @@ success) and `#f9035e` (destructive) are fixed across themes.
 The four reviewers compose: on a non-trivial diff, run them in parallel
 (single message, multiple tool calls). The three implementers are
 single-purpose — pick one, then run the relevant reviewers afterward.
+
+For the canonical path → agent map, co-ownership rules, and the hand-off
+graph, see [`.claude/agents/README.md`](./.claude/agents/README.md). The
+table above is concern-keyed; the README is path-keyed.
