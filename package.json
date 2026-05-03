@@ -30,8 +30,8 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
-    "@zip.js/zip.js": "^2.8.26",
     "dayjs": "^1.11.20",
+    "fflate": "^0.8.2",
     "preact": "^10.29.1",
     "tailwindcss": "^4.2.2"
   },
@@ -53,6 +53,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-storybook": "^10.3.6",
     "globals": "^17.5.0",
+    "@zip.js/zip.js": "^2.8.26",
     "husky": "^9.1.7",
     "jsdom": "^29.0.2",
     "lint-staged": "^16.4.0",

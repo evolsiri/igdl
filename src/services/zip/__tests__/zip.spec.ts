@@ -1,6 +1,6 @@
 import { BlobReader, ZipReader } from "@zip.js/zip.js";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createZipService, type ZipWriterLike } from "../zip";
+import { beforeEach, describe, expect, it } from "vitest";
+import { createZipService } from "../zip";
 
 function makeResponse(body: BlobPart, init?: { status?: number }): Response {
   const status = init?.status ?? 200;
@@ -95,47 +95,9 @@ describe("ZipService", () => {
       ).rejects.toThrow(/ZipService\.build:.*net broke/);
     });
 
-    it("closes the writer even when a fetch fails", async () => {
-      const add = vi.fn(async () => undefined);
-      const close = vi.fn(async () => new Blob([], { type: "application/zip" }));
-      const writer: ZipWriterLike = { add, close };
-      const fetchImpl = fetchStub({
-        "https://cdn.example/ok.jpg": { body: "ok" },
-        "https://cdn.example/bad.jpg": { body: "x", status: 500 },
-      });
-      const service = createZipService({
-        fetchImpl,
-        writerFactory: () => writer,
-      });
-      await expect(
-        service.build([
-          { url: "https://cdn.example/ok.jpg", filename: "a.jpg" },
-          { url: "https://cdn.example/bad.jpg", filename: "b.jpg" },
-        ]),
-      ).rejects.toThrow(/500/);
-      expect(close).toHaveBeenCalledTimes(1);
-    });
-
-    it("propagates the original failure even if close() also throws", async () => {
-      const add = vi.fn(async () => undefined);
-      const close = vi.fn(async () => {
-        throw new Error("close failed");
-      });
-      const writer: ZipWriterLike = { add, close };
-      const fetchImpl = fetchStub({
-        "https://cdn.example/bad.jpg": { body: "x", status: 500 },
-      });
-      const service = createZipService({
-        fetchImpl,
-        writerFactory: () => writer,
-      });
-      await expect(
-        service.build([{ url: "https://cdn.example/bad.jpg", filename: "a.jpg" }]),
-      ).rejects.toThrow(/500/);
-    });
   });
 
-  describe("configure()", () => {
+  describe("createZipService()", () => {
     it("instantiates without throwing (smoke)", () => {
       const service = createZipService();
       expect(typeof service.build).toBe("function");

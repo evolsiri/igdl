@@ -1,13 +1,4 @@
-import { BlobReader, BlobWriter, configure, ZipWriter } from "@zip.js/zip.js";
-
-/**
- * Configure `@zip.js/zip.js` to run on the main thread. Content scripts can't
- * spawn Web Workers from a packaged extension script without declaring the
- * worker URL in `web_accessible_resources`, so we disable worker usage
- * altogether. Zip assembly on the main thread is fine for Instagram carousels
- * (typically ≤10 items, tens of MB total) and keeps the manifest minimal.
- */
-configure({ useWebWorkers: false });
+import { zip as fflateZip, type Zippable } from "fflate";
 
 /** One source file to add to the zip: a remote URL and its desired inner filename. */
 export interface ZipEntry {
@@ -17,36 +8,26 @@ export interface ZipEntry {
   filename: string;
 }
 
-/**
- * Minimal shape of the `ZipWriter` methods ZipService consumes. Lets tests
- * inject a stubbed writer without depending on `@zip.js/zip.js`'s runtime.
- */
-export interface ZipWriterLike {
-  add(filename: string, reader: BlobReader): Promise<unknown>;
-  close(): Promise<Blob>;
-}
-
 export interface ZipServiceOptions {
   /** Injected fetch; defaults to `globalThis.fetch`. Tests pass a stub. */
   fetchImpl?: typeof fetch;
-  /** Factory returning a fresh ZipWriter; defaults to `@zip.js/zip.js` + `BlobWriter`. */
-  writerFactory?: () => ZipWriterLike;
 }
 
 export interface ZipService {
   /**
-   * Fetches every entry's URL sequentially and streams each response into a
-   * fresh `ZipWriter`, producing a single `application/zip` `Blob`. Fetches
-   * run with `credentials: "omit"` — Instagram CDN URLs are signed/public
-   * and the CDN does not return `Access-Control-Allow-Credentials`, so a
-   * credentialed fetch would fail CORS with a NetworkError.
+   * Fetches every entry's URL sequentially and assembles them into a single
+   * `application/zip` `Blob`. Fetches run with `credentials: "omit"` — Instagram
+   * CDN URLs are signed/public and the CDN does not return
+   * `Access-Control-Allow-Credentials`, so a credentialed fetch would fail CORS.
+   *
+   * Entries are stored without compression (`level: 0`) because Instagram media
+   * files (JPEG, MP4) are already compressed; deflating them adds latency with no
+   * size benefit.
    *
    * Rejects on:
    *   - empty entry list
    *   - any non-2xx fetch response (message includes status + URL)
    *   - any network error on a fetch (message wraps the underlying cause)
-   *
-   * The writer is always closed — callers don't have to worry about leaks.
    *
    * @example
    * const zipService = createZipService();
@@ -60,8 +41,12 @@ export interface ZipService {
 }
 
 /**
- * Creates a ZipService. Content scripts instantiate one per click; the
- * service holds no mutable state between builds.
+ * Creates a ZipService backed by `fflate`. Content scripts instantiate one per
+ * click; the service holds no mutable state between builds.
+ *
+ * `fflate` uses pure Uint8Array operations with no Streams API, which avoids
+ * Firefox's Xray-wrapper restriction that prevents `ReadableStream.pipeTo` /
+ * `pipeThrough` from working correctly in privileged content-script contexts.
  *
  * @example
  * const zipService = createZipService();
@@ -69,9 +54,6 @@ export interface ZipService {
  */
 export function createZipService(options: ZipServiceOptions = {}): ZipService {
   const fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
-  const writerFactory =
-    options.writerFactory ??
-    (() => new ZipWriter(new BlobWriter("application/zip")) as unknown as ZipWriterLike);
 
   return {
     async build(entries) {
@@ -79,7 +61,7 @@ export function createZipService(options: ZipServiceOptions = {}): ZipService {
         throw new Error("ZipService.build: no entries");
       }
 
-      const writer = writerFactory();
+      const fileMap: Zippable = {};
       try {
         for (const entry of entries) {
           const response = await fetchImpl(entry.url, { credentials: "omit" });
@@ -88,23 +70,28 @@ export function createZipService(options: ZipServiceOptions = {}): ZipService {
               `ZipService.build: fetch ${entry.url} returned ${response.status}`,
             );
           }
-          const blob = await response.blob();
-          await writer.add(entry.filename, new BlobReader(blob));
+          fileMap[entry.filename] = [
+            new Uint8Array(await response.arrayBuffer()),
+            { level: 0 },
+          ];
         }
-        return await writer.close();
       } catch (err) {
-        try {
-          await writer.close();
-        } catch {
-          // Closing an errored writer is best-effort — swallow secondary failures
-          // so the original cause propagates.
-        }
         if (err instanceof Error) {
           if (err.message.startsWith("ZipService.build:")) throw err;
           throw new Error(`ZipService.build: ${err.message}`, { cause: err });
         }
         throw new Error(`ZipService.build: ${String(err)}`, { cause: err });
       }
+
+      return new Promise<Blob>((resolve, reject) => {
+        fflateZip(fileMap, (err, data) => {
+          if (err) {
+            reject(new Error(`ZipService.build: ${err.message}`, { cause: err }));
+          } else {
+            resolve(new Blob([data as Uint8Array<ArrayBuffer>], { type: "application/zip" }));
+          }
+        });
+      });
     },
   };
 }
