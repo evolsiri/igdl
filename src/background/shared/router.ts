@@ -1,6 +1,6 @@
 import type { Message, MessageResponse } from "../../types/messages";
 import type { BackgroundDeps } from "./deps";
-import { handleDownloadMedia } from "./downloads";
+import { handleDownloadMedia, handleDownloadZip } from "./downloads";
 import { handleOpenUrl } from "./open-url";
 
 /**
@@ -23,6 +23,8 @@ export async function routeMessage(
   switch (message.type) {
     case "DOWNLOAD_MEDIA":
       return handleDownloadMedia(message, deps);
+    case "DOWNLOAD_ZIP":
+      return handleDownloadZip(message);
     case "OPEN_URL":
       return handleOpenUrl(message);
     case "XHR_SNAPSHOT":
@@ -50,7 +52,7 @@ export function asMessage(raw: unknown): Message | null {
   const candidate = raw as { type?: unknown };
   if (typeof candidate.type !== "string") return null;
   const t = candidate.type;
-  if (t === "DOWNLOAD_MEDIA" || t === "OPEN_URL" || t === "XHR_SNAPSHOT") {
+  if (t === "DOWNLOAD_MEDIA" || t === "DOWNLOAD_ZIP" || t === "OPEN_URL" || t === "XHR_SNAPSHOT") {
     return raw as Message;
   }
   return null;

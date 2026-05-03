@@ -10,6 +10,7 @@ import type { MediaResource } from "./instagram";
  */
 export type Message =
   | { type: "DOWNLOAD_MEDIA"; resource: MediaResource; saveAs?: boolean }
+  | { type: "DOWNLOAD_ZIP"; dataUrl: string; filename: string; saveAs?: boolean }
   | { type: "OPEN_URL"; url: string }
   | { type: "XHR_SNAPSHOT"; endpoint: string; body: unknown };
 

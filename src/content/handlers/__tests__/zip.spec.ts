@@ -13,12 +13,13 @@ function makeDeps(overrides: Partial<ZipHandlerDeps> = {}): ZipHandlerDeps {
     success: vi.fn(() => () => undefined),
     failure: vi.fn(() => () => undefined),
     info: vi.fn(() => () => undefined),
+    loading: vi.fn(() => vi.fn()),
     dispose: vi.fn(),
   };
   return {
     zipService,
     toast,
-    downloadBlob: vi.fn(),
+    sendDownloadZip: vi.fn(async () => ({ ok: true })),
     getInfo: vi.fn(async () => null),
     getArticle: vi.fn(() => article),
     getSettings: () => SETTINGS_DEFAULTS,
@@ -46,7 +47,7 @@ afterEach(() => {
 });
 
 describe("zipOnClicked", () => {
-  it("builds a zip from every carousel item and anchor-downloads it", async () => {
+  it("builds a zip from every carousel item and dispatches DOWNLOAD_ZIP with saveAs", async () => {
     const info = carouselInfo("alice", "ABC", 1_700_000_000, 3);
     const deps = makeDeps({
       getInfo: vi.fn(async () => info),
@@ -67,11 +68,13 @@ describe("zipOnClicked", () => {
     // Filename template is {username}-{id}-{datetime}, carousel indexing on by default.
     expect(entries[0].filename).toMatch(/^alice-ABC-\d{8}_\d{6}_1\.jpg$/);
     expect(entries[2].filename).toMatch(/_3\.jpg$/);
-    expect(deps.downloadBlob).toHaveBeenCalledTimes(1);
-    const [blob, outerName] = (deps.downloadBlob as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(blob).toBeInstanceOf(Blob);
-    expect((blob as Blob).type).toBe("application/zip");
+    expect(deps.sendDownloadZip).toHaveBeenCalledTimes(1);
+    const [dataUrl, outerName] = (deps.sendDownloadZip as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(dataUrl).toMatch(/^data:application\/zip;base64,/);
     expect(outerName).toMatch(/^alice-ABC-\d{8}_\d{6}\.zip$/);
+    expect(deps.toast.loading).toHaveBeenCalledWith(
+      expect.stringContaining("Starting zip download"),
+    );
     expect(deps.toast.success).toHaveBeenCalledWith(
       expect.stringMatching(/3 items from @alice/),
     );
@@ -92,7 +95,7 @@ describe("zipOnClicked", () => {
     await zipOnClicked(anchor, deps);
 
     expect(deps.zipService.build).not.toHaveBeenCalled();
-    expect(deps.downloadBlob).not.toHaveBeenCalled();
+    expect(deps.sendDownloadZip).not.toHaveBeenCalled();
     expect(deps.onFailure).toHaveBeenCalledWith("not a carousel post");
     expect(deps.toast.success).not.toHaveBeenCalled();
   });
@@ -134,7 +137,7 @@ describe("zipOnClicked", () => {
 
     await zipOnClicked(anchor, deps);
 
-    expect(deps.downloadBlob).not.toHaveBeenCalled();
+    expect(deps.sendDownloadZip).not.toHaveBeenCalled();
     expect(deps.onFailure).toHaveBeenCalledWith(
       expect.stringContaining("ZipService.build"),
     );
@@ -149,7 +152,7 @@ describe("zipOnClicked", () => {
 
     await zipOnClicked(anchor, deps);
 
-    const [, outerName] = (deps.downloadBlob as ReturnType<typeof vi.fn>).mock.calls[0];
+    const [, outerName] = (deps.sendDownloadZip as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(outerName).toMatch(/^instagram-ABC-/);
   });
 

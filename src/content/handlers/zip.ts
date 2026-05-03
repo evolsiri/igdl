@@ -1,14 +1,10 @@
 import dayjs, { type Dayjs } from "dayjs";
 import { buildFilename } from "../../services/download/naming";
 import { createToastService, type ToastService } from "../../services/toast/toast";
-import {
-  createZipService,
-  type ZipEntry,
-  type ZipService,
-} from "../../services/zip/zip";
-import { triggerAnchorDownload } from "../../services/zip/download";
+import { createZipService, type ZipEntry, type ZipService } from "../../services/zip/zip";
 import type { MediaResource } from "../../types/instagram";
 import type { Settings } from "../../types/settings";
+import { sendMessage } from "../../utils/messages";
 import { reportFailure } from "../downloadBridge";
 import { getParentArticleNode } from "../extractors/dom";
 import { getDataFromAPI, getImgOrVideoUrl } from "../extractors/fn";
@@ -22,14 +18,19 @@ import { storageCache } from "../extractors/storage";
 export interface ZipHandlerDeps {
   zipService: ZipService;
   toast: ToastService;
-  downloadBlob: (blob: Blob, filename: string) => void;
+  /**
+   * Sends the built zip to the background for `chrome.downloads` with
+   * `saveAs: true`. Injectable for tests to avoid a live chrome.runtime
+   * environment.
+   */
+  sendDownloadZip: (dataUrl: string, filename: string) => Promise<{ ok: boolean; error?: string }>;
   /** Resolves the Instagram info-API payload for the article that owns `node`. */
   getInfo: (articleNode: HTMLElement | null) => Promise<Record<string, unknown> | null>;
   /** Walks up from `node` to the enclosing `<article>`. */
   getArticle: (node: HTMLElement | null) => HTMLElement | null;
   /** Synchronous Settings snapshot — content script pulls from `storageCache.canonical`. */
   getSettings: () => Settings;
-  /** Reports a user-facing failure message. Defaults to the shared toast-failure reporter. */
+  /** Reports a user-facing failure message. */
   onFailure: (message: string) => void;
 }
 
@@ -40,7 +41,8 @@ function getDefaultDeps(): ZipHandlerDeps {
     cached = {
       zipService: createZipService(),
       toast: createToastService(),
-      downloadBlob: triggerAnchorDownload,
+      sendDownloadZip: (dataUrl, filename) =>
+        sendMessage({ type: "DOWNLOAD_ZIP", dataUrl, filename, saveAs: true }),
       getInfo: getDataFromAPI,
       getArticle: getParentArticleNode,
       getSettings: () => storageCache.canonical,
@@ -64,9 +66,9 @@ export function __resetZipHandlerDepsForTesting(): void {
 /**
  * Handles a click on the injected `zip-btn` next to a carousel post's like
  * icon. Resolves every carousel item via Instagram's media info API, streams
- * each one through `ZipService.build`, and writes the resulting `.zip` to
- * disk via an anchor-click (see `ZipService/download.ts` for why this path
- * is used instead of `chrome.downloads`).
+ * each one through `ZipService.build`, converts the resulting blob to a
+ * base64 data URL, and dispatches a `DOWNLOAD_ZIP` message to the background
+ * so `chrome.downloads` shows the Save As dialog.
  *
  * On success, fires a success "Downloaded zip from @user" toast. On any
  * failure — missing article node, non-carousel post, info-API miss, fetch
@@ -106,8 +108,21 @@ export async function zipOnClicked(
     const entries = buildZipEntries(resources, settings, takenAt);
     const outerFilename = buildOuterFilename(owner, postId, settings, takenAt);
 
-    const blob = await deps.zipService.build(entries);
-    deps.downloadBlob(blob, outerFilename);
+    const dismissProgress = deps.toast.loading(
+      "Starting zip download. The current tab may freeze until complete.",
+    );
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+    let blob: Blob;
+    try {
+      blob = await deps.zipService.build(entries);
+    } finally {
+      dismissProgress();
+    }
+
+    const dataUrl = await blobToDataUrl(blob);
+    const result = await deps.sendDownloadZip(dataUrl, outerFilename);
+    if (!result.ok) throw new Error(result.error ?? "zip download failed");
 
     const suffix = resources.length === 1 ? "item" : "items";
     deps.toast.success(`Downloaded ${resources.length} ${suffix} from @${owner} as zip`);
@@ -181,4 +196,13 @@ function buildOuterFilename(
     isVideo: false,
   };
   return buildFilename(zipResource, settings, takenAt.toDate());
+}
+
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
 }
