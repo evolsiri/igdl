@@ -1,107 +1,73 @@
 # SettingsService
 
-Owns the user-facing settings blob at `chrome.storage.local["igdl_settings"]`. Every module that reads or writes settings goes through this service — direct `chrome.storage.*` access is prohibited everywhere else (TAC-4.3).
+Single owner of `chrome.storage.local["igdl_settings"]`. Every module that reads or writes settings goes through this service — direct `chrome.storage.*` access is prohibited elsewhere (see `../code-style-guide.md`).
 
-## Files
-
-| Path | Role |
-|---|---|
-| `src/services/settings/settings.ts` | Public API + `createSettingsService`. |
-| `src/services/settings/schema.ts` | `SETTINGS_DEFAULTS`, `normalize`, `migrate` (forward-only). |
-| `src/services/settings/storage.ts` | `KvStorage` interface, `chromeStorageLocal()`, `inMemoryStorage()` for tests. Shared with `MediaCacheService`. |
-| `src/types/settings.ts` | `Settings`, `ProfileDirEntry`, `NeverAskEntry`, `ThemeSetting`, `ProfileDirectoriesSort`. |
+The settings blob is schema-versioned. `migrate()` on load and `normalize()` on save defend against hand-edited JSON imports.
 
 ## Public API
 
-### `get(): Promise<Settings>`
-
-Returns the current settings, normalized through `migrate()`. Returns a fresh `SETTINGS_DEFAULTS` when storage has no prior blob.
-
 ```ts
-const settings = await service.get();
-console.log(settings.theme); // "system"
+interface SettingsService {
+  get(): Promise<Settings>;
+  set(settings: Settings): Promise<void>;
+  patch(partial: Partial<Settings>): Promise<Settings>;
+
+  addProfile(input: AddProfileInput): Promise<ProfileDirEntry>;
+  updateProfile(username: string, fields: UpdateProfileInput): Promise<ProfileDirEntry>;
+  deleteProfile(username: string): Promise<void>;
+  incrementDownload(username: string): Promise<void>;
+  setProfileDirectoriesSort(sort: ProfileDirectoriesSort): Promise<void>;
+
+  addNeverAsk(username: string): Promise<void>;
+  removeNeverAsk(username: string): Promise<void>;
+
+  resetAll(): Promise<void>;
+  subscribe(listener: (settings: Settings) => void): () => void;
+}
+
+function createSettingsService(options?: SettingsServiceOptions): SettingsService;
 ```
 
-### `set(settings): Promise<void>`
+| Method | What it does |
+| --- | --- |
+| `get` | Returns settings, normalized through migration. Returns `SETTINGS_DEFAULTS` if nothing is persisted yet. |
+| `set` | Replaces the entire blob. Re-normalizes on the way in. |
+| `patch` | Shallow merge + persist. Returns the merged result. |
+| `addProfile` | Adds a profile-directory row. Username is `trim().toLowerCase()`. Throws if the username already exists. |
+| `updateProfile` | Edits an existing row. Throws if the target username isn't found, or a renamed-to username already exists. |
+| `deleteProfile` | Removes a row. No-op if missing. |
+| `incrementDownload` | `downloadCount += 1`, `lastDownloadAt = now()` for the named profile. No-op if the profile has no row (i.e. the user downloaded to the default directory). |
+| `setProfileDirectoriesSort` | Persists the active sort for the Profile Directories table. |
+| `addNeverAsk` | Adds a username to the never-ask list. Idempotent. Does not affect any existing profile-directory row. |
+| `removeNeverAsk` | Removes a username from the never-ask list. No-op if missing. |
+| `resetAll` | Wipes everything; restores `SETTINGS_DEFAULTS`. |
+| `subscribe` | Listener fires on every storage change to `igdl_settings`, including changes from other contexts (options page ↔ content script ↔ background). Returns an unsubscribe function. |
 
-Replaces the entire blob. Inputs are re-normalized on the way in.
+The `addedAt`, `lastEditedAt`, and `lastDownloadAt` timestamps are epoch ms produced by `options.now ?? Date.now`.
 
-```ts
-await service.set({ ...current, theme: "dark" });
-```
+## Lifecycle
 
-### `patch(partial): Promise<Settings>`
+Singleton-per-context. The background instantiates one in `src/background/chrome.ts` / `firefox.ts`; the options page and content scripts each get their own. `subscribe()` is the cross-context glue — `chrome.storage.onChanged` events from any context propagate to every subscriber.
 
-Merges a partial update and returns the result. `schemaVersion` is always clamped to `1`.
+## Storage
 
-```ts
-const next = await service.patch({ theme: "light", enableThreadsSupport: false });
-```
+Backed by `chrome.storage.local["igdl_settings"]` via the `KvStorage` adapter at `src/services/settings/storage.ts`. The adapter is the only place in the codebase that calls `chrome.storage.*`. Tests inject `inMemoryStorage()` from the same file.
 
-### `addProfile({ username, directory }): Promise<ProfileDirEntry>`
+The schema lives in `src/services/settings/schema.ts`:
+- `SETTINGS_DEFAULTS` — the source of truth for default values.
+- `migrate(raw)` — forward-only migrations from older schema versions.
+- `normalize(settings)` — defensive normalization (lowercases usernames, dedupes lists, applies defaults to missing fields).
 
-Adds a new per-profile directory entry. Username is trimmed + lowercased before storage. Timestamps (`addedAt`, `lastEditedAt`) are stamped; `downloadCount` starts at 0; `lastDownloadAt` is `null`.
+## Call sites
 
-Throws if the username already exists.
+- `src/background/chrome.ts:11` — singleton instantiation.
+- `src/background/shared/downloads.ts:22` — `get()` and `incrementDownload()` per download.
+- `src/options/components/cards/*` — every options-page card reads via `subscribe()` and writes via `patch` / `addProfile` / etc.
+- `src/content/extractors/storage.ts` — content-script projection that mirrors the blob into a synchronous `storageCache` for click handlers.
+- `src/content/flow/download.tsx` — `addProfile` / `addNeverAsk` from the no-directory popup.
 
-```ts
-await service.addProfile({ username: "Alice", directory: "instagram/alice" });
-```
+## Invariants
 
-### `updateProfile(username, fields): Promise<ProfileDirEntry>`
-
-Edits an existing row. Updates `lastEditedAt` unconditionally. Renaming to an existing username throws. Lookup on the original `username` is case-insensitive.
-
-```ts
-await service.updateProfile("alice", { directory: "ig/alice-new" });
-```
-
-### `deleteProfile(username): Promise<void>`
-
-Removes a row. No-op if the username isn't present.
-
-### `incrementDownload(username): Promise<void>`
-
-Bumps `downloadCount` and updates `lastDownloadAt`. No-op when the profile has no row (user downloaded to the default directory).
-
-### `setProfileDirectoriesSort(sort): Promise<void>`
-
-Persists the active sort for the Profile Directories table (`{ key, direction }`). The card reads this back via the Settings snapshot and applies it to rows after filtering, so search respects the chosen sort. Default is `{ key: "addedAt", direction: "desc" }` — most recently added on top.
-
-```ts
-await service.setProfileDirectoriesSort({ key: "username", direction: "asc" });
-```
-
-### `addNeverAsk(username) / removeNeverAsk(username): Promise<void>`
-
-Manages the never-ask list. `addNeverAsk` is idempotent. Both normalize the username. Opt-out and directory-config are orthogonal — a profile can have both a custom directory and a never-ask entry.
-
-### `resetAll(): Promise<void>`
-
-Writes `SETTINGS_DEFAULTS` verbatim. Idempotent. The options page's ResetAllCard combines this with `MediaCacheService.clearAll()`.
-
-### `subscribe(listener): () => void`
-
-Fires on every settings change, including cross-context writes (options ↔ content ↔ background) via `chrome.storage.onChanged`. Returns an unsubscribe function.
-
-```ts
-const off = service.subscribe((settings) => console.log(settings.theme));
-// later
-off();
-```
-
-## Migration policy
-
-`schemaVersion` is pinned at 1 for v1. Future schema changes bump the version and add a branch to `migrate()` in `schema.ts`. The policy is forward-only, lossy-permissive: unknown fields from a future version are dropped, missing fields are filled from defaults. The canonical shape is the `Settings` type in `src/types/settings.ts`.
-
-## Consumers
-
-- **Options page** (`src/options/App.tsx`): subscribes, re-renders cards on change, threads Theme changes through to `ThemeService`. The Import / Export card calls `get()` to serialize settings to a JSON file, and `set()` with a key-filtered payload to apply an imported file (the schema layer fills missing fields with defaults and coerces invalid types).
-- **Content-script download flow** (`src/content/flow/download.tsx`): reads to decide silent vs popup path; writes via `addProfile` / `addNeverAsk` after user choices.
-- **Background download handler** (`src/background/shared/downloads.ts`): reads `alwaysPromptSaveAs`, calls `incrementDownload` after a successful `chrome.downloads.download`.
-
-## Tests
-
-`src/services/settings/__tests__/settings.spec.ts` — 30+ cases covering CRUD, migration forward-step scaffolding, idempotent reset, cross-context subscribe via external storage writes, never-ask add/remove, case-insensitive username semantics.
-
-Inject an `inMemoryStorage()` (from `storage.ts`) when writing new tests — never hit `chrome.storage.local` from a test environment.
+- One blob, one key. Don't add new top-level `chrome.storage.local` keys for settings — extend the `Settings` interface and bump `schemaVersion` instead.
+- Username equality is case-insensitive everywhere. `addProfile`, `updateProfile`, `deleteProfile`, `incrementDownload`, `addNeverAsk`, `removeNeverAsk` all `trim().toLowerCase()` the input.
+- Never-ask and profile-directory state are orthogonal. Adding to one doesn't remove from the other; the options-page UI handles the mutually-exclusive presentation.

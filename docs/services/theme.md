@@ -1,66 +1,48 @@
 # ThemeService
 
-Resolves a user theme preference (`system` / `light` / `dark`) to a concrete theme, toggles a `.dark` class on the root element, and — when the preference is `system` — subscribes to `matchMedia("(prefers-color-scheme: dark)")` so OS changes take effect live.
+Resolves a user theme preference (`system` / `light` / `dark`) to a concrete theme and toggles a `dark` class on the root element. When the preference is `system`, it subscribes to `matchMedia("(prefers-color-scheme: dark)")` so OS changes take effect live without re-rendering Preact.
 
-Per TAC-4.4, `ThemeService` does not touch storage. The options page reads `settings.theme` from `SettingsService` and calls `themeService.apply(theme)` whenever it changes.
-
-## Files
-
-| Path | Role |
-|---|---|
-| `src/services/theme/theme.ts` | Full implementation + `ThemeServiceOptions` for test injection. |
+This service does **not** persist. Persistence is `SettingsService`'s job — the options page reads `settings.theme` and feeds it to `apply()`, then re-applies on every settings change.
 
 ## Public API
 
-### `resolve(preference): "light" | "dark"`
-
 ```ts
-service.resolve("system"); // → "dark" if OS prefers dark, else "light"
-service.resolve("dark");   // → "dark"
+type ThemeSetting = "system" | "light" | "dark";
+type ResolvedTheme = "light" | "dark";
+
+interface ThemeService {
+  resolve(preference: ThemeSetting): ResolvedTheme;
+  apply(preference: ThemeSetting): void;
+  subscribe(listener: (theme: ResolvedTheme) => void): () => void;
+  dispose(): void;
+}
+
+function createThemeService(options?: ThemeServiceOptions): ThemeService;
 ```
 
-### `apply(preference): void`
+| Method | What it does |
+| --- | --- |
+| `resolve` | Pure: maps `system` to the OS preference, else echoes the input. |
+| `apply` | Toggles the `dark` class on the root element, fires subscribers, and (re)attaches the OS-change listener iff the preference is `system`. |
+| `subscribe` | Listener fires on every `apply()` and (when preference is `system`) on every OS theme change. Returns an unsubscribe function. |
+| `dispose` | Detaches the OS listener and clears subscribers. Idempotent. |
 
-Toggles the `.dark` class on the configured root (`document.documentElement` by default) and attaches/detaches the OS media-query listener based on the preference.
+`ThemeServiceOptions` lets tests inject `root` and `matchMedia` substitutes; defaults are `document.documentElement` and `window.matchMedia`.
 
-```ts
-service.apply("system");   // follows OS; listens for changes
-service.apply("light");    // explicit; OS changes ignored
-```
+## Lifecycle
 
-### `subscribe(listener): () => void`
+Stateful: holds the current preference, the subscriber set, and the OS listener handle. The OS listener is attached/detached lazily — only present while the preference is `system`. `dispose()` is symmetric to construction.
 
-Fires on every `apply()` call AND (when preference is `system`) when the OS toggles between light and dark. Returns an unsubscribe function.
+## Storage
 
-### `dispose(): void`
+None. The preference flows in from `SettingsService`.
 
-Detaches the OS listener and clears subscribers. Idempotent.
+## Call sites
 
-## Dependency injection
+- `src/options/main.tsx` (or equivalent options-page bootstrap) — creates a `ThemeService`, subscribes to `SettingsService`, and re-`apply()`s on every settings change.
 
-```ts
-createThemeService({
-  root?: HTMLElement,                                // default: document.documentElement
-  matchMedia?: (q: string) => MediaQueryList,        // default: window.matchMedia
-});
-```
+## Invariants
 
-Tests pass a fake `matchMedia` that exposes `.setMatches(value) / .emit()` so the OS-change path is deterministic. See `src/services/theme/__tests__/theme.spec.ts` for the pattern.
-
-## Consumers
-
-- `src/options/App.tsx` — on mount, calls `apply(settings.theme)`; re-applies whenever `settings.theme` changes.
-
-## Tests
-
-`src/services/theme/__tests__/theme.spec.ts` — 16 cases:
-- `resolve()` for every preference × OS state combination.
-- `.dark` class toggling.
-- OS listener attach/detach as preference toggles between `system` and explicit values.
-- `subscribe` firing on `apply` and on OS change; unsubscribe behavior; cross-check OS changes don't fire on explicit preferences.
-- `dispose` idempotency.
-
-## Design notes
-
-- Root-class-only side effect — no storage, no DOM mutation beyond class list. Keeps the service trivially testable and safe to call from any context.
-- `system` preference listens via `addEventListener("change")` on the MediaQueryList (modern API). Older `addListener` fallback isn't needed because both target browsers support the new form in MV3-era releases.
+- The service touches one DOM concern: the `dark` class on the root element. It does not write inline styles, doesn't write data attributes, and doesn't render anything.
+- It must never call into `chrome.storage.*` or persist anything.
+- The OS-change listener is attached only while preference is `system`. Switching to `light` or `dark` detaches it — no orphan listeners.

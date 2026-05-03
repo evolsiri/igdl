@@ -1,85 +1,54 @@
 # DownloadService
 
-Thin client-side service that content scripts and the options page use to request downloads. It composes filename + directory on the client, sends a `DOWNLOAD_MEDIA` message, and the background worker does the actual `chrome.downloads.download` call (TAC-4.1).
+Content-script-side wrapper around the `DOWNLOAD_MEDIA` message. Content scripts and the options page use it to request a download without ever touching `chrome.downloads.*` directly. The background worker is the single point of entry for `chrome.downloads.download` — see `../architecture.md`.
 
-## Files
-
-| Path | Role |
-|---|---|
-| `src/services/download/download.ts` | `DownloadService` interface + `createDownloadService` — sends DOWNLOAD_MEDIA. |
-| `src/services/download/naming.ts` | `buildFilename`, `resolveDirectory`, `buildFullPath` — pure, fully unit-tested. |
-
-## Client API
-
-### `queue(resource, options?): Promise<{ ok: true; downloadId } | { ok: false; error }>`
-
-Sends a `DOWNLOAD_MEDIA` message with the resource. Never throws — surfaces transport errors as `{ ok: false }`.
-
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `saveAs` | `boolean` | `false` | When `true`, forwards `saveAs: true` to `chrome.downloads.download`, prompting the OS Save As dialog. Used by right-click. |
+## Public API
 
 ```ts
-// Normal download
-const download = createDownloadService();
-const result = await download.queue(resource);
-// Right-click / Save As
-const result = await download.queue(resource, { saveAs: true });
-if (result.ok) toast.success("Downloaded");
-else toast.failure(result.error);
+interface DownloadService {
+  queue(
+    resource: MediaResource,
+    options?: { saveAs?: boolean },
+  ): Promise<{ ok: true; downloadId: number } | { ok: false; error: string }>;
+}
+
+function createDownloadService(): DownloadService;
 ```
 
-## Naming helpers (pure functions)
+`queue()` sends a `DOWNLOAD_MEDIA` message via `sendMessage()` and unwraps the response. The `saveAs` option overrides `settings.alwaysPromptSaveAs` for that one call (used by the never-ask path so dialogs always appear).
 
-### `buildFilename(resource, settings, now?): string`
+**Never throws.** Transport errors and download errors both surface as `{ ok: false, error }` — content-script code uses the discriminated result instead of try/catch.
 
-Interpolates the filename template with `{username}`, `{id}`, `{type}`, `{datetime}` placeholders. Applies:
-- `datetimeFormat` via Day.js tokens (see `src/utils/date.ts`).
-- `enableDatetimeFormat` toggle — when off, `{datetime}` expands to empty.
-- Separator cleanup — strips leading/trailing `-_.` and collapses runs.
-- `sanitizeFilename` — replaces illegal chars with underscores (see `src/utils/path.ts`).
-- `useCarouselIndexing` — appends `_<index>` when `resource.index` is set.
-- `replaceJpegWithJpg` — normalizes extension.
+## Lifecycle
 
-```ts
-buildFilename(
-  { username: "alice", id: "ABC", type: "post", extension: "jpeg", index: 2, ... },
-  { ...SETTINGS_DEFAULTS, filenameTemplate: "{username}-{id}-{datetime}" },
-  new Date("2026-04-16T15:07:42"),
-);
-// → "alice-ABC-20260416_150742_2.jpg"
-```
+Stateless. The factory returns a fresh service per call; there's no init or cleanup.
 
-### `resolveDirectory(username, settings): string`
-
-Returns the per-profile directory when present (case-insensitive match on `profileDirectories`), else `defaultDownloadDirectory`. Never includes a trailing slash.
-
-### `buildFullPath(resource, settings, now?): string`
-
-`joinPath(resolveDirectory(...), buildFilename(...))` — the final relative path for `chrome.downloads.download`'s `filename` field.
-
-## Message flow
+## What happens after `queue()`
 
 ```
-content handler ─▶ DownloadService.queue ─▶ sendMessage(DOWNLOAD_MEDIA)
-                                                     │
-                                                     ▼
-                                       background/shared/router.ts
-                                                     │
-                                                     ▼
-                                     handleDownloadMedia (shared/downloads.ts)
-                                                     │
-                                                     ├─▶ buildFullPath
-                                                     ├─▶ chrome.downloads.download
-                                                     └─▶ SettingsService.incrementDownload
+DownloadService.queue
+   │
+   └─ sendMessage({ type: "DOWNLOAD_MEDIA", resource, saveAs })
+                                │
+                                ▼
+                    background/shared/router.ts:routeMessage
+                                │
+                                └─ handleDownloadMedia (downloads.ts)
+                                        │
+                                        ├─ settings = await deps.settings.get()
+                                        ├─ filename = buildFullPath(resource, settings)
+                                        ├─ chrome.downloads.download({ url, filename, saveAs })
+                                        └─ deps.settings.incrementDownload(resource.username)
 ```
 
-## Consumers
+The filename is computed in the **background**, not the content script — so the per-profile directory + filename template are applied once, with the canonical settings snapshot, even if the content script's local cache is briefly stale.
 
-- `src/content/flow/download.tsx` — `handleDownloadClick` calls `download.queue(r)` for each resolved resource.
-- (Future) Options page "test download" if we add one — currently not used in the options UI.
+## Call sites
 
-## Tests
+- `src/content/flow/download.tsx:downloadAll` — the per-resource queue loop in the download flow.
+- `src/content/downloadBridge.ts:downloadViaFlow` — direct `queue()` call for the never-ask Save-As-only path.
 
-- `src/services/download/__tests__/naming.spec.ts` — exhaustive template / extension / index / dir-resolution cases.
-- `src/background/shared/__tests__/downloads.spec.ts` — end-to-end for `handleDownloadMedia` (chrome.downloads.download + settings increment + error path + alwaysPromptSaveAs respected).
+## Invariants
+
+- Content scripts MUST NOT call `chrome.downloads.*` directly. The single declared call is in `src/background/shared/downloads.ts`.
+- The carousel ZIP path is the deliberate exception: it uses an anchor click on a blob URL so the file lands in the Downloads folder root. See `../download-flow.md` and `zip.md`.

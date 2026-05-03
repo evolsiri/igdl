@@ -1,54 +1,34 @@
 # Design System
 
-This document indexes igdl's visual and interaction language. The **Storybook story at `Design System/*` is the source of truth** — this file is a pointer + the contribution contract.
+This document is an **index**. The source of truth is the `Design System/*` story group at `src/stories/DesignSystem.stories.tsx` — open Storybook (`pnpm run storybook`) to see every token rendered live. When you add or change a token, update the story in the same PR; this doc only sketches the categories.
 
-## Where to look
-
-Run Storybook locally:
-
-```bash
-pnpm run storybook
-```
-
-The sidebar's `Design System` group has three stories that render live from the production tokens:
+## The three stories
 
 | Story | Covers | Backed by |
-|---|---|---|
-| `Design System / Color Palette` | Every colour token — options-page CSS variables (both themes) and content-script TypeScript tokens. Swatches read live CSS values via `getComputedStyle`, so toggling the Storybook theme toolbar flips them in real time. | `src/index.css`, `src/content/tokens.ts` |
-| `Design System / Design Tokens` | Non-colour primitives: radii (all `0`), motion durations (120 ms hover / 160 ms focus with an interactive demo), typography (font stack + used size ramp), and frequently-used spacing. | `src/index.css`, `src/content/tokens.ts` |
-| `Design System / Components` | Hand-maintained inventory of every Preact component shipped in the extension, grouped by directory, each pointing to its sibling Storybook story. | `src/options/components/**`, `src/content/**` |
+| --- | --- | --- |
+| `Design System / Color Palette` | Every colour token in both themes. Swatches read live values via `getComputedStyle`, so the Storybook theme toolbar flips them in real time. | `src/index.css`, `src/content/tokens.ts` |
+| `Design System / Design Tokens` | Non-colour primitives: radii (all `0`), motion durations and easings (with an interactive demo), typography ramp, and spacing. | `src/index.css`, `src/content/tokens.ts` |
+| `Design System / Components` | Hand-maintained inventory of every Preact component, grouped by directory, with a pointer to each component's own Storybook story. | `src/options/components/**`, `src/content/**` |
 
-The story file itself lives at `src/stories/DesignSystem.stories.tsx`.
+## Token surfaces
 
-## Source-of-truth contract
+Two surfaces, two source files:
 
-1. **Palette and tokens** — The values in `src/index.css` (options-page) and `src/content/tokens.ts` (content-script) are authoritative. The Storybook swatches read them at render time; they don't hardcode hex values. If you change a token, the story updates automatically on reload.
-2. **Component inventory** — The `COMPONENT_GROUPS` array in `DesignSystem.stories.tsx` is hand-maintained. When a new component ships under `src/options/components/cards|modals/`, `src/content/modals/`, or `src/content/toasts/`, **add a row to that array in the same PR** alongside its own `__stories__/*.stories.tsx`.
-3. **Token descriptions** — The `OPTIONS_COLOR_GROUPS` array in the same file carries human-readable descriptions of each CSS variable. When a new token is added to `src/index.css`, add a description row so the palette story surfaces it.
+- **Options page** — Tailwind v4's `@theme` block in `src/index.css`. Variables shadow themselves under `:root.dark`. `ThemeService` flips the `dark` class on `<html>`; no re-render needed.
+- **Injected UI** — inline-token object in `src/content/tokens.ts`. Shadow-DOM-rendered components style themselves from this — Tailwind utilities don't reach inside the shadow root, and no stylesheet is injected there. Injected UI is dark-only because it sits on top of Instagram's own themed surfaces.
 
-## Contribution rules
+## Hard rules
 
-Any UI-touching change should pass these self-checks before review:
+- **Zero border-radius** on every UI element. SVG `rx` and SVG primitives like `<circle>` are the only opt-out (used for brand glyphs and the round logo). Every `border-radius` rule resolves to `0`.
+- **Dark-first.** OS preference defaults the theme; the user can force light or dark on the options page. Injected UI is always dark.
+- **CSS transitions only.** Use `--duration-hover` / `--duration-focus` + `--ease-out-swift`. No JS animation libraries.
+- **Brand alignment.** `--color-brand-green` (`#a8f368`) is the accent / success / focus ring and pairs with black for ~15.7:1 (AAA). `--color-brand-pink` (`#f9035e`) is the destructive / error fill and pairs with white. Both stay constant across themes — they're identity, not surface.
 
-- **New colour** — add the CSS variable to `src/index.css` (both `@theme` and `:root.dark` blocks) **and** a matching row in `OPTIONS_COLOR_GROUPS`. Verify contrast against the relevant contrast pair (black on accent, white on destructive, etc.) — the Color Palette story lists the expected ratios.
-- **New content-script colour** — add to the `TOKENS` object in `src/content/tokens.ts` **and** a description to `CONTENT_TOKEN_DESCRIPTIONS` in the story file.
-- **New component** — ship a `__stories__/<Name>.stories.tsx` with `LightMode` + `DarkMode` variants and add a row to `COMPONENT_GROUPS` in the design-system story.
-- **New motion / radius / spacing token** — update `src/index.css`, the corresponding `RADII` / `TYPE_SCALE` / `SPACING` array in the story, and anywhere it's referenced in `docs/architecture.md`.
+## Adding a token, colour, or component
 
-## Visual invariants (recap)
+1. **New colour** → add the variable to `src/index.css` (`@theme` and `:root.dark` blocks) **and** a row in `OPTIONS_COLOR_GROUPS` in the design-system story.
+2. **New content-script colour** → extend the `TOKENS` object in `src/content/tokens.ts` **and** `CONTENT_TOKEN_DESCRIPTIONS` in the story.
+3. **New component** → ship a `__stories__/<Name>.stories.tsx` with `LightMode` + `DarkMode` variants and add a row to `COMPONENT_GROUPS` in the design-system story.
+4. **New motion / radius / spacing** → update `src/index.css` and the matching `RADII` / `TYPE_SCALE` / `SPACING` array in the story.
 
-These are enforced by the `ux-reviewer` agent and cross-checked here:
-
-- **Zero border-radius** on every UI element (the global reset in `src/index.css` makes this load-bearing). SVG `rx` attributes (and SVG primitives like `<circle>`) are the only opt-out — used for brand glyphs like the Instagram icon in the profile table and the round igdl logo. The rule still applies to every UI element with `border-radius`.
-- **Dark-first** palette. Accent: `#a8f368` ('brand-green') paired with black text (~15.7:1, AAA). The accent shares its hex with `--color-brand-green`, so the UI's primary fills match the logo's square background. Destructive / error / failure states use `--color-brand-pink` (`#f9035e`) paired with white text — that's the same brand-pink token, used as the destructive fill across confirm dialogs, failure toasts, and reset-all flows.
-- **CSS-only** micro-animations using `--duration-hover` / `--duration-focus` + `--ease-out-swift`. No JS animation libraries.
-- **Shadow-DOM isolation** for every injected UI element. Content-script tokens never flip — they're dark-only because they render on Instagram's own themed surfaces.
-
-## Reviewer coverage
-
-Four project-local agents are aware of this design system:
-
-- `ux-reviewer` — pulls up the Color Palette + Design Tokens stories when reviewing any UI diff, verifies new tokens were added to both source and the story.
-- `code-reviewer` — verifies a new component comes with a story file and that the design-system inventory was updated.
-- `documentation-reviewer` — verifies `docs/design-system.md` stays in sync with the story file and that `docs/README.md` indexes it.
-- `extension-auditor` — notes whether any injected-UI change drifts from the content-script palette in `src/content/tokens.ts`.
+All four of the project-local reviewer agents (`code-reviewer`, `ux-reviewer`, `documentation-reviewer`, `extension-auditor`) check this contract on review.

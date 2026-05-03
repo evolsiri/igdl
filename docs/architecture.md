@@ -1,222 +1,88 @@
 # Architecture
 
-This document describes how `igdl`'s modules interact at runtime. It covers the module map, the message bus, the storage contract, the XHR-interception layer, and the Threads bridge. Start here if you want to understand how a click on the injected download button actually triggers a download.
+Module boundaries, the message bus, the storage contract, and the MV3 lifecycle differences between Chrome and Firefox. Read this once, then `download-flow.md` to see all the parts in motion at the same time.
 
 ## Module map
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│ Manifest (MV3, Chrome + Firefox)                               │
-└──────────────┬─────────────────────────────┬───────────────────┘
-               │                             │
-               ▼                             ▼
-   ┌──────────────────────┐      ┌───────────────────────┐
-   │ Background           │      │ Content Script        │
-   │  (service_worker /   │◀────▶│  (runs on IG/Threads) │
-   │   scripts)           │      │                       │
-   │  • chrome.downloads  │      │  • Polls DOM every 3s │
-   │  • message router    │      │  • Injects buttons    │
-   │  • Threads bridge    │      │  • Handles clicks     │
-   │  • webRequest (FF)   │      │  • Mounts modals      │
-   └──────────────────────┘      │    in Shadow DOM      │
-                                 └───────────┬───────────┘
-                                             │
-           ┌─────────────────────────────────┼──────────────────┐
-           ▼                                 ▼                  ▼
-   ┌──────────────────────┐      ┌──────────────────────┐  ┌────────────────┐
-   │ Options Page         │      │ Services (shared)    │  │ Utils          │
-   │  (options.html)      │◀────▶│  • SettingsService   │  │ • filename     │
-   │  • Preact root       │      │  • MediaCacheService │  │ • path-join    │
-   │  • 6 cards           │      │  • DownloadService   │  │ • dom-find     │
-   │  • Theme mgmt        │      │  • ToastService      │  │ • format-date  │
-   └──────────────────────┘      │  • ThemeService      │  └────────────────┘
-                                 └──────────────────────┘
+options page  ──┐
+                ├── (chrome.runtime.sendMessage) ──→  background worker  ──→  chrome.downloads / chrome.tabs
+content script ─┘                                           │
+                                                            └── SettingsService / MediaCacheService → chrome.storage.local
+        ▲                                                           ▲
+        │ window.postMessage                                        │ chrome.runtime.onMessageExternal
+        │                                                           │
+   inject.ts (MAIN world)                                  threads.com page scripts
 ```
 
-### Who owns what
+The four script contexts are isolated:
 
-- **`chrome.downloads.*`** — only `src/background/shared/downloads.ts` calls it. Enforced by the `code-reviewer` agent.
-- **`chrome.storage.*`** — only `src/services/settings/storage.ts` and (via the same adapter) `src/services/media-cache/media-cache.ts` call it. Everyone else goes through the services.
-- **`chrome.runtime.sendMessage`** — only `src/utils/messages.ts` and `src/background/shared/router.ts` call it. Callers use the typed wrapper.
-- **DOM mutation** — only content-script handlers + Preact render. Shadow-DOM boundaries keep injected UI isolated.
-- **Theme class toggling** — only `src/services/theme/theme.ts`. It never touches storage (`SettingsService` does, and notifies via `subscribe`).
+- **Background worker** (`src/background/chrome.ts` and `src/background/firefox.ts`). Owns every `chrome.downloads.*` call. Holds the canonical `SettingsService` + `MediaCacheService` instances, registers `chrome.runtime.onMessage` and `onStartup` listeners. Chrome ships an ES-module service worker; Firefox ships an IIFE background script — both share `src/background/shared/` for handlers.
+- **Content script** (`src/content/index.ts`). Isolated world, runs on `instagram.com` and `threads.com`. Polls the DOM, injects the download button family, runs the per-route handler families in `src/content/handlers/`, and posts cross-context messages.
+- **Inject script** (`src/inject.ts`). Runs in the **page's MAIN world** (Chrome via `content_scripts.world: "MAIN"`, Firefox via a `<script>` tag injection from `src/content/loader.ts`). Installs the XHR/fetch monkey-patch from `src/xhr.ts` and forwards captured JSON via `window.postMessage`. No `chrome.*` access — those APIs aren't available in MAIN world.
+- **Options page** (`src/options/`). The full Preact app rendered into `options.html`. Reads + writes settings via `SettingsService` directly; uses the same message bus for downloads.
+
+## Services
+
+All under `src/services/<name>/<name>.ts`. Each service is a `createXxxService(options?)` factory returning an interface; state lives in the closure. See `services/<name>.md` for each.
+
+- **SettingsService** — single owner of `chrome.storage.local["igdl_settings"]`. Read, patch, profile-directory CRUD, never-ask CRUD, theme preference, download counters. Subscribes to storage changes so the options page and content script stay in sync.
+- **MediaCacheService** — ephemeral cache backed by other `chrome.storage.local` keys. Populated by the XHR-interception layer; cleared on `chrome.runtime.onStartup`. Provides `resolveMediaForPost/Reel/Story/Highlight/Avatar/ThreadsPost` and `getUsernameForPost`.
+- **DownloadService** — content-script-side wrapper that sends a `DOWNLOAD_MEDIA` message and surfaces the result. Never throws.
+- **ZipService** — main-thread `@zip.js/zip.js` wrapper for carousel ZIP downloads. Fetches with `credentials: "omit"` because Instagram's CDN URLs are signed/public and don't return `Access-Control-Allow-Credentials`.
+- **ThemeService** — toggles a `dark` class on `<html>`. Does **not** persist the preference; the options page feeds it from `SettingsService` and re-applies on settings change.
+- **ToastService** — lazy Shadow-DOM toast stack used by the content script. `success` / `failure` / `info`; auto-dismiss after ~4 s.
 
 ## Message bus
 
-All cross-context communication flows through `chrome.runtime.sendMessage`. Payloads are narrowed to the `Message` union in `src/types/messages.ts`:
+The discriminated union in `src/types/messages.ts`:
 
-| Type | Sender | Receiver | Purpose |
-|---|---|---|---|
-| `DOWNLOAD_MEDIA` | content script, options page | background | Kick off a `chrome.downloads.download` for one resource. Optional `saveAs?: boolean` triggers the OS Save As dialog. |
-| `OPEN_URL` | content script | background | Opens the URL in a new tab (Open-in-new-tab icon). |
-| `XHR_SNAPSHOT` | background (Firefox) | content script | Forwards a decoded XHR response captured by `webRequest`. |
+| Variant | Sender | Handler | Returns |
+| --- | --- | --- | --- |
+| `DOWNLOAD_MEDIA` | content / options | `background/shared/downloads.ts:handleDownloadMedia` | `{ downloadId }` and bumps profile counters |
+| `OPEN_URL` | content | `background/shared/open-url.ts:handleOpenUrl` | `null` (opens new tab) |
+| `XHR_SNAPSHOT` | content | `background/shared/router.ts` → `mediaCache.ingestXhrSnapshot` | `null` (writes to media cache) |
 
-Every handler returns a `MessageResponse<T>`:
-```ts
-{ ok: true; data: T } | { ok: false; error: string }
-```
+Senders use the `sendMessage()` wrapper in `src/utils/messages.ts`; never raw `chrome.runtime.sendMessage`. Wrapper guarantees a discriminated `MessageResponse = { ok: true; data } | { ok: false; error }` and never throws — transport failures (extension reloaded, no receiver) come back as `{ ok: false }`.
 
-No thrown errors ever cross the message bus. Callers inspect `ok` to decide.
-
-### Request/response flow for a download click
-
-```
-content/handlers/post.ts
-  ─▶ extracts MediaResource[] from the DOM
-  ─▶ calls handleDownloadClick(resources, deps)   ─▶ content/flow/download.tsx
-                                                       │
-                                                       ▼
-                                   either silent download or NoDirPopup
-                                                       │
-                                                       ▼
-                                                download.queue(r)        ─▶ DownloadService
-                                                       │                     │
-                                                       ▼                     ▼
-                                         sendMessage(DOWNLOAD_MEDIA)   background/shared/router.ts
-                                                                             │
-                                                                             ▼
-                                                           handleDownloadMedia → chrome.downloads
-                                                                             │
-                                                                             ▼
-                                                              increments profile's downloadCount
-                                                                      via SettingsService
-```
-
-### Right-click / Save As flow
-
-Right-clicking the injected download button fires `handleGlobalContextMenu`
-in `src/content/index.ts`, which calls `onClickHandler(btn, true)`. The
-`saveAs = true` flag threads through each surface handler →
-`downloadViaFlow(params, true)` → `download.queue(resource, { saveAs: true })`
-→ `DOWNLOAD_MEDIA` with `saveAs: true` → `chrome.downloads.download({ saveAs: true })`.
-
-This path **never** opens a modal — no NoDirPopup, no profile-directory check.
-The OS Save As dialog is the only UI.
+The receiver in `background/shared/register.ts:registerSharedBackground` narrows inbound payloads with `asMessage()`, dispatches via `routeMessage()`, and returns `true` from the listener to keep the async channel open. Unknown types come back as `{ ok: false, error: "unknown message type: …" }` rather than throwing.
 
 ## Storage contract
 
-Two distinct concerns, both on `chrome.storage.local`:
+One source of truth: `chrome.storage.local`. Three sets of keys, all reached through the `KvStorage` adapter at `src/services/settings/storage.ts`:
 
-### Settings (single blob)
+| Key family | Owner | Lifetime |
+| --- | --- | --- |
+| `igdl_settings` (single blob) | `SettingsService` | Persistent. Schema-versioned; future migrations live in `src/services/settings/schema.ts`. |
+| Cache keys (`postMedia`, `reelsEdgesData`, `storiesReelsMedia`, `highlightMedia`, `userProfilePicUrl`, `idToUsernameMap`, `threadsPostMedia`) | `MediaCacheService` | Ephemeral. Cleared on `chrome.runtime.onStartup`. |
 
-- Key: `igdl_settings`
-- Shape: `Settings` type in `src/types/settings.ts`
-- Writes from any context (options, content, background) broadcast via `chrome.storage.onChanged`.
-- `SettingsService.subscribe(listener)` filters to this key and re-hydrates the blob through the schema migration.
+Direct `chrome.storage.*` access outside those two services is a hard-rule violation — see CLAUDE.md.
 
-### Media caches (7 keys)
+## MV3 lifecycle
 
-- Prefix: `igdl_cache_`
-- Keys: `idToUsernameMap`, `userProfilePicUrl`, `storiesReelsMedia`, `reelsEdgesData`, `postMedia`, `highlightMedia`, `threadsPostMedia` — see `src/services/media-cache/keys.ts`.
-- Cleared on `chrome.runtime.onStartup` (TAC-5.4) — caches are ephemeral.
-- Writes only via `MediaCacheService.ingestXhrSnapshot(endpoint, body)` (TAC-5.5).
-- Reads only via the resolver API (`resolveMediaFor*` + `getUsernameForPost`); raw-cache helpers are module-private (TAC-4.7).
+### Chrome
 
-## XHR-interception layer
+- **Background**: `service_worker: "background.js"` with `type: "module"`. The worker can be evicted at any time and restarted on the next event; `chrome.ts` keeps module-scope side effects to listener registration only.
+- **Content script**: two entries in `content_scripts`. `content.js` runs at `document_start` on both Instagram and Threads. `inject.js` runs at `document_start` on Instagram only with `world: "MAIN"`.
+- **Threads media**: the inject path doesn't run on Threads. Instead the manifest declares `externally_connectable.matches: ["*://*.threads.com/*"]`, and threads.com page scripts post to the background via `chrome.runtime.onMessageExternal` (`THREADS_MEDIA`). The Threads bridge in `src/background/shared/threads.ts` writes those payloads into the media cache.
+- **Options entry**: `options_page: "options.html"`. Toolbar icon click opens it via `chrome.runtime.openOptionsPage()` (registered in `registerSharedBackground`).
 
-Instagram serves many media URLs (especially videos) as short-lived, session-scoped signed URLs that aren't in the DOM. We capture them by patching the page's own `XMLHttpRequest` and `fetch` in the **page world**, mirroring the reference extension.
+### Firefox
 
-Files:
-- `src/xhr.ts` — `installXhrInterceptor(options)`. Patches XHR + fetch. Idempotent via a global sentinel.
-- `src/inject.ts` — calls `installXhrInterceptor` and forwards every snapshot via `window.postMessage({ source: "igdl-xhr", endpoint, body })`.
+- **Background**: `scripts: ["background.js"]` (IIFE — Firefox MV3 doesn't yet load module workers reliably). No `service_worker` key.
+- **Content script**: a single entry that loads `content.js` + `loader.js` at `document_idle` (Firefox runs scripts later than Chrome by default). Firefox MV3 has no `world: "MAIN"` support, so `loader.js` (`src/content/loader.ts`) appends a `<script src="inject.js">` tag to the page — the `inject.js` reaches `web_accessible_resources` via `chrome.runtime.getURL`.
+- **Permissions**: adds `webRequest` (used for ZIP-related concerns). No `externally_connectable` — the Threads bridge degrades gracefully on Firefox.
+- **Options entry**: `options_ui.page: "options.html"` with `open_in_tab: true`.
+- **Add-on identity**: `browser_specific_settings.gecko.id = "igdl@evolsiri.local"`, `strict_min_version: "115.0"`.
 
-### Chrome path
+Both manifests live at `src/manifest/{chrome,firefox}.manifest.json`. The build copies the right one and injects the version from `package.json` — see `build-and-release.md`. Don't paste Chrome-only keys into the Firefox manifest: Firefox parses, warns, then **silently refuses to inject content scripts**.
 
-`chrome.manifest.json` declares `inject.js` as a `content_scripts` entry with `world: "MAIN"` and `run_at: "document_start"`. The browser runs it in the page world; no `chrome.*` API is available there, which is fine because all we do is postMessage.
+## Content script anatomy
 
-### Firefox path
+See `content-script.md` for the full picture. In short:
 
-Firefox MV3 doesn't support `world: "MAIN"`. Instead:
-
-1. `src/content/loader.ts` runs in the isolated world at `document_start`.
-2. It appends a `<script src={chrome.runtime.getURL("inject.js")}>` tag to the page. `inject.js` is declared in `web_accessible_resources`.
-3. The page context executes `inject.js`, which patches XHR and postMessages snapshots.
-
-Firefox also registers `chrome.webRequest.filterResponseData` in `src/background/firefox.ts` as a belt-and-suspenders fallback for endpoints the page-level patch misses.
-
-### Ingestion
-
-The isolated-world content script (`src/content/index.ts`) listens for both:
-- `window` `message` events with `source === "igdl-xhr"` (Chrome + Firefox happy path)
-- `chrome.runtime.onMessage` with `type === "XHR_SNAPSHOT"` (Firefox `webRequest` fallback)
-
-Both routes funnel into `MediaCacheService.ingestXhrSnapshot(endpoint, body)`, which dispatches on endpoint substring (e.g. `/api/v1/users/web_profile_info/` populates `userProfilePicUrl`).
-
-## Threads bridge
-
-Threads.com runs a different origin. The reference extension coordinates via `chrome.runtime.onMessageExternal`:
-
-1. `chrome.manifest.json` + `firefox.manifest.json` declare `externally_connectable.matches = ["*://*.threads.com/*"]`.
-2. A page script on `threads.com` (injected the same way as Instagram's `inject.js`) captures Threads' own XHRs and posts them back via `chrome.runtime.sendMessage({ type: "THREADS_MEDIA", endpoint, body }, EXTENSION_ID)`.
-3. `src/background/shared/threads.ts` receives the external message, validates the shape, and funnels the body into `MediaCacheService.ingestXhrSnapshot`.
-4. When the user clicks a Threads download button, `src/content/handlers/threads.ts` calls `MediaCacheService.resolveMediaForThreadsPost(postId)` and hands off to `handleDownloadClick`.
-
-Only threads.com pages can connect. Everything else bounces.
-
-## Design system
-
-The visual + interaction language is centralised in two places:
-
-- **`src/index.css`** — CSS custom properties for the options-page (Tailwind v4 theme block + `:root.dark` overrides). Covers surfaces, text, accent, destructive, toasts, focus, radii (all `0`), motion durations, and ease curves.
-- **`src/content/tokens.ts`** — TypeScript `TOKENS` and `MOTION` constants for content-script UI. Dark-palette only (shadow-mounted injected UI renders on Instagram / Threads and must read well regardless of the host theme).
-
-Both are indexed and visualised by the **`Design System/*` Storybook stories** (`src/stories/DesignSystem.stories.tsx`), which are the source of truth for what exists and how it looks. `docs/design-system.md` is the pointer + contribution contract — read it before adding a new token or component so the story stays complete.
-
-## Injected-UI isolation
-
-Every content-script-rendered component mounts inside a Shadow DOM (`src/content/modals/mount.ts`):
-
-- `createShadowMount()` appends a fixed-position host to `document.documentElement` with `z-index: 2147483647`.
-- `host.attachShadow({ mode: "open" })` gives a scoped root.
-- Preact renders into the shadow root.
-- Inline styles via `src/content/tokens.ts` — no Tailwind utility classes inside the shadow root; the reset and tokens come as plain CSS values. Tailwind (and Instagram's CSS) can't affect the content, and our styles can't leak out.
-
-## Polling loop
-
-`src/content/index.ts` runs the reference-derived polling loop:
-
-```ts
-function tick() {
-  if ("requestIdleCallback" in window) window.requestIdleCallback(processPage);
-  else processPage();
-}
-tick();                         // immediate first pass
-setInterval(tick, 3000);        // every 3s while idle
-beforeunload → clearInterval
-```
-
-`processPage` routes to surface handlers based on `window.location.pathname` (see `src/content/selectors.ts` for predicates). Each handler is idempotent: it checks for its sentinel attribute before injecting and skips already-processed containers.
-
-## Lifecycle
-
-| Event | Chrome (SW) | Firefox (bg scripts) | What happens |
-|---|---|---|---|
-| `onInstalled` | ✓ | ✓ | No-op — services lazy-init on first `get()`. |
-| `onStartup` | ✓ | ✓ | `MediaCacheService.clearAll()` — media caches are ephemeral. |
-| `onMessage` | ✓ | ✓ | `routeMessage` dispatches by `Message.type`. Returns `true` to keep the async channel open. |
-| `onMessageExternal` | ✓ | ✓ | Threads bridge funnels into MediaCache. |
-| `action.onClicked` | ✓ | ✓ | Opens the options page via `openOptionsPage()`. Toolbar icon has no popup. |
-
-Chrome's SW may terminate any time; every handler is idempotent and reads authoritative state from storage rather than in-memory mirrors.
-
-## Cross-browser divergences at a glance
-
-| Concern | Chrome | Firefox |
-|---|---|---|
-| Background form | `service_worker` (module) | `scripts` array |
-| Page-world XHR patch | `content_scripts` w/ `world: "MAIN"` | `content/loader.ts` injects `<script>` |
-| API-response fallback | N/A | `webRequest.filterResponseData` |
-| Carousel ZIP build | Content script (`ZipService` + anchor-click, no background involvement) | Content script (`ZipService` + anchor-click, no background involvement) |
-| Options surface | `options_page` | `options_ui` with `open_in_tab: true` |
-| Extra permissions | — | `webRequest`, `webRequestBlocking`, `webRequestFilterResponse` |
-| Store distribution | `.zip` → Chrome Web Store | `.xpi`/`.zip` via `web-ext build` → AMO |
-
-## Where each top-level concern lives
-
-- Run options-page bootstrap: `src/options/main.tsx` → `App.tsx`.
-- Handle an incoming download request on the wire: `src/background/shared/router.ts`.
-- Decide where a file lands on disk: `src/services/download/naming.ts`.
-- Resolve a post's author username at click time: `MediaCacheService.getUsernameForPost(postId)` (PLAN round 7 decision 30).
-- Decide whether to show the no-directory popup: `src/content/flow/download.tsx` — `handleDownloadClick`.
-
-If you need to add a new surface to the extension (say, Instagram Live), create `src/content/handlers/live.ts` mirroring the existing handler skeletons, wire it into the URL dispatch in `src/content/index.ts`, and add a resolver to `MediaCacheService` if its media URLs come from a distinct endpoint.
+1. **Polling loop**: `processPage()` runs every 3 s, with an early burst every 2 s for the first 10 s to catch late React renders. No `pushState`/`popstate` hooks — polling beats SPA-route races.
+2. **Per-route handlers** in `src/content/handlers/` inject the download button next to native action buttons.
+3. **Click delegator** at the document level fires `onClickHandler()` for any `.${CLASS_CUSTOM_BUTTON}` click and routes through the **download flow** (`src/content/flow/download.tsx`) — see `download-flow.md`.
+4. **Inject world**: `src/inject.ts` runs in the page's main world, monkey-patches `XMLHttpRequest` and `fetch`, posts JSON snapshots back to the isolated content script via `window.postMessage`, which forwards them as `XHR_SNAPSHOT` to the background, which writes them into `MediaCacheService`.
+5. **Shadow DOM**: every modal and toast mounts via `createShadowMount()` in `src/content/modals/mount.ts` — open shadow root, inline-token styles, keyboard-shortcut isolation.

@@ -1,74 +1,44 @@
 # ToastService
 
-Manages the stack of success / failure / info toasts rendered over Instagram or Threads when downloads complete. Lazily creates one Shadow-DOM mount on first toast, keeps it alive across subsequent toasts, and exposes a tiny `success` / `failure` / `info` / `dispose` API.
-
-## Files
-
-| Path | Role |
-|---|---|
-| `src/services/toast/toast.tsx` | `createToastService` with factory-injected shadow mount. |
-| `src/content/toasts/Toast.tsx` | `Toast` + `ToastStack` components — inline-styled for Shadow DOM. |
+Renders the success / failure / info toast stack over Instagram or Threads when downloads complete. Lazily creates a Shadow-DOM mount on the first toast, keeps it alive across subsequent toasts, and unmounts it on `dispose()`.
 
 ## Public API
 
-### `success(message): () => void`
-
-Success toast (accent-coloured left bar — follows the brand), auto-dismiss ~4s (PAC-3.1). Returns an early-dismiss function.
-
 ```ts
-const dismiss = toast.success("Downloaded @alice");
-// later
-dismiss(); // before the 4s timer fires
+interface ToastService {
+  success(message: string): () => void;
+  failure(message: string): () => void;
+  info(message: string): () => void;
+  dispose(): void;
+}
+
+function createToastService(options?: ToastServiceOptions): ToastService;
 ```
 
-### `failure(message): () => void`
+| Method | What it does |
+| --- | --- |
+| `success` | Brand-green left bar. Auto-dismisses after ~4 s. Returns a manual-dismiss function. |
+| `failure` | Brand-pink left bar. Same auto-dismiss. |
+| `info` | Neutral. Used for non-error user actions (e.g. the user dismissed the Save-As dialog). |
+| `dispose` | Removes the shadow host. Idempotent — safe to call during page unload even if no toast was ever shown. |
 
-Red toast with the supplied error message (PAC-3.2). Also auto-dismisses.
+The returned dismiss function lets callers cancel a toast early (e.g. when navigating away).
 
-### `info(message): () => void`
+## Lifecycle
 
-Neutral toast for non-error user actions — e.g. when the user dismisses the browser's Save As dialog and the download is canceled. Auto-dismisses ~4s.
+Lazy: the shadow mount is created on first `success`/`failure`/`info` call and reused for every subsequent toast. Empty stacks `render(null, container)` to drop the Preact tree but leave the host attached so the next toast doesn't pay the mount-creation cost again.
 
-### `dispose(): void`
+## Storage
 
-Unmounts the stack and removes the shadow host from the document. Idempotent.
+None.
 
-## Behavior
+## Call sites
 
-- **Stacking** — new toasts append to the bottom; older ones shift slightly upward (PAC-3.3).
-- **Auto-dismiss** — default 4s; the entry animates out for ~200ms, then the component calls its `onDismiss` which removes it from the visible set.
-- **Shadow-DOM isolation** — the stack renders inside a fixed-position host with `pointer-events: none` on the host and `pointer-events: auto` on the rendered root so only toast areas intercept clicks.
-- **Inline styles** — no Tailwind inside the shadow root. Colors come from `src/content/tokens.ts`; timings from `MOTION`.
+- `src/content/downloadBridge.ts` — the cached `DownloadFlowDeps` instance; reused across every download.
+- `src/content/flow/download.tsx:downloadAll` — fires `success`, `failure`, or `info` based on the per-resource aggregate (all-canceled vs partial vs success vs failure).
 
-## Dependency injection
+## Invariants
 
-```ts
-createToastService({
-  mountFactory?: () => ShadowMount,   // default: createShadowMount from content/modals/mount.ts
-});
-```
-
-Tests pass a fake mount that records `render` calls without actually mounting Preact, making assertions direct and synchronous.
-
-## Consumers
-
-- `src/content/flow/download.tsx` — `downloadAll` fires `toast.success("Downloaded ...")` on success, `toast.failure(error)` on failure, or `toast.info("Download canceled")` when the user dismisses the Save As dialog.
-- Potentially future: content-script error paths that can't be handled locally.
-
-## Tests
-
-`src/services/toast/__tests__/toast.spec.ts`:
-- Lazy mount creation on first toast.
-- Mount reuse across subsequent toasts.
-- `dispose()` tears down the mount.
-- `dispose()` idempotent.
-- Returned dismiss function is callable without throwing.
-
-`src/content/toasts/__tests__/Toast.spec.tsx`:
-- Success vs failure glyph + ARIA role differences.
-- Auto-dismiss after `durationMs + transition tail`.
-
-## Design notes
-
-- The Toast component uses `useState(visible)` + `setTimeout` for its own lifecycle. The service owns the stack; each component owns its own disappear animation. This separation keeps stacking math out of the component and keeps animations out of the service.
-- Accent tokens are hard-coded to the dark palette inside `tokens.ts` (injected UI always looks dark-theme for consistency on both Instagram and Threads). Respecting the user's options-page theme preference is possible but adds an async storage read on every toast; not worth the cost yet.
+- The toast stack lives in a Shadow DOM via `createShadowMount()` — no Tailwind classes, no Instagram CSS leaks. See `../content-script.md`.
+- Toast component styling (colours, spacing, animation) lives in `src/content/toasts/Toast.tsx` and reads from `src/content/tokens.ts`. Adding a new toast kind means extending `ToastKind` plus adding a token row.
+- Brand colours are load-bearing: success uses `--color-brand-green` (`#a8f368`); failure uses `--color-brand-pink` (`#f9035e`).

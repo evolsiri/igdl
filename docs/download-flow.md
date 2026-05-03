@@ -1,125 +1,117 @@
-# Download flow (Post-Action Coordinator)
+# Download flow
 
-The **Post-Action Coordinator** (PAC) is the content-script pipeline that every download button click funnels through, regardless of which surface (post, reel, story, profile, Threads post) extracted the media. It lives in `src/content/flow/download.tsx` and is the only place that coordinates directory resolution, never-ask state, the modal prompt, the queue call, and the toast.
+The click-to-file trace. Every download — from the feed, a reel, a story, a highlight, an avatar, or a Threads post — funnels through one pipeline at `src/content/flow/download.tsx:handleDownloadClick`.
 
-## Entry point
-
-```ts
-handleDownloadClick(
-  resources: MediaResource[],
-  deps: DownloadFlowDeps,
-): Promise<void>
-```
-
-- `resources` — one or more resolved media items from the surface handler. Carousels are N items; single media is a 1-item array.
-- `deps` — dependency bag: `SettingsService`, `DownloadService`, `ToastService`, plus optional injectables for tests (`mountFactory`, `settingsSnapshot`).
-
-## Flow diagram
+## End-to-end trace
 
 ```
-              click on .download-btn
-                      │
-          surface handler extracts
-          ┌─────────  MediaResource[]  ─────────┐
-          │                                     │
-          ▼                                     │
-     handleDownloadClick(resources, deps)       │
-          │                                     │
-          ▼                                     │
-   ┌─────────────────────────┐                  │
-   │ profile has custom dir? │                  │
-   │    or on never-ask?     │                  │
-   └────┬────────────────┬───┘                  │
-   yes  │                │  no                  │
-        ▼                ▼                      │
-  downloadAll()    show NoDirPopup              │
-                        │                       │
-                   ┌────┴─────────────┐         │
-                   ▼         ▼         ▼         │
-            setDirectory  default  neverAsk     │
-                   │         │         │         │
-                   │         ▼         ▼         │
-                   │  downloadAll()  addNeverAsk +
-                   ▼                 downloadAll()
-          addProfile(dir) +
-          downloadAll()
-                   │
-                   ▼
-             SUCCESS toast — ✔  "Downloaded @alice"
-             FAILURE toast — ✕  "Download failed: …"
-             CANCEL  toast — ℹ  "Download canceled" (when Save As dismissed)
+1. User clicks the injected download button
+        │
+        ▼
+2. Document-level delegator in src/content/index.ts catches the click
+        │
+        ▼
+3. The route's handler (post.ts / reels.ts / stories.ts / …) extracts media:
+     • Most surfaces call /api/v1/media/{id}/info/ via getUrlFromInfoApi()
+     • Carousels and highlight reels read MediaCacheService instead
+        │
+        ▼
+4. Reference-shaped DownloadParams →
+     downloadBridge.ts:downloadViaFlow → MediaResource[] →
+     handleDownloadClick(resources, deps)
+        │
+        ▼
+5. handleDownloadClick decides the per-profile path:
+        │
+        ├── settings.alwaysPromptSaveAs           → downloadAll(saveAs: true)
+        ├── profile has a configured directory    → downloadAll() (silent, routed)
+        ├── profile is on the never-ask list      → downloadAll(saveAs: true)
+        └── otherwise                             → NoDirPopup with three choices
+                ├── "Set directory and download"  → SettingsService.addProfile + downloadAll
+                ├── "Use default directory"       → downloadAll
+                └── "Don't ask again"             → SettingsService.addNeverAsk + downloadAll(saveAs: true)
+        │
+        ▼
+6. downloadAll loops over resources:
+     for each: DownloadService.queue(resource, { saveAs? }) →
+       sendMessage({ type: "DOWNLOAD_MEDIA", resource, saveAs }) →
+       background routeMessage → handleDownloadMedia
+        │
+        ▼
+7. background/shared/downloads.ts:
+     • settings = await deps.settings.get()
+     • filename = buildFullPath(resource, settings)
+     • chrome.downloads.download({ url, filename, saveAs })
+     • settings.incrementDownload(resource.username)   ← profile counter
+        │
+        ▼
+8. downloadAll aggregates per-resource results:
+     successes / firstError / canceled
+     Toast:
+       all canceled → toast.info("Download canceled")
+       all failed   → toast.failure(error)
+       partial      → toast.failure("Only N/M downloaded — error")
+       all ok       → toast.success("Downloaded @user")
 ```
 
-## Why it lives in the content script
+## Which step is where
 
-Two reasons this flow must run in-page rather than in the background worker:
+| Step | File |
+| --- | --- |
+| Button injection | `src/content/handlers/*.ts` (per route) |
+| Click delegator | `src/content/index.ts:handleGlobalClick` |
+| Reference-shape adapter | `src/content/downloadBridge.ts:downloadViaFlow` |
+| Pipeline (decision tree) | `src/content/flow/download.tsx:handleDownloadClick` |
+| No-directory modal | `src/content/modals/NoDirPopup.tsx` |
+| Per-resource queue | `src/content/flow/download.tsx:downloadAll` |
+| Content-side wrapper | `src/services/download/download.ts:DownloadService.queue` |
+| Cross-context send | `src/utils/messages.ts:sendMessage` |
+| Background dispatch | `src/background/shared/router.ts:routeMessage` |
+| Background download | `src/background/shared/downloads.ts:handleDownloadMedia` |
+| Filename + path | `src/services/download/naming.ts:buildFullPath` |
+| Profile counter bump | `src/services/settings/settings.ts:incrementDownload` |
 
-1. **Modals + toasts need a DOM host.** `NoDirPopup` and `ToastService` both mount into a Shadow DOM attached to the Instagram document. The background service worker has no DOM.
-2. **`Save As` cancel detection.** Chrome surfaces `"User canceled"` as a message on `chrome.runtime.lastError` when the OS Save dialog is dismissed. The content-script `DownloadService.queue` adapter translates that into an `ok: false` response with a `/cancel/i` pattern in the message, which the content-side `downloadAll` loop counts in the `canceled` bucket to emit the neutral info toast.
+## Filename templating
 
-## Per-profile routing
+`buildFilename()` in `src/services/download/naming.ts` interpolates the user's template, which defaults to `{username}-{id}-{datetime}`:
 
-Before prompting, the flow checks two pieces of settings state:
+| Token | Source |
+| --- | --- |
+| `{username}` | `MediaResource.username` (lowercased; `"instagram"` if missing) |
+| `{id}` | `MediaResource.id` (post / reel / story id) |
+| `{type}` | One of `post`, `reel`, `story`, `highlight`, `avatar`, `threads` |
+| `{datetime}` | `formatDate(now, settings.datetimeFormat)` (default `YYYYMMDD_HHmmss`). Replaced with empty string if `settings.enableDatetimeFormat` is false. |
 
-| Condition                                                     | Action                                |
-| ------------------------------------------------------------- | ------------------------------------- |
-| `settings.profileDirectories` has an entry with matching username | Silent download into that directory |
-| `settings.neverAskProfiles` has an entry with matching username   | Silent download into default dir    |
-| Neither                                                        | Show `NoDirPopup` with 3 choices     |
+After interpolation:
 
-Username matching is **case-insensitive** (`username.trim().toLowerCase()`), per the canonical normalization in `SettingsService.addProfile`.
+1. Leading and trailing `-_.` separators are stripped.
+2. Repeated `-` or `_` runs are collapsed.
+3. The name is sanitized via `sanitizeFilename()`.
+4. If the resource has an `index` and `useCarouselIndexing` is on, `_<index>` is appended.
+5. The extension is lowercased; `.jpeg` → `.jpg` if `replaceJpegWithJpg` is on.
 
-## `NoDirPopup` choices
+`resolveDirectory(username, settings)` returns the user's per-profile directory (case-insensitive match) or `settings.defaultDownloadDirectory`. `buildFullPath()` joins them — the result is what `chrome.downloads.download` receives in `filename` and is interpreted relative to the browser's Downloads folder.
 
-The modal returns one of:
+Example with all defaults: a feed post by `@alice` with id `ABC` at `2026-04-16T15:07:42`, item 2 of a 3-image carousel, downloads to:
 
-| Kind             | Effect                                                                       |
-| ---------------- | ---------------------------------------------------------------------------- |
-| `setDirectory`   | `settings.addProfile({ username, directory })` → download into new directory |
-| `default`        | download into `settings.defaultDownloadDirectory` (no settings change)       |
-| `neverAsk`       | `settings.addNeverAsk(username)` → download into default, skip prompt next time |
-| cancel (Esc / backdrop) | no-op, no download                                                    |
-
-See [`components/NoDirPopup.md`](./components/NoDirPopup.md) for the modal's own API.
-
-## Queue + batch semantics
-
-`downloadAll()` loops over every resource sequentially (not parallel):
-
-```ts
-for (const resource of resources) {
-  const result = await deps.download.queue(resource);
-  // …tally success / cancel / first error
-}
+```
+instagram/alice/alice-ABC-20260416_150742_2.jpg
 ```
 
-Carousels sometimes produce 10+ items; serial queueing avoids overwhelming `chrome.downloads` and keeps toast error messages deterministic (first failure wins).
+## ZIP carousel path (the divergence)
 
-The post-loop toast logic is bucket-based:
+Carousel posts can be downloaded as a single ZIP via the second injected button. That path **does not** go through the message bus or `chrome.downloads`. The handler at `src/content/handlers/zip.ts`:
 
-| Bucket                                          | Toast                                                      |
-| ----------------------------------------------- | ---------------------------------------------------------- |
-| At least one success, zero errors               | ✔ success "Downloaded @alice" / "Downloaded N items from @alice" |
-| Zero success, ≥1 cancel, zero errors            | ℹ neutral "Download canceled" / "N downloads canceled"     |
-| At least one error, zero success                | ✕ red "Download failed: <first error>"                     |
-| Partial error (some success + ≥1 error)         | ✕ red "Only N/M downloaded — <first error>"                |
+1. Resolves all carousel items to `MediaResource[]` the same way the regular flow does.
+2. Calls `ZipService.build(entries)` (`src/services/zip/zip.ts`), which fetches every URL with `credentials: "omit"`, streams them into a `ZipWriter`, and returns an `application/zip` `Blob`.
+3. Uses `URL.createObjectURL` + an anchor click (`triggerAnchorDownload` in `src/services/zip/download.ts`) to save the blob.
 
-## Tests
+Consequences:
 
-`src/content/flow/__tests__/download.spec.tsx` covers:
+- The ZIP lands in the **browser's Downloads folder root**, not the per-profile directory. The anchor-click path doesn't reach `chrome.downloads`, which means we can't supply a `filename` with a directory prefix.
+- Profile counters are **not** incremented for ZIP downloads — `incrementDownload` is only called from `handleDownloadMedia`.
+- `credentials: "omit"` is load-bearing: Instagram's CDN serves signed URLs without `Access-Control-Allow-Credentials`, so a credentialed fetch fails CORS.
 
-- Directory-hit path (silent download, no modal).
-- Never-ask path (silent download, no modal).
-- Cold-start path (popup shown, each of the three choices).
-- Popup cancellation (no download).
-- Cancel-toast path (every item canceled).
-- Partial failure path (first error surfaces, successes still counted).
+## Cancellation
 
-## Related docs
-
-- [`services/download.md`](./services/download.md) — `DownloadService.queue` contract + naming rules.
-- [`services/settings.md`](./services/settings.md) — `addProfile`, `addNeverAsk`.
-- [`services/toast.md`](./services/toast.md) — success / failure / info semantics.
-- [`components/NoDirPopup.md`](./components/NoDirPopup.md) — the modal.
-- [`shadow-dom-mount.md`](./shadow-dom-mount.md) — how the modal mounts safely in Instagram's DOM.
-- [`content-script-routing.md`](./content-script-routing.md) — how surface handlers reach this flow.
+When the user dismisses Chrome's "Save As" dialog, `chrome.downloads.download` rejects with a message containing `"cancel"`. `downloadAll`'s `isUserCanceled()` catches this and shows `toast.info("Download canceled")` instead of a failure toast — only when **every** resource was canceled. A canceled-then-succeeded mix surfaces only the success/failure aggregate. Firefox uses similar wording; the regex `/cancel/i` covers both.

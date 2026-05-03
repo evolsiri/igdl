@@ -1,82 +1,58 @@
 # MediaCacheService
 
-Owns the ephemeral caches that store Instagram + Threads API responses captured by the XHR-interception layer. Content-script handlers read through the public resolver API to turn a DOM-extracted id (post id, reel id, username) into a list of `MediaResource` objects ready to hand to `DownloadService`.
+Ephemeral cache of Instagram + Threads API payloads observed by the XHR-interception layer. Resolves a DOM-derived id (post id, reel id, username, highlight pk) into the `MediaResource[]` content-script handlers hand to `DownloadService`.
 
-The raw-cache helpers are module-private; handlers use the resolver API only (TAC-4.7).
-
-## Files
-
-| Path | Role |
-|---|---|
-| `src/services/media-cache/media-cache.ts` | Public resolver API + ingestion entry point + lifecycle. |
-| `src/services/media-cache/keys.ts` | Cache-key constants + `ALL_CACHE_KEYS`. |
-| `src/types/media-cache.ts` | Cache-payload shapes. |
-| `src/types/instagram.ts` | `MediaResource` + `MediaType`. |
+This service exists because most Instagram media URLs (especially video) are **short-lived signed URLs** that never enter the DOM. To get reliable URLs without re-issuing API calls on every click, the inject script captures responses live; this service is the read side of that pipeline.
 
 ## Public API
 
-### Resolver methods
-
-Every `resolveMediaFor*` method is async, safe to call on an empty cache (returns `[]` or `null`), and tolerates malformed payloads (never throws).
-
 ```ts
-resolveMediaForPost(postId: string): Promise<MediaResource[]>
-resolveMediaForReel(reelId: string): Promise<MediaResource[]>
-resolveMediaForStory(storyId: string): Promise<MediaResource[]>
-resolveMediaForHighlight(highlightId: string): Promise<MediaResource[]>
-resolveMediaForAvatar(username: string): Promise<MediaResource | null>
-resolveMediaForThreadsPost(postId: string): Promise<MediaResource[]>
+interface MediaCacheService {
+  resolveMediaForPost(postId: string): Promise<MediaResource[]>;
+  resolveMediaForReel(reelId: string): Promise<MediaResource[]>;
+  resolveMediaForStory(storyId: string): Promise<MediaResource[]>;
+  resolveMediaForHighlight(highlightPk: string): Promise<MediaResource[]>;
+  resolveMediaForAvatar(username: string): Promise<MediaResource | null>;
+  resolveMediaForThreadsPost(postId: string): Promise<MediaResource[]>;
+  getUsernameForPost(postId: string): Promise<string | null>;
+  ingestXhrSnapshot(endpoint: string, body: unknown): Promise<void>;
+  clearAll(): Promise<void>;
+}
+
+function createMediaCacheService(options?: MediaCacheServiceOptions): MediaCacheService;
 ```
 
-Carousels (post + Threads) return N resources with 1-based `index`. Single-item surfaces return a 1-element array with `index` undefined. Reels fall back from `reels_edges_data` to `stories_reels_media` when absent from the primary cache.
+The `resolveMediaForX` methods all return `[]` (or `null` for avatar) on cache miss and **never throw** — handlers fall back to `getDataFromAPI()` when the cache hasn't seen the relevant payload yet. Carousels return one `MediaResource` per item; non-carousels return one-element arrays.
 
-```ts
-const items = await cache.resolveMediaForPost("ABC123");
-// → [{ url, id: "ABC123", type: "post", username: "alice", index: 1, extension: "jpg", isVideo: false }, ...]
-```
+`getUsernameForPost()` is the feed-click handler's single source of truth for who authored a post. It's populated from intercepted `/api/v1/feed/timeline/` responses.
 
-### `getUsernameForPost(postId): Promise<string | null>`
+`ingestXhrSnapshot()` is the only write entry point. It dispatches by endpoint substring:
 
-Single source of truth for post-id → author-username mapping (PLAN round 7 decision 30). The feed-click handler uses this to figure out which profile authored a post before routing to per-profile directories.
+| Endpoint match | Cache key updated |
+| --- | --- |
+| `/api/v1/users/web_profile_info/` | `userProfilePicUrl` |
+| `/api/v1/feed/timeline/` | `idToUsernameMap` |
+| `/graphql/query` (highlights connection) | `highlightMedia` |
 
-Populated by `ingestXhrSnapshot` off intercepted feed/timeline responses.
+Unknown endpoints are silently ignored — Instagram emits dozens of endpoints we don't care about.
 
-### `ingestXhrSnapshot(endpoint, body): Promise<void>`
+## Lifecycle
 
-Single entry point for cache writes from the XHR-interception layer (TAC-5.5). Dispatches on endpoint substring into the matching cache key. Unknown endpoints are a silent no-op (Instagram emits many we don't care about).
+Singleton-per-context (created once in `src/background/chrome.ts` / `firefox.ts`). Lazy: no listeners on construction. The background's `chrome.runtime.onStartup` fires `clearAll()` so caches don't leak across browser sessions.
 
-Wired parsers:
-- `/api/v1/users/web_profile_info/` → `user_profile_pic_url`
-- `/api/v1/feed/timeline/` → `id_to_username_map`
+## Storage
 
-Additional parsers are added as new endpoints are observed in live traffic.
+Backed by `chrome.storage.local` via the `KvStorage` adapter from `src/services/settings/storage.ts`. The cache keys are listed in `src/services/media-cache/keys.ts:CACHE_KEYS` and exported as `ALL_CACHE_KEYS` for `clearAll()`.
 
-### `clearAll(): Promise<void>`
+## Call sites
 
-Removes every key this service owns (7 keys). Called from the background on `chrome.runtime.onStartup` — caches are ephemeral (TAC-5.4).
+- `src/background/shared/router.ts` — handles `XHR_SNAPSHOT` messages by calling `ingestXhrSnapshot`.
+- `src/background/shared/register.ts` — calls `clearAll()` on `chrome.runtime.onStartup`.
+- `src/background/shared/threads.ts` — Threads bridge writes `THREADS_MEDIA` payloads here.
+- Content-script handlers (`handlers/post.ts`, `handlers/highlights.ts`, etc.) — call `resolveMediaForX` to skip the API roundtrip when the cache has the data.
 
-## Cache keys
+## Invariants
 
-All keys prefixed with `igdl_cache_`:
-
-| Key constant | Shape | Populated by |
-|---|---|---|
-| `idToUsernameMap` | `Record<postId, username>` | feed/timeline, post-detail GraphQL |
-| `userProfilePicUrl` | `Record<username, url>` | web_profile_info |
-| `storiesReelsMedia` | `Record<id, StoriesReelsItem>` | stories tray |
-| `reelsEdgesData` | `Record<reelId, ReelsEdgeEntry>` | reels GraphQL |
-| `postMedia` | `Record<postId, PostMediaEntry>` | post detail / feed carousels |
-| `highlightMedia` | `Record<highlightId, HighlightEntry>` | highlight viewer |
-| `threadsPostMedia` | `Record<postId, ThreadsPostEntry>` | threads.com external bridge |
-
-## Consumers
-
-- Content-script handlers (`src/content/handlers/*`): resolver API + `getUsernameForPost` for feed clicks.
-- Background Threads bridge (`src/background/shared/threads.ts`): calls `ingestXhrSnapshot` on every external message.
-- Background lifecycle (`src/background/shared/register.ts`): calls `clearAll` on startup.
-
-## Tests
-
-`src/services/media-cache/__tests__/media-cache.spec.ts` — 36 cases. Per resolver: cache hit, cache miss, malformed payload. Ingestion dispatch for each supported endpoint. `clearAll` scoping + idempotency.
-
-Seed `inMemoryStorage()` directly with the cache-key shape to set up a hit-path test. The service's resolver methods don't care how data got into storage — they only read.
+- All writes flow through `ingestXhrSnapshot` (or the Threads bridge equivalent). Adding a new endpoint means adding a new dispatch branch and a parser, not a new write site.
+- Parsers tolerate shape drift: missing fields, unknown keys, malformed nodes are skipped, not thrown over.
+- `clearAll()` deletes every key in `ALL_CACHE_KEYS` — extending the cache means adding to `CACHE_KEYS` so `clearAll` stays exhaustive.

@@ -1,41 +1,35 @@
 # igdl docs
 
-This folder documents the internals of the `igdl` browser extension. Every service under `src/services/*` has a dedicated doc. Architecture-wide concerns live in `architecture.md`; cross-cutting concerns and process docs have their own files.
+Internals of the igdl browser extension. Code is the source of truth; these docs explain the *why* and the *shape*.
 
-The tables below are the canonical index. If a file listed here does not exist yet, the corresponding source code has not shipped.
+If you're a user looking to install the extension, read the root [`../README.md`](../README.md). If you're a contributor, start with [`../CLAUDE.md`](../CLAUDE.md) for the hard rules, then read these top-down.
 
-## Architecture
+## Top-level
 
-| Doc | Covers |
-|---|---|
-| [`architecture.md`](./architecture.md) | Module boundaries, message flow, storage flow, XHR-interception layer, Threads bridge |
-| [`code-style-guide.md`](./code-style-guide.md) | File layout, service factory pattern, messaging, UI, TypeScript, architectural invariants |
-| [`design-system.md`](./design-system.md) | Design-system index. Pointer to the `Design System/*` Storybook stories (palette, tokens, component inventory) which are the source of truth. |
-
-## Process
-
-| Doc | Covers |
-|---|---|
-| [`release.md`](./release.md) | Release checklist for Chrome Web Store + Mozilla AMO |
-| [`ci.md`](./ci.md) | GitHub Actions workflows, gate order, local parity commands, storybook test gating |
-| [`build-and-packaging.md`](./build-and-packaging.md) | Multi-entry build pipeline, Chrome/Firefox packaging, dist layout |
-
-## Core flows
-
-| Doc | Covers |
-|---|---|
-| [`content-script-routing.md`](./content-script-routing.md) | 3 s poll loop, surface → handler routing table, click dispatch |
-| [`download-flow.md`](./download-flow.md) | Post-Action Coordinator pipeline: profile directory resolution, never-ask, NoDirPopup, queue, toast |
-| [`shadow-dom-mount.md`](./shadow-dom-mount.md) | `createShadowMount()` primitive — style isolation + keyboard guard for all injected UI |
-| [`xhr-interception.md`](./xhr-interception.md) | Page-world `XMLHttpRequest` + `fetch` patching, `inject.js` bootstrap, Firefox loader |
+- [**architecture.md**](./architecture.md) — module map, message bus, storage contract, MV3 lifecycle, manifest divergence.
+- [**build-and-release.md**](./build-and-release.md) — how sources turn into Chrome / Firefox extensions and how releases are cut, locally and in CI.
+- [**code-style-guide.md**](./code-style-guide.md) — service folder layout, TSDoc contract, single-owner ambient APIs, naming, imports.
+- [**content-script.md**](./content-script.md) — content-script routing, XHR/fetch interception, Shadow DOM mount.
+- [**design-system.md**](./design-system.md) — index pointing at the Storybook design-system story (the source of truth).
+- [**development.md**](./development.md) — getting set up, common commands, sideload steps.
+- [**download-flow.md**](./download-flow.md) — the click-to-file trace from user click to `chrome.downloads.download`.
 
 ## Services
 
-| Doc | Source |
-|---|---|
-| [`services/settings.md`](./services/settings.md) | `src/services/settings/` |
-| [`services/media-cache.md`](./services/media-cache.md) | `src/services/media-cache/` |
-| [`services/download.md`](./services/download.md) | `src/services/download/` |
-| [`services/theme.md`](./services/theme.md) | `src/services/theme/` |
-| [`services/toast.md`](./services/toast.md) | `src/services/toast/` |
-| [`services/zip.md`](./services/zip.md) | `src/services/zip/` |
+One doc per service in [`src/services/`](../src/services/). Each describes the public API, lifecycle, storage surface, call sites, and invariants.
+
+- [services/download.md](./services/download.md) — `DownloadService`
+- [services/media-cache.md](./services/media-cache.md) — `MediaCacheService`
+- [services/settings.md](./services/settings.md) — `SettingsService` (the storage monopoly)
+- [services/theme.md](./services/theme.md) — `ThemeService`
+- [services/toast.md](./services/toast.md) — `ToastService`
+- [services/zip.md](./services/zip.md) — `ZipService`
+
+## Suggested reading order
+
+1. [`../CLAUDE.md`](../CLAUDE.md) — the rules everyone has to follow.
+2. [architecture.md](./architecture.md) — the layout.
+3. [download-flow.md](./download-flow.md) — the canonical end-to-end trace.
+4. [services/settings.md](./services/settings.md) — the highest-traffic service and a model for the rest.
+
+This index has no commentary on individual files — read the file. If a doc looks stale, the code wins.
