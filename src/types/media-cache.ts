@@ -52,15 +52,25 @@ export interface PostMediaEntry {
 }
 export type PostMedia = Record<string, PostMediaEntry>;
 
-/** Highlights entry — keyed by highlight id. Similar shape to `StoriesReelsItem` but versioned separately. */
-export interface HighlightEntry {
-  id: string;
-  username: string;
+/** A single item inside a highlight reel — reels are carousels, indexed by position. */
+export interface HighlightMediaItem {
+  /** Unix epoch seconds. Used to format the `{datetime}` placeholder in filenames. */
+  takenAt: number;
   url: string;
   isVideo: boolean;
   extension: string;
 }
-export type HighlightMedia = Record<string, HighlightEntry>;
+
+/** Highlight reel entry — `items.length >= 1`; index into `items` is the carousel position. */
+export interface HighlightReelEntry {
+  /** Instagram-issued id including the prefix, e.g. `"highlight:18023929792378379"`. */
+  id: string;
+  username: string;
+  items: HighlightMediaItem[];
+}
+
+/** Keyed by *unprefixed* highlight pk (matches the URL path segment `/stories/highlights/{pk}/`). */
+export type HighlightMedia = Record<string, HighlightReelEntry>;
 
 /** Threads post entry — populated via the `externally_connectable` bridge. */
 export interface ThreadsPostEntry {

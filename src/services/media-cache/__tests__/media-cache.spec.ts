@@ -227,25 +227,59 @@ describe("MediaCacheService", () => {
   });
 
   describe("resolveMediaForHighlight()", () => {
-    it("returns one MediaResource with type=highlight", async () => {
+    it("returns one MediaResource per item with type=highlight", async () => {
       const { cache } = setup({
         [CACHE_KEYS.highlightMedia]: {
-          HILITE1: {
-            id: "HILITE1",
+          "18023929": {
+            id: "highlight:18023929",
             username: "eve",
-            url: "https://example.com/h1.mp4",
-            isVideo: true,
-            extension: "mp4",
+            items: [
+              { takenAt: 1700000000, url: "https://example.com/h1.mp4", isVideo: true, extension: "mp4" },
+              { takenAt: 1700000100, url: "https://example.com/h2.jpg", isVideo: false, extension: "jpg" },
+            ],
           },
         },
       });
-      const [only] = await cache.resolveMediaForHighlight("HILITE1");
-      expect(only).toMatchObject({ type: "highlight", username: "eve", isVideo: true });
+      const items = await cache.resolveMediaForHighlight("18023929");
+      expect(items).toHaveLength(2);
+      expect(items[0]).toMatchObject({
+        type: "highlight",
+        username: "eve",
+        id: "highlight:18023929",
+        isVideo: true,
+        index: 1,
+        url: "https://example.com/h1.mp4",
+      });
+      expect(items[1].index).toBe(2);
+      expect(items[1].isVideo).toBe(false);
+    });
+
+    it("omits the index when the reel has only one item", async () => {
+      const { cache } = setup({
+        [CACHE_KEYS.highlightMedia]: {
+          "18023929": {
+            id: "highlight:18023929",
+            username: "eve",
+            items: [{ takenAt: 0, url: "https://example.com/h1.jpg", isVideo: false, extension: "jpg" }],
+          },
+        },
+      });
+      const [only] = await cache.resolveMediaForHighlight("18023929");
+      expect(only.index).toBeUndefined();
     });
 
     it("returns [] on cache miss", async () => {
       const { cache } = setup();
       expect(await cache.resolveMediaForHighlight("nope")).toEqual([]);
+    });
+
+    it("returns [] for an empty items array", async () => {
+      const { cache } = setup({
+        [CACHE_KEYS.highlightMedia]: {
+          "18023929": { id: "highlight:18023929", username: "eve", items: [] },
+        },
+      });
+      expect(await cache.resolveMediaForHighlight("18023929")).toEqual([]);
     });
   });
 
@@ -341,6 +375,166 @@ describe("MediaCacheService", () => {
       await expect(
         cache.ingestXhrSnapshot("/api/v1/users/web_profile_info/", {}),
       ).resolves.toBeUndefined();
+    });
+
+    describe("graphql/query → highlight_media", () => {
+      const TRAVEL_BODY = {
+        data: {
+          xdt_api__v1__feed__reels_media__connection: {
+            edges: [
+              {
+                node: {
+                  id: "highlight:1111",
+                  user: { username: "alice" },
+                  items: [
+                    {
+                      taken_at: 1700000000,
+                      image_versions2: { candidates: [{ url: "https://cdn/travel-1.jpg" }] },
+                    },
+                    {
+                      taken_at: 1700000050,
+                      video_versions: [{ url: "https://cdn/travel-2.mp4" }],
+                      image_versions2: { candidates: [{ url: "https://cdn/travel-2-poster.jpg" }] },
+                    },
+                  ],
+                },
+              },
+              {
+                node: {
+                  id: "highlight:2222",
+                  user: { username: "alice" },
+                  items: [
+                    {
+                      taken_at: 1700000100,
+                      image_versions2: { candidates: [{ url: "https://cdn/food-1.jpg" }] },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      };
+
+      it("writes one entry per edge keyed by unprefixed pk", async () => {
+        const { cache, storage } = setup();
+        await cache.ingestXhrSnapshot("https://www.instagram.com/graphql/query", TRAVEL_BODY);
+        const stored = await storage.get<Record<string, unknown>>(CACHE_KEYS.highlightMedia);
+        expect(stored && Object.keys(stored).sort()).toEqual(["1111", "2222"]);
+      });
+
+      it("merges with existing reels rather than overwriting them", async () => {
+        const { cache, storage } = setup({
+          [CACHE_KEYS.highlightMedia]: {
+            "9999": {
+              id: "highlight:9999",
+              username: "carol",
+              items: [{ takenAt: 0, url: "https://cdn/old.jpg", isVideo: false, extension: "jpg" }],
+            },
+          },
+        });
+        await cache.ingestXhrSnapshot("/graphql/query", TRAVEL_BODY);
+        const stored = await storage.get<Record<string, unknown>>(CACHE_KEYS.highlightMedia);
+        expect(stored && Object.keys(stored).sort()).toEqual(["1111", "2222", "9999"]);
+      });
+
+      it("picks video URL over image when both are present and marks isVideo", async () => {
+        const { cache } = setup();
+        await cache.ingestXhrSnapshot("/graphql/query", TRAVEL_BODY);
+        const items = await cache.resolveMediaForHighlight("1111");
+        expect(items[1]).toMatchObject({
+          url: "https://cdn/travel-2.mp4",
+          isVideo: true,
+          extension: "mp4",
+        });
+        expect(items[0]).toMatchObject({
+          url: "https://cdn/travel-1.jpg",
+          isVideo: false,
+          extension: "jpg",
+        });
+      });
+
+      it("downstream resolver returns the SECOND reel's items when queried by its pk", async () => {
+        const { cache } = setup();
+        await cache.ingestXhrSnapshot("/graphql/query", TRAVEL_BODY);
+        const items = await cache.resolveMediaForHighlight("2222");
+        expect(items).toHaveLength(1);
+        expect(items[0].url).toBe("https://cdn/food-1.jpg");
+        expect(items[0].id).toBe("highlight:2222");
+      });
+
+      it("skips edges with empty items, missing username, or unresolvable URLs", async () => {
+        const { cache, storage } = setup();
+        await cache.ingestXhrSnapshot("/graphql/query", {
+          data: {
+            xdt_api__v1__feed__reels_media__connection: {
+              edges: [
+                { node: { id: "highlight:empty", user: { username: "x" }, items: [] } },
+                { node: { id: "highlight:nouser", items: [{ taken_at: 0, image_versions2: { candidates: [{ url: "u" }] } }] } },
+                { node: { id: "highlight:nourl", user: { username: "y" }, items: [{ taken_at: 0, image_versions2: { candidates: [] } }] } },
+              ],
+            },
+          },
+        });
+        expect(await storage.get(CACHE_KEYS.highlightMedia)).toBeUndefined();
+      });
+
+      it("locates the connection nested under arbitrary parent keys", async () => {
+        const { cache } = setup();
+        await cache.ingestXhrSnapshot("/graphql/query", {
+          some: {
+            deeply: {
+              nested: {
+                xdt_api__v1__feed__reels_media__connection: {
+                  edges: [
+                    {
+                      node: {
+                        id: "highlight:nested",
+                        user: { username: "alice" },
+                        items: [
+                          { taken_at: 1, image_versions2: { candidates: [{ url: "https://cdn/n.jpg" }] } },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        });
+        const items = await cache.resolveMediaForHighlight("nested");
+        expect(items).toHaveLength(1);
+        expect(items[0].url).toBe("https://cdn/n.jpg");
+      });
+
+      it("ignores graphql/query bodies that don't carry the highlights connection", async () => {
+        const { cache, storage } = setup();
+        await cache.ingestXhrSnapshot("/graphql/query", { data: { something_else: { edges: [] } } });
+        expect(await storage.get(CACHE_KEYS.highlightMedia)).toBeUndefined();
+      });
+
+      it("tolerates ids without the 'highlight:' prefix", async () => {
+        const { cache, storage } = setup();
+        await cache.ingestXhrSnapshot("/graphql/query", {
+          data: {
+            xdt_api__v1__feed__reels_media__connection: {
+              edges: [
+                {
+                  node: {
+                    id: "3333",
+                    user: { username: "alice" },
+                    items: [
+                      { taken_at: 1, image_versions2: { candidates: [{ url: "https://cdn/p.jpg" }] } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        });
+        const stored = await storage.get<Record<string, unknown>>(CACHE_KEYS.highlightMedia);
+        expect(stored && Object.keys(stored)).toEqual(["3333"]);
+      });
     });
   });
 

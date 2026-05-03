@@ -1,6 +1,8 @@
 import type { MediaResource } from "../../types/instagram";
 import type {
   HighlightMedia,
+  HighlightMediaItem,
+  HighlightReelEntry,
   IdToUsernameMap,
   PostMedia,
   ReelsEdgesData,
@@ -47,12 +49,18 @@ export interface MediaCacheService {
   resolveMediaForStory(storyId: string): Promise<MediaResource[]>;
 
   /**
-   * Resolves the media URL for a highlight item.
+   * Resolves every item in a profile highlight reel, indexed by carousel
+   * position. The caller picks the active item via the returned array's
+   * index. Returns `[]` on cache miss or empty reel.
+   *
+   * `highlightPk` is the unprefixed pk from the URL — the same value as
+   * `/stories/highlights/{pk}/`'s path segment.
    *
    * @example
-   * const items = await cache.resolveMediaForHighlight("HILITE123");
+   * const items = await cache.resolveMediaForHighlight("18023929792378379");
+   * const active = items[mediaIndex];
    */
-  resolveMediaForHighlight(highlightId: string): Promise<MediaResource[]>;
+  resolveMediaForHighlight(highlightPk: string): Promise<MediaResource[]>;
 
   /**
    * Resolves a profile avatar as a single MediaResource. Returns null if no
@@ -201,20 +209,19 @@ export function createMediaCacheService(
       ];
     },
 
-    async resolveMediaForHighlight(highlightId) {
+    async resolveMediaForHighlight(highlightPk) {
       const highlights = await getRaw<HighlightMedia>(CACHE_KEYS.highlightMedia);
-      const item = highlights?.[highlightId];
-      if (!item || typeof item.url !== "string") return [];
-      return [
-        {
-          url: item.url,
-          id: highlightId,
-          type: "highlight",
-          username: item.username,
-          extension: item.extension,
-          isVideo: item.isVideo,
-        },
-      ];
+      const entry = highlights?.[highlightPk];
+      if (!entry || !Array.isArray(entry.items) || entry.items.length === 0) return [];
+      return entry.items.map((item, i) => ({
+        url: item.url,
+        id: entry.id,
+        type: "highlight" as const,
+        username: entry.username,
+        index: entry.items.length > 1 ? i + 1 : undefined,
+        extension: item.extension,
+        isVideo: item.isVideo,
+      }));
     },
 
     async resolveMediaForAvatar(username) {
@@ -276,6 +283,21 @@ export function createMediaCacheService(
             ...prev,
             ...idMap,
           }));
+        }
+        return;
+      }
+
+      // GraphQL responses share a single endpoint (`/graphql/query`) but cover
+      // many different document IDs. Dispatch by body shape: scan for the
+      // highlights connection key and merge whatever reels we find.
+      if (endpoint.includes("/graphql/query")) {
+        const reels = parseHighlightReels(body);
+        if (reels.length > 0) {
+          await patchRaw<HighlightMedia>(CACHE_KEYS.highlightMedia, (prev) => {
+            const next = { ...prev };
+            for (const reel of reels) next[stripHighlightPrefix(reel.id)] = reel;
+            return next;
+          });
         }
         return;
       }
@@ -348,4 +370,82 @@ function extractItems(body: Record<string, unknown>): unknown[] {
     if (Array.isArray(data.items)) return data.items;
   }
   return [];
+}
+
+/**
+ * Locates the `xdt_api__v1__feed__reels_media__connection` shape anywhere in
+ * the response body. Instagram's GraphQL responses nest it differently across
+ * document IDs, so we walk the tree until we find a value with `.edges`.
+ */
+function findReelsMediaConnection(
+  obj: Record<string, unknown>,
+): { edges: unknown[] } | null {
+  for (const key of Object.keys(obj)) {
+    const value = obj[key];
+    if (key === "xdt_api__v1__feed__reels_media__connection") {
+      if (isRecord(value) && Array.isArray((value as Record<string, unknown>).edges)) {
+        return { edges: (value as { edges: unknown[] }).edges };
+      }
+    }
+    if (isRecord(value)) {
+      const found = findReelsMediaConnection(value);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+/**
+ * Parses a GraphQL response body into one `HighlightReelEntry` per edge.
+ * Tolerant of shape drift: drops nodes missing username, items, or with
+ * unresolvable URLs. Returns `[]` if the connection isn't found.
+ */
+function parseHighlightReels(body: Record<string, unknown>): HighlightReelEntry[] {
+  const connection = findReelsMediaConnection(body);
+  if (!connection) return [];
+  const out: HighlightReelEntry[] = [];
+  for (const edge of connection.edges) {
+    if (!isRecord(edge)) continue;
+    const node = isRecord(edge.node) ? edge.node : null;
+    if (!node) continue;
+    const id = typeof node.id === "string" ? node.id : null;
+    const user = isRecord(node.user) ? node.user : null;
+    const username = user && typeof user.username === "string" ? user.username : null;
+    const rawItems = Array.isArray(node.items) ? node.items : [];
+    if (!id || !username || rawItems.length === 0) continue;
+    const items: HighlightMediaItem[] = [];
+    for (const raw of rawItems) {
+      const item = parseHighlightItem(raw);
+      if (item) items.push(item);
+    }
+    if (items.length === 0) continue;
+    out.push({ id, username, items });
+  }
+  return out;
+}
+
+function parseHighlightItem(raw: unknown): HighlightMediaItem | null {
+  if (!isRecord(raw)) return null;
+  const videoVersions = Array.isArray(raw.video_versions) ? raw.video_versions : [];
+  const firstVideo = isRecord(videoVersions[0]) ? videoVersions[0] : null;
+  const videoUrl = firstVideo && typeof firstVideo.url === "string" ? firstVideo.url : null;
+
+  const imageVersions = isRecord(raw.image_versions2) ? raw.image_versions2 : null;
+  const candidates =
+    imageVersions && Array.isArray(imageVersions.candidates) ? imageVersions.candidates : [];
+  const firstCandidate = isRecord(candidates[0]) ? candidates[0] : null;
+  const imageUrl =
+    firstCandidate && typeof firstCandidate.url === "string" ? firstCandidate.url : null;
+
+  const isVideo = videoUrl !== null;
+  const url = videoUrl ?? imageUrl;
+  if (!url) return null;
+
+  const takenAt = typeof raw.taken_at === "number" ? raw.taken_at : 0;
+  const extension = extractExtension(url, isVideo ? "mp4" : "jpg");
+  return { takenAt, url, isVideo, extension };
+}
+
+function stripHighlightPrefix(id: string): string {
+  return id.startsWith("highlight:") ? id.slice("highlight:".length) : id;
 }
