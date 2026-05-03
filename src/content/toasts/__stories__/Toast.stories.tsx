@@ -60,12 +60,30 @@ export const AutoDismisses: Story = {
 
 export const LightSurroundings: Story = {
   args: { kind: "success", message: "Light surroundings, dark toast" },
-  parameters: { forceTheme: "light", backgrounds: { default: "light" } },
+
+  parameters: {
+    forceTheme: "light"
+  },
+
+  globals: {
+    backgrounds: {
+      value: "light"
+    }
+  }
 };
 
 export const DarkSurroundings: Story = {
   args: { kind: "success", message: "Dark surroundings, dark toast" },
-  parameters: { forceTheme: "dark", backgrounds: { default: "dark" } },
+
+  parameters: {
+    forceTheme: "dark"
+  },
+
+  globals: {
+    backgrounds: {
+      value: "dark"
+    }
+  }
 };
 
 /**

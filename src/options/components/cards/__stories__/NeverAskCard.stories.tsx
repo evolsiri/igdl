@@ -63,10 +63,28 @@ export const RemovesRow: Story = {
 
 export const LightMode: Story = {
   args: { entries: SAMPLE_ENTRIES },
-  parameters: { forceTheme: "light", backgrounds: { default: "light" } },
+
+  parameters: {
+    forceTheme: "light"
+  },
+
+  globals: {
+    backgrounds: {
+      value: "light"
+    }
+  }
 };
 
 export const DarkMode: Story = {
   args: { entries: SAMPLE_ENTRIES },
-  parameters: { forceTheme: "dark", backgrounds: { default: "dark" } },
+
+  parameters: {
+    forceTheme: "dark"
+  },
+
+  globals: {
+    backgrounds: {
+      value: "dark"
+    }
+  }
 };

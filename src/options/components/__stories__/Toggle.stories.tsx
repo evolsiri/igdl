@@ -67,10 +67,28 @@ export const Toggles: Story = {
 
 export const LightMode: Story = {
   args: { checked: true, description: "A brand-green switch on a light surface." },
-  parameters: { forceTheme: "light", backgrounds: { default: "light" } },
+
+  parameters: {
+    forceTheme: "light"
+  },
+
+  globals: {
+    backgrounds: {
+      value: "light"
+    }
+  }
 };
 
 export const DarkMode: Story = {
   args: { checked: true, description: "A brand-green switch on a dark surface." },
-  parameters: { forceTheme: "dark", backgrounds: { default: "dark" } },
+
+  parameters: {
+    forceTheme: "dark"
+  },
+
+  globals: {
+    backgrounds: {
+      value: "dark"
+    }
+  }
 };

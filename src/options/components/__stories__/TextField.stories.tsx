@@ -82,10 +82,28 @@ export const TypesAndResets: Story = {
 
 export const LightMode: Story = {
   args: { value: "instagram", resetValue: "instagram", description: "Default directory." },
-  parameters: { forceTheme: "light", backgrounds: { default: "light" } },
+
+  parameters: {
+    forceTheme: "light"
+  },
+
+  globals: {
+    backgrounds: {
+      value: "light"
+    }
+  }
 };
 
 export const DarkMode: Story = {
   args: { value: "instagram", resetValue: "instagram", description: "Default directory." },
-  parameters: { forceTheme: "dark", backgrounds: { default: "dark" } },
+
+  parameters: {
+    forceTheme: "dark"
+  },
+
+  globals: {
+    backgrounds: {
+      value: "dark"
+    }
+  }
 };

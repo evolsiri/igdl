@@ -75,10 +75,28 @@ export const ShowsValidationError: Story = {
 
 export const LightMode: Story = {
   args: { open: true },
-  parameters: { forceTheme: "light", backgrounds: { default: "light" } },
+
+  parameters: {
+    forceTheme: "light"
+  },
+
+  globals: {
+    backgrounds: {
+      value: "light"
+    }
+  }
 };
 
 export const DarkMode: Story = {
   args: { open: true },
-  parameters: { forceTheme: "dark", backgrounds: { default: "dark" } },
+
+  parameters: {
+    forceTheme: "dark"
+  },
+
+  globals: {
+    backgrounds: {
+      value: "dark"
+    }
+  }
 };

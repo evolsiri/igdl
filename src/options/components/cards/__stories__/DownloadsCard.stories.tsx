@@ -75,10 +75,28 @@ export const TogglesAlwaysPromptSaveAs: Story = {
 
 export const LightMode: Story = {
   args: { settings: { ...SETTINGS_DEFAULTS } },
-  parameters: { forceTheme: "light", backgrounds: { default: "light" } },
+
+  parameters: {
+    forceTheme: "light"
+  },
+
+  globals: {
+    backgrounds: {
+      value: "light"
+    }
+  }
 };
 
 export const DarkMode: Story = {
   args: { settings: { ...SETTINGS_DEFAULTS } },
-  parameters: { forceTheme: "dark", backgrounds: { default: "dark" } },
+
+  parameters: {
+    forceTheme: "dark"
+  },
+
+  globals: {
+    backgrounds: {
+      value: "dark"
+    }
+  }
 };

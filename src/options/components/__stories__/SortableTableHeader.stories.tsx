@@ -52,9 +52,25 @@ export const RightAligned: Story = {
 };
 
 export const LightMode: Story = {
-  parameters: { forceTheme: "light", backgrounds: { default: "light" } },
+  parameters: {
+    forceTheme: "light"
+  },
+
+  globals: {
+    backgrounds: {
+      value: "light"
+    }
+  }
 };
 
 export const DarkMode: Story = {
-  parameters: { forceTheme: "dark", backgrounds: { default: "dark" } },
+  parameters: {
+    forceTheme: "dark"
+  },
+
+  globals: {
+    backgrounds: {
+      value: "dark"
+    }
+  }
 };
