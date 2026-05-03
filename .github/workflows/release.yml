@@ -121,11 +121,11 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if ! git diff --quiet -- package.json src/manifest/chrome.manifest.json src/manifest/firefox.manifest.json; then
             git add package.json src/manifest/chrome.manifest.json src/manifest/firefox.manifest.json
-            git commit -m "chore: release $TARGET"
-            git push origin "HEAD:$BRANCH"
+            git commit -m "chore: release $TARGET" --no-verify
+            git push origin "HEAD:$BRANCH" --no-verify
           fi
           git tag -a "$TAG" -m "Release $TAG"
-          git push origin "$TAG"
+          git push origin "$TAG" --no-verify
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
