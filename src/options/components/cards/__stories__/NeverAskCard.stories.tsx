@@ -15,17 +15,25 @@ const meta: Meta<typeof NeverAskCard> = {
   component: NeverAskCard,
   tags: ["autodocs"],
   parameters: { layout: "padded" },
-  args: { onRemove: fn() },
+  args: {
+    profileDirectoryUsernames: [],
+    onAdd: fn(),
+    onRemove: fn(),
+    onRemoveFromDirectories: fn(),
+  },
   render: (args) => {
     const [entries, setEntries] = useState(args.entries);
     return (
       <div class="max-w-3xl mx-auto">
         <NeverAskCard
           entries={entries}
+          profileDirectoryUsernames={args.profileDirectoryUsernames}
+          onAdd={args.onAdd}
           onRemove={async (username) => {
             setEntries(entries.filter((e) => e.username !== username));
             await args.onRemove(username);
           }}
+          onRemoveFromDirectories={args.onRemoveFromDirectories}
         />
       </div>
     );

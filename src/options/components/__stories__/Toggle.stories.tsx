@@ -59,7 +59,7 @@ export const Toggles: Story = {
     await userEvent.click(label);
     await expect(args.onChange).toHaveBeenCalledWith(true);
 
-    const resetBtn = canvas.getByRole("button", { name: /reset .* to default/i });
+    const resetBtn = canvas.getByRole("button", { name: /reset to default/i });
     await userEvent.click(resetBtn);
     await expect(args.onChange).toHaveBeenLastCalledWith(false);
   },

@@ -39,7 +39,7 @@ describe("ImportExportCard", () => {
   describe("export", () => {
     it("serializes the current settings as JSON and triggers a download", async () => {
       const onExport = vi.fn(async () => settings({ theme: "dark" }));
-      render(<ImportExportCard onExport={onExport} onImport={vi.fn()} />);
+      render(<ImportExportCard onExport={onExport} onImport={vi.fn()} onReset={vi.fn()} />);
 
       fireEvent.click(screen.getByRole("button", { name: /export settings/i }));
 
@@ -58,7 +58,7 @@ describe("ImportExportCard", () => {
 
     it("uses an .json filename containing the igdl-settings prefix", async () => {
       const onExport = vi.fn(async () => settings());
-      render(<ImportExportCard onExport={onExport} onImport={vi.fn()} />);
+      render(<ImportExportCard onExport={onExport} onImport={vi.fn()} onReset={vi.fn()} />);
 
       // Capture the anchor at click time so we can read its `download` attr.
       let anchorDownload: string | undefined;
@@ -76,7 +76,7 @@ describe("ImportExportCard", () => {
   describe("import", () => {
     it("parses a valid file and forwards every recognized key to onImport", async () => {
       const onImport = vi.fn(async () => undefined);
-      render(<ImportExportCard onExport={vi.fn()} onImport={onImport} />);
+      render(<ImportExportCard onExport={vi.fn()} onImport={onImport} onReset={vi.fn()} />);
 
       const input = screen.getByTestId("import-settings-file") as HTMLInputElement;
       const payload = JSON.stringify({
@@ -97,7 +97,7 @@ describe("ImportExportCard", () => {
 
     it("silently fails (logs only) when the file is not valid JSON", async () => {
       const onImport = vi.fn();
-      render(<ImportExportCard onExport={vi.fn()} onImport={onImport} />);
+      render(<ImportExportCard onExport={vi.fn()} onImport={onImport} onReset={vi.fn()} />);
 
       const input = screen.getByTestId("import-settings-file") as HTMLInputElement;
       selectFile(input, "{not valid json");
@@ -109,7 +109,7 @@ describe("ImportExportCard", () => {
 
     it("silently fails when the JSON root is not an object", async () => {
       const onImport = vi.fn();
-      render(<ImportExportCard onExport={vi.fn()} onImport={onImport} />);
+      render(<ImportExportCard onExport={vi.fn()} onImport={onImport} onReset={vi.fn()} />);
 
       const input = screen.getByTestId("import-settings-file") as HTMLInputElement;
       selectFile(input, JSON.stringify(["theme", "dark"]));
@@ -121,7 +121,7 @@ describe("ImportExportCard", () => {
 
     it("drops unrecognized keys, logs them, and forwards the rest", async () => {
       const onImport = vi.fn(async () => undefined);
-      render(<ImportExportCard onExport={vi.fn()} onImport={onImport} />);
+      render(<ImportExportCard onExport={vi.fn()} onImport={onImport} onReset={vi.fn()} />);
 
       const input = screen.getByTestId("import-settings-file") as HTMLInputElement;
       const payload = JSON.stringify({
@@ -135,7 +135,7 @@ describe("ImportExportCard", () => {
       expect(onImport).toHaveBeenCalledWith({ theme: "dark" });
 
       // Check we logged the unknown key list
-      const dropCall = warnSpy.mock.calls.find((c) =>
+      const dropCall = warnSpy.mock.calls.find((c: unknown[]) =>
         typeof c[0] === "string" && /unrecognized/i.test(c[0]),
       );
       expect(dropCall).toBeTruthy();
@@ -144,7 +144,7 @@ describe("ImportExportCard", () => {
 
     it("does nothing when the file picker is dismissed without a selection", async () => {
       const onImport = vi.fn();
-      render(<ImportExportCard onExport={vi.fn()} onImport={onImport} />);
+      render(<ImportExportCard onExport={vi.fn()} onImport={onImport} onReset={vi.fn()} />);
 
       const input = screen.getByTestId("import-settings-file") as HTMLInputElement;
       Object.defineProperty(input, "files", { value: [], configurable: true });
