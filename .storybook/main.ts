@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 import type { StorybookConfig } from "@storybook/preact-vite";
 
 const config: StorybookConfig = {
-  stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
+  stories: ["../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
   addons: [
     "@chromatic-com/storybook",
     "@storybook/addon-vitest",
@@ -16,7 +16,9 @@ const config: StorybookConfig = {
   },
   viteFinal(config) {
     const req = createRequire(import.meta.url);
-    const shimDir = dirname(req.resolve("@storybook/react-dom-shim/package.json"));
+    const shimDir = dirname(
+      req.resolve("@storybook/react-dom-shim/package.json"),
+    );
     const absoluteReact16 = `${shimDir}/dist/react-16.js`;
     const NON_ABSOLUTE = "@storybook/react-dom-shim/react-16";
 
@@ -29,11 +31,14 @@ const config: StorybookConfig = {
             (entry: { find: unknown; replacement: string }) =>
               entry.replacement === NON_ABSOLUTE
                 ? { ...entry, replacement: absoluteReact16 }
-                : entry
+                : entry,
           ),
         },
       };
-    } else if (config.resolve?.alias && typeof config.resolve.alias === "object") {
+    } else if (
+      config.resolve?.alias &&
+      typeof config.resolve.alias === "object"
+    ) {
       const alias = { ...config.resolve.alias } as Record<string, string>;
       if (alias["@storybook/react-dom-shim"] === NON_ABSOLUTE) {
         alias["@storybook/react-dom-shim"] = absoluteReact16;
@@ -42,7 +47,7 @@ const config: StorybookConfig = {
     }
 
     const include = config.optimizeDeps?.include?.filter(
-      (dep: string) => dep !== "@storybook/react-dom-shim"
+      (dep: string) => dep !== "@storybook/react-dom-shim",
     );
     return { ...config, optimizeDeps: { ...config.optimizeDeps, include } };
   },

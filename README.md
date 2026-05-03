@@ -7,7 +7,9 @@
 Chrome and Firefox extension that adds a download button to [Instagram](https://www.instagram.com).
 
 <p align="center">
-  <img src="docs/instagram_post_mockup.svg" width="auto" height="600" alt="igdl" />
+  <a href="#igdl">
+    <img src="docs/instagram_post_mockup.svg" width="auto" height="600" alt="igdl" />
+  </a>
 </p>
 
 - **Download** posts, reels, stories, highlights, and carousels.

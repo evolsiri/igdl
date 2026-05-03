@@ -50,6 +50,15 @@ Violating any of these will fail review:
   belong in commit messages, PR descriptions, or comments next to the code.
   No ADR directory.
 
+## Project README contract
+
+The top-level `README.md` is the product's storefront, not a contributor
+doc. Voice, audience, scope, and smell-tests are defined in
+[`docs/project-readme.md`](./docs/project-readme.md). Accuracy of links
+and structural coverage stays with `documentation-reviewer`; this rule
+covers tone and what-belongs-where only. Applies only to `/README.md` —
+`docs/README.md` and per-service docs are out of scope.
+
 ## Design system
 
 `src/stories/DesignSystem.stories.tsx` is the source of truth for tokens,

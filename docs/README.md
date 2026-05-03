@@ -13,6 +13,7 @@ If you're a user looking to install the extension, read the root [`../README.md`
 - [**design-system.md**](./design-system.md) — index pointing at the Storybook design-system story (the source of truth).
 - [**development.md**](./development.md) — getting set up, common commands, sideload steps.
 - [**download-flow.md**](./download-flow.md) — the click-to-file trace from user click to `chrome.downloads.download`.
+- [**project-readme.md**](./project-readme.md) — voice & scope rule for the project root `README.md`.
 
 ## Services
 
