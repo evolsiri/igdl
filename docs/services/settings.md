@@ -60,8 +60,8 @@ The schema lives in `src/services/settings/schema.ts`:
 
 ## Call sites
 
-- `src/background/chrome.ts:11` — singleton instantiation.
-- `src/background/shared/downloads.ts:22` — `get()` and `incrementDownload()` per download.
+- `src/background/chrome.ts` — singleton instantiation.
+- `src/background/shared/downloads.ts` — `get()` and `incrementDownload()` per download (`handleDownloadMedia`).
 - `src/options/components/cards/*` — every options-page card reads via `subscribe()` and writes via `patch` / `addProfile` / etc.
 - `src/content/extractors/storage.ts` — content-script projection that mirrors the blob into a synchronous `storageCache` for click handlers.
 - `src/content/flow/download.tsx` — `addProfile` / `addNeverAsk` from the no-directory popup.

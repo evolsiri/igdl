@@ -63,10 +63,10 @@ covers tone and what-belongs-where only. Applies only to `/README.md` —
 
 `src/stories/DesignSystem.stories.tsx` is the source of truth for tokens,
 motion, typography, and the component inventory. New tokens / components
-must update the matching array (`OPTIONS_COLOR_GROUPS`,
-`CONTENT_TOKEN_DESCRIPTIONS`, `RADII`, `TYPE_SCALE`, `SPACING`,
-`COMPONENT_GROUPS`) in the same PR. Brand colors `#a8f368` (accent /
-success) and `#f9035e` (destructive) are fixed across themes.
+must update the matching array in the story in the same PR. The canonical
+token values live in `src/index.css` (options page) and
+`src/content/tokens.ts` (injected UI); see [`docs/design-system.md`](./docs/design-system.md)
+for the contract.
 
 ## Subagent routing
 

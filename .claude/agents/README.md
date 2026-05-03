@@ -2,7 +2,7 @@
 
 Canonical map of which agent owns which paths in the `igdl` repo, and how reviews compose. The eight agents in `.claude/agents/*.md` carry their own briefs and escalation rules; this file is the bird's-eye view that a contributor (or any agent) can open to answer **"who has to APPROVE a diff to this path?"**
 
-This file is canonical. Per-agent `## Codeownership` sections are local restatements; if the two ever disagree, this file wins. [`claude-config-reviewer`](./claude-config-reviewer.md) audits drift between the two on every change to `.claude/`.
+This file is canonical. Per-agent `## Codeownership` sections are local restatements; if the two ever disagree, this file wins. [`claude-config-reviewer`](./claude-config-reviewer.md) audits drift between the two on every change to `.claude/` (see its "Cross-artifact consistency" check).
 
 ## What this is not
 
@@ -100,7 +100,7 @@ A diff that touches a co-owned path needs **both** agents to APPROVE before `cod
    └────────────────┘ └──────────────┘ └──────────┘ └───────────────────┘ └────────────────────┘
 ```
 
-On a non-trivial diff, run the relevant specialists in parallel (single message, multiple tool calls), then `code-reviewer`. On a release-candidate diff, run `code-reviewer` + `ux-reviewer` + `documentation-reviewer` + `extension-auditor` in parallel — a release passes all four (`extension-auditor.md:174-176`).
+On a non-trivial diff, run the relevant specialists in parallel (single message, multiple tool calls), then `code-reviewer`. On a release-candidate diff, run `code-reviewer` + `ux-reviewer` + `documentation-reviewer` + `extension-auditor` in parallel — a release passes all four (see `extension-auditor.md` "Rules").
 
 ## Hand-off graph
 
@@ -135,23 +135,7 @@ claude-config-reviewer   → file's original author for fixes; tooling-gap findi
 
 ## Concern → agent table
 
-The summary in [`CLAUDE.md`](../../CLAUDE.md), repeated here in full and complete:
-
-| Concern | Agent |
-| --- | --- |
-| Five-axis review + igdl invariants | `code-reviewer` |
-| Visual / interaction / design-system parity | `ux-reviewer` |
-| Docs coverage + TSDoc | `documentation-reviewer` |
-| MV3 manifest, SW lifecycle, Chrome/Firefox parity | `extension-auditor` |
-| Scaffold a new service or component | `service-implementer` |
-| Instagram DOM / selector / XHR-bridge fixes | `instagram-dom-engineer` |
-| Release: version bump, sign, tag | `release-engineer` |
-| `.claude/` config / agent-file drift | `claude-config-reviewer` |
-| WCAG / screen-reader audit | `voltagent-qa-sec:accessibility-tester` |
-| Threat-modeling / supply-chain audit | `voltagent-qa-sec:security-auditor` |
-| Runtime verification (Chrome / Firefox) | `chrome-devtools-mcp:chrome-devtools` |
-| Codebase exploration | `Explore` |
-| Implementation planning | `Plan` |
+For the concern-keyed summary (which agent handles which kind of work), see [`CLAUDE.md`](../../CLAUDE.md) "Subagent routing". This README owns the path-keyed map above; `CLAUDE.md` owns the concern-keyed one.
 
 ## Dev workflow
 

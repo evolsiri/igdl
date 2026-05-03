@@ -1,6 +1,6 @@
 # Project README — Voice & Scope
 
-## 1. Project README — Voice & Scope
+## 1. Scope
 
 This file governs the **top-level `/README.md` only.** Not `docs/README.md`, not per-service docs, not component doc-blocks. The project README is the product's storefront on GitHub — a potential user reads it for under thirty seconds before deciding whether to install. It is not a manual, not an architecture overview, and not a place for contributor instructions.
 

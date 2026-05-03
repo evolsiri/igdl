@@ -14,7 +14,7 @@ How igdl turns a page load on Instagram or Threads into an injected download but
 - `https://www.instagram.com` → runs the Instagram surface dispatch.
 - Anything else → no-op (the manifests gate this, but the runtime check is a defensive backstop).
 
-`init()` (`src/content/index.ts:278`) does three things on load:
+`init()` in `src/content/index.ts` does three things on load:
 1. `initStorageCache()` — pre-warms the settings cache the click handlers read synchronously.
 2. `prewarmModalMount()` — creates a Shadow DOM mount eagerly so the no-directory popup has zero perceived latency.
 3. Wires `window.addEventListener("message", …)` for the XHR-snapshot bridge (see below) and global `click` + `contextmenu` listeners for the button delegator.
@@ -55,7 +55,7 @@ That's the whole route-detection mechanism: 2 s burst for the first 10 s, then 3
 | Carousel ZIP | wherever a carousel is detected | `handlers/zip.ts` | A second "download as zip" button next to the standard one. |
 | Threads | any threads.com path | `threads/index.ts` + `threads/post.ts` | Download button on each `data-pagelet`. |
 
-The button class is `igdl-custom-btn` (`button.ts:CLASS_CUSTOM_BUTTON`). Clicks bubble up to the document-level delegator in `src/content/index.ts:266`, which calls `onClickHandler()` and routes through the download flow at `src/content/flow/download.tsx` — see `download-flow.md`.
+The button class is `igdl-custom-btn` (`button.ts:CLASS_CUSTOM_BUTTON`). Clicks bubble up to the document-level delegator in `src/content/index.ts`, which calls `onClickHandler()` and routes through the download flow at `src/content/flow/download.tsx` — see `download-flow.md`.
 
 ## Extractors
 

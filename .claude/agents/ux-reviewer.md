@@ -26,10 +26,11 @@ for tokens, motion, typography, and the component inventory.
   (`OPTIONS_COLOR_GROUPS`, `CONTENT_TOKEN_DESCRIPTIONS`, `RADII`,
   `TYPE_SCALE`, `SPACING`, `COMPONENT_GROUPS`) of
   `src/stories/DesignSystem.stories.tsx`. Missing sync is REQUEST CHANGES.
-- Brand contrast. Brand-green (`#a8f368`) pairs with black text (~15.7:1).
-  Brand-pink (`#f9035e`) pairs with white. New fills using these tokens
+- Brand contrast. `--color-brand-green` pairs with black text (~15.7:1).
+  `--color-brand-pink` pairs with white. New fills using these tokens
   inherit those pairings; new fills introduce new tokens that must clear
-  reasonable contrast.
+  reasonable contrast. Literal token values live in `src/index.css` and
+  `src/content/tokens.ts`.
 - Layout. The options page is a single-column stack — Downloads → Profile
   Directories → Never-Ask → Appearance → Import/Export. No multi-column
   layouts. No reordering without an explicit task. (The Reset action is a

@@ -22,7 +22,7 @@ Two surfaces, two source files:
 - **Zero border-radius** on every UI element. SVG `rx` and SVG primitives like `<circle>` are the only opt-out (used for brand glyphs and the round logo). Every `border-radius` rule resolves to `0`.
 - **Dark-first.** OS preference defaults the theme; the user can force light or dark on the options page. Injected UI is always dark.
 - **CSS transitions only.** Use `--duration-hover` / `--duration-focus` + `--ease-out-swift`. No JS animation libraries.
-- **Brand alignment.** `--color-brand-green` (`#a8f368`) is the accent / success / focus ring and pairs with black for ~15.7:1 (AAA). `--color-brand-pink` (`#f9035e`) is the destructive / error fill and pairs with white. Both stay constant across themes — they're identity, not surface.
+- **Brand alignment.** `--color-brand-green` is the accent / success / focus ring and pairs with black for ~15.7:1 (AAA). `--color-brand-pink` is the destructive / error fill and pairs with white. Both stay constant across themes — they're identity, not surface. Literal values live in `src/index.css` and `src/content/tokens.ts`.
 
 ## Adding a token, colour, or component
 

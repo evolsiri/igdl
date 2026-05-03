@@ -43,4 +43,4 @@ None.
 
 - The toast stack lives in a Shadow DOM via `createShadowMount()` — no Tailwind classes, no Instagram CSS leaks. See `../content-script.md`.
 - Toast component styling (colours, spacing, animation) lives in `src/content/toasts/Toast.tsx` and reads from `src/content/tokens.ts`. Adding a new toast kind means extending `ToastKind` plus adding a token row.
-- Brand colours are load-bearing: success uses `--color-brand-green` (`#a8f368`); failure uses `--color-brand-pink` (`#f9035e`).
+- Brand colours are load-bearing: success uses `--color-brand-green`; failure uses `--color-brand-pink`. Literals are defined in `src/content/tokens.ts`.
