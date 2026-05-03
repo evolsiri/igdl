@@ -44,7 +44,7 @@ To update: download the new `.xpi` and install it the same way.
 
 ## How to use it
 
-Once installed, just visit Instagram or Threads. A download button appears next to the like icon on every post, reel, story, highlight, and profile. Click it. The first time you save from a given profile, igdl asks where to put the files; after that it remembers.
+Once installed, just visit Instagram or Threads. A download button appears next to the like icon on every post, reel, story, highlight, and profile. Click it to save, or right-click for your browser's Save As dialog. An optional second button opens the media in a new tab instead of downloading it. The first time you save from a given profile, igdl asks where to put the files; after that it remembers.
 
 ### Per-profile folders
 
@@ -76,9 +76,9 @@ Multi-image posts get a second download button that bundles every item into a si
 
 For profiles where you'd rather always pick the destination yourself, add them to the **Never-Ask Profiles** list. igdl will skip the folder prompt and let your browser's regular Save dialog handle it.
 
-### Theme
+### Backing up your settings
 
-The settings page follows your operating system's light/dark preference by default; you can force one or the other. The on-page download button and popups always use a dark palette so they look right on Instagram regardless of theme.
+Under **Settings** in the options page you can export everything — your profile directories, filename template, and preferences — to a `.json` file. Import it again any time to restore, such as after reinstalling the browser or switching machines.
 
 ## Privacy
 
