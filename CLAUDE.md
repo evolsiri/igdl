@@ -1,104 +1,81 @@
 # igdl
 
-Chrome + Firefox MV3 browser extension (Preact + TypeScript + Tailwind v4) that downloads Instagram/Threads media with per-profile directory routing. Heavily inspired by [TheKonka/instagram-download-browser-extension](https://github.com/TheKonka/instagram-download-browser-extension).
+Chrome + Firefox MV3 extension that adds a download button to Instagram and
+Threads with per-profile directory routing. Preact + TypeScript + Tailwind v4.
 
-## Stack
+For everything beyond the rules below, the code is canonical and `docs/` is
+the map. Start at `docs/architecture.md`, then `docs/code-style-guide.md`.
 
-- **Language**: TypeScript, strict mode.
-- **UI**: Preact only — never React. JSX via `/** @jsxImportSource preact */`.
-- **Styling**: Tailwind v4 via `@tailwindcss/vite`. No other CSS framework. Theme tokens as CSS variables in `src/index.css`.
-- **Tests**: Vitest + `@testing-library/preact`.
-- **Build**: Vite (multi-entry: options, content, background, inject).
-- **Package manager**: pnpm — never npm or yarn.
+## Hard rules
 
-## Commands
+Violating any of these will fail review:
 
-- `pnpm run dev`
-- `pnpm run lint` (zero warnings required)
-- `pnpm run test`
-- `pnpm run build:chrome`
-- `pnpm run build:firefox`
-- `pnpm run build` (both)
+- **Preact, not React.** JSX uses `/** @jsxImportSource preact */`; hooks come
+  from `preact/hooks`. Importing `react` is a lint error.
+- **pnpm only.** Never npm or yarn.
+- **Zero border-radius** on every UI element (options page + injected modals
+  + toasts). Enforced by the global reset in `src/index.css`. SVG `rx` on
+  brand glyphs is the sanctioned opt-out.
+- **CSS animations only.** No JS animation libraries.
+- **Storage is owned by `src/services/settings/storage.ts`.** Every consumer
+  goes through the `KvStorage` adapter. `SettingsService` and
+  `MediaCacheService` are the only two clients.
+- **Downloads are owned by `src/background/shared/downloads.ts`.** Content
+  scripts and the options page send `DOWNLOAD_MEDIA` via `DownloadService`.
+  The carousel ZIP path (`src/services/zip/`, anchor-click on a blob) is the
+  one deliberate exception.
+- **Cross-context messaging goes through `src/utils/messages.ts`** (sender)
+  and `src/background/shared/router.ts` (receiver), typed against the union
+  in `src/types/messages.ts`. Never raw `chrome.runtime.sendMessage`. Never
+  throw across the boundary — surface failures as `{ ok: false, error }`.
+- **All injected UI mounts in a Shadow DOM** via `createShadowMount()`
+  (`src/content/modals/mount.ts`). Tailwind does not reach the shadow root;
+  injected components style themselves from `src/content/tokens.ts`.
+- **No `innerHTML` on Instagram-derived content. No `eval`, no `Function(…)`,
+  no dynamic `<script>` insertion.**
+- **Manifest parity.** `src/manifest/chrome.manifest.json` and
+  `firefox.manifest.json` stay in lockstep modulo browser-specific keys.
+  Host permissions are `instagram.com` + `threads.com` only. The Firefox
+  manifest silently drops content-script injection if Chrome-only keys leak
+  in — see `docs/architecture.md` and `docs/development.md`.
 
-## Non-negotiable styling rules
+## Docs + TSDoc contract
 
-- **Zero border-radius** on every element in all extension UI (options page + injected modals + toasts). Enforced via a global reset.
-- **Dark-first** palette. Accent / success: brand-green (#a8f368, pairs with black text for ~15.7:1 AAA contrast — same hex as the square logo background). Destructive / error / failure: brand-pink (#f9035e, pairs with white text). Default to dark when `prefers-color-scheme: dark`.
-- Animations are **CSS transitions only** — no JS animation libraries. Trigger on `:hover`, `:focus`, `:focus-visible`, `:active`, or stateful class changes.
-- Theme switching toggles a single root class; never re-renders the tree for theme changes.
+- Every service in `src/services/<name>/` has `docs/services/<name>.md`.
+- Every public service method has a TSDoc block stating what it does plus at
+  least one runnable `@example`.
+- Component documentation lives as a TSDoc-style doc block **above the
+  component in its `.tsx` file** — there is no `docs/components/` directory.
+- `docs/README.md` indexes everything in `docs/`. Architectural decisions
+  belong in commit messages, PR descriptions, or comments next to the code.
+  No ADR directory.
 
-## Architecture invariants
+## Design system
 
-- Content scripts **never** call `chrome.downloads.*` directly. They send typed messages to the background worker, which owns all download invocation.
-- **All injected UI** (modals, toasts, anything content-script-rendered) mounts inside a **Shadow DOM** so Tailwind styles don't leak into Instagram and Instagram styles don't leak in.
-- **All storage access** (read + write) goes through `SettingsService`. Direct `chrome.storage.*` calls outside `src/services/settings/` are prohibited.
-- `ThemeService` toggles a root class only; it persists via `SettingsService`, never direct storage.
-- Messages between content ↔ background are typed via the union in `src/types/messages.ts`. Send them via the wrapper in `src/utils/messages.ts`, not raw `chrome.runtime.sendMessage`.
-
-## File layout
-
-- **Preact components (options page)**: `src/options/components/` (cards under `cards/`, modals under `modals/`).
-- **Preact components (injected)**: `src/content/modals/` and `src/content/toasts/`.
-- **Utilities**: `src/utils/`.
-- **Services**: `src/services/<name>/<name>.ts` — lowercase/kebab folder, primary entry file named to match the folder (no `index.ts` barrels). Tests co-located in `src/services/<name>/__tests__/<name>.spec.ts(x)`. See `docs/code-style-guide.md`.
-- **Types**: `src/types/`.
-- **Manifests**: `src/manifest/chrome.manifest.json` and `src/manifest/firefox.manifest.json`.
-
-## Docs contract
-
-- Every service in `src/services/*` has a matching `docs/services/<name>.md` (same lowercase/kebab name as the service folder).
-- Component documentation lives in the component file itself as a doc block above the component — not in a separate file.
-- No ADRs. Architectural decisions belong in commit messages, PR descriptions, or comments in the relevant code.
-- `docs/README.md` is the index; keep it synced.
-- `docs/architecture.md` describes module boundaries, message flow, and storage flow.
-- `docs/design-system.md` indexes the design system. Source of truth is the `Design System/*` Storybook story at `src/stories/DesignSystem.stories.tsx` — any new colour token, motion value, typography size, or component must update the story's corresponding array in the same PR.
-
-## TSDoc contract
-
-Every public service method needs a TSDoc block stating:
-
-1. What it does.
-2. How it's used, with at least one example.
-
-## Manifest rules (MV3)
-
-- Both `chrome.manifest.json` and `firefox.manifest.json` stay in lockstep.
-- Host permissions: `https://www.instagram.com/*` and `https://www.threads.com/*` only.
-- Permissions: `storage`, `unlimitedStorage`, `downloads`, `scripting` (+ `contextMenus` if used).
-- `action.default_popup` is **not** set; toolbar icon opens `options.html` via `chrome.runtime.openOptionsPage()`.
-- `options_page: "options.html"`.
-
-## Filename + download defaults
-
-- Template: `{username}-{id}-{datetime}`.
-- Datetime: `YYYYMMDD_HHmmss`.
-- `.jpeg` → `.jpg` replacement on.
-- Carousel indexing on.
-- Downloads are relative to the browser's Downloads folder; a global "Always prompt Save As" toggle overrides.
-
-## Reference extension
-
-Source for parity behavior + selectors: `https://github.com/TheKonka/instagram-download-browser-extension`. Port handlers directly but route all downloads through `DownloadService` + the background worker.
+`src/stories/DesignSystem.stories.tsx` is the source of truth for tokens,
+motion, typography, and the component inventory. New tokens / components
+must update the matching array (`OPTIONS_COLOR_GROUPS`,
+`CONTENT_TOKEN_DESCRIPTIONS`, `RADII`, `TYPE_SCALE`, `SPACING`,
+`COMPONENT_GROUPS`) in the same PR. Brand colors `#a8f368` (accent /
+success) and `#f9035e` (destructive) are fixed across themes.
 
 ## Subagent routing
 
-When a task crosses domains, delegate to the right specialist rather than doing it all in the main session. Prefer the project-local agent when it overlaps a global one — it knows igdl invariants.
+| Concern                                           | Agent                                        |
+| ------------------------------------------------- | -------------------------------------------- |
+| Five-axis review + igdl invariants                | `code-reviewer`                              |
+| Visual / interaction / design-system parity       | `ux-reviewer`                                |
+| Docs coverage + TSDoc                             | `documentation-reviewer`                     |
+| MV3 manifest, SW lifecycle, Chrome/Firefox parity | `extension-auditor`                          |
+| Scaffold a new service or component               | `service-implementer`                        |
+| Instagram DOM / selector / XHR-bridge fixes       | `instagram-dom-engineer`                     |
+| Release: version bump, sign, tag                  | `release-engineer`                           |
+| WCAG / screen-reader audit                        | `voltagent-qa-sec:accessibility-tester`      |
+| Threat-modeling / supply-chain audit              | `voltagent-qa-sec:security-auditor`          |
+| Runtime verification (Chrome / Firefox)           | `chrome-devtools-mcp:chrome-devtools`        |
+| Codebase exploration                              | `Explore`                                    |
+| Implementation planning                           | `Plan`                                       |
 
-| Concern                                        | Agent                                        |
-| ---------------------------------------------- | -------------------------------------------- |
-| General code review (5-axis + igdl invariants) | `code-reviewer` (project-local)              |
-| Visual + interaction design                    | `ux-reviewer` (project-local)                |
-| Docs coverage + TSDoc                          | `documentation-reviewer` (project-local)     |
-| MV3 + Chrome/Firefox parity                    | `extension-auditor` (project-local)          |
-| WCAG / keyboard / screen-reader a11y           | `voltagent-qa-sec:accessibility-tester`      |
-| Deep security audit                            | `voltagent-qa-sec:security-auditor`          |
-| Perf profiling + bottleneck analysis           | `voltagent-qa-sec:performance-engineer`      |
-| TDD workflow                                   | `agent-skills:test`                          |
-| Test framework + CI integration                | `voltagent-qa-sec:test-automator`            |
-| Advanced TypeScript                            | `voltagent-lang:typescript-pro`              |
-| Preact / component patterns                    | `voltagent-lang:react-specialist`            |
-| Browser debugging + DOM inspection             | `agent-skills:browser-testing-with-devtools` |
-| Codebase exploration                           | `Explore` agent                              |
-| Implementation planning                        | `Plan` agent                                 |
-
-The four project-local reviewers compose. On a meaty diff, run `code-reviewer`, `ux-reviewer`, `documentation-reviewer`, and `extension-auditor` in parallel (single message, multiple tool calls) rather than sequentially — their scopes don't overlap.
+The four reviewers compose: on a non-trivial diff, run them in parallel
+(single message, multiple tool calls). The three implementers are
+single-purpose — pick one, then run the relevant reviewers afterward.
