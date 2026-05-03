@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { AddProfileInput, UpdateProfileInput } from "../../../services/settings/settings";
 import type {
+  NeverAskEntry,
   ProfileDirEntry,
   ProfileDirectoriesSort,
   ProfileDirectoriesSortKey,
@@ -19,11 +20,14 @@ import { sortProfiles } from "./profileSort";
 export interface ProfileDirectoriesCardProps {
   profiles: ProfileDirEntry[];
   defaultDirectory: string;
+  prefix: string;
+  neverAskProfiles: NeverAskEntry[];
   sort: ProfileDirectoriesSort;
   onAdd: (input: AddProfileInput) => Promise<ProfileDirEntry>;
   onUpdate: (username: string, fields: UpdateProfileInput) => Promise<ProfileDirEntry>;
   onDelete: (username: string) => Promise<void>;
   onSortChange: (sort: ProfileDirectoriesSort) => void;
+  onRemoveNeverAsk: (username: string) => Promise<void> | void;
 }
 
 type EditField = "username" | "directory";
@@ -36,16 +40,20 @@ interface EditingState {
 export function ProfileDirectoriesCard({
   profiles,
   defaultDirectory,
+  prefix,
+  neverAskProfiles,
   sort,
   onAdd,
   onUpdate,
   onDelete,
   onSortChange,
+  onRemoveNeverAsk,
 }: ProfileDirectoriesCardProps) {
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [neverAskConflict, setNeverAskConflict] = useState<AddProfileInput | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(
@@ -96,8 +104,26 @@ export function ProfileDirectoriesCard({
   }
 
   async function handleAdd(input: AddProfileInput): Promise<void> {
+    const normalized = input.username.trim().toLowerCase();
+    if (neverAskProfiles.some((e) => e.username === normalized)) {
+      setShowAdd(false);
+      setNeverAskConflict({ ...input, username: normalized });
+      return;
+    }
     await onAdd(input);
     setShowAdd(false);
+  }
+
+  async function handleConfirmNeverAskConflict(): Promise<void> {
+    if (!neverAskConflict) return;
+    const input = neverAskConflict;
+    setNeverAskConflict(null);
+    try {
+      await onAdd(input);
+      await onRemoveNeverAsk(input.username);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
   }
 
   async function handleDelete(): Promise<void> {
@@ -122,10 +148,11 @@ export function ProfileDirectoriesCard({
   return (
     <Card
       title="Profile Download Directories"
-      subtitle="Per-profile destination folders. Click a cell to edit — Enter saves, Esc reverts."
+      subtitle="Per-profile download destination folders."
       action={addButton}
       id="profile-directories"
       testId="profile-directories-card"
+      collapsible={true}
     >
       {profiles.length > 0 && (
         <SearchInput
@@ -176,26 +203,7 @@ export function ProfileDirectoriesCard({
                   activeDirection={sort.direction}
                   onSort={handleSort}
                   onClear={handleClearSort}
-                  thClass="w-[38%]"
-                />
-                <SortableTableHeader
-                  label="#"
-                  sortKey="downloadCount"
-                  activeSortKey={sort.key}
-                  activeDirection={sort.direction}
-                  onSort={handleSort}
-                  onClear={handleClearSort}
-                  thClass="text-right w-[6%]"
-                  align="right"
-                />
-                <SortableTableHeader
-                  label="Last download"
-                  sortKey="lastDownloadAt"
-                  activeSortKey={sort.key}
-                  activeDirection={sort.direction}
-                  onSort={handleSort}
-                  onClear={handleClearSort}
-                  thClass="w-[12%]"
+                  thClass="w-[56%]"
                 />
                 <SortableTableHeader
                   label="Added on"
@@ -231,7 +239,7 @@ export function ProfileDirectoriesCard({
 
       <AddProfileModal
         open={showAdd}
-        initialDirectory={`${defaultDirectory}/`}
+        initialDirectory={`${prefix || defaultDirectory}/`}
         onSubmit={handleAdd}
         onCancel={() => setShowAdd(false)}
       />
@@ -239,12 +247,22 @@ export function ProfileDirectoriesCard({
       <ConfirmDialog
         open={confirmDelete !== null}
         title={`Delete ${confirmDelete ?? ""}?`}
-        message="Removes the per-profile directory. Future downloads from this profile will use the default directory instead."
+        message="Removes the saved directory for this profile. The next time you download from this profile, igdl will ask where to save."
         confirmLabel="Delete"
         cancelLabel="Cancel"
         destructive
         onConfirm={handleDelete}
         onCancel={() => setConfirmDelete(null)}
+      />
+
+      <ConfirmDialog
+        open={neverAskConflict !== null}
+        title={`Add @${neverAskConflict?.username ?? ""} to profile directories?`}
+        message={`@${neverAskConflict?.username ?? ""} is on the Never-Ask list, which routes their downloads straight to your browser's Save As dialog. A profile can't follow both rules at once — a custom directory takes priority and makes the never-ask rule unreachable. Confirming will remove @${neverAskConflict?.username ?? ""} from the Never-Ask list.`}
+        confirmLabel="Add profile"
+        cancelLabel="Cancel"
+        onConfirm={handleConfirmNeverAskConflict}
+        onCancel={() => setNeverAskConflict(null)}
       />
     </Card>
   );
@@ -349,13 +367,6 @@ function ProfileRow({
             {row.directory || <span class="italic">not set</span>}
           </button>
         )}
-      </td>
-      <td class="py-3 px-3 align-middle text-right text-muted">{row.downloadCount}</td>
-      <td
-        class="py-3 px-3 align-middle text-xs text-muted whitespace-nowrap overflow-hidden text-ellipsis"
-        title={formatShortDate(row.lastDownloadAt)}
-      >
-        {formatRelativeDate(row.lastDownloadAt)}
       </td>
       <td
         class="py-3 px-3 align-middle text-xs text-muted whitespace-nowrap overflow-hidden text-ellipsis"

@@ -2,6 +2,7 @@ import { useRef, useState } from "preact/hooks";
 import { SETTINGS_DEFAULTS } from "../../../services/settings/schema";
 import type { Settings } from "../../../types/settings";
 import { Card } from "../Card";
+import { ConfirmDialog } from "../ConfirmDialog";
 
 export interface ImportExportCardProps {
   /** Returns the current settings to be serialized. */
@@ -12,6 +13,8 @@ export interface ImportExportCardProps {
    * schema layer normalizes types and fills any missing fields with defaults.
    */
   onImport: (parsed: Record<string, unknown>) => Promise<void>;
+  /** Resets all settings and clears profile/never-ask lists. */
+  onReset: () => Promise<void> | void;
 }
 
 const KNOWN_SETTING_KEYS = new Set<string>(Object.keys(SETTINGS_DEFAULTS));
@@ -33,9 +36,10 @@ const KNOWN_SETTING_KEYS = new Set<string>(Object.keys(SETTINGS_DEFAULTS));
  * so the schema layer fills missing fields with defaults and coerces invalid
  * value types — the card does not perform per-field validation itself.
  */
-export function ImportExportCard({ onExport, onImport }: ImportExportCardProps) {
+export function ImportExportCard({ onExport, onImport, onReset }: ImportExportCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   async function handleExport() {
     setBusy(true);
@@ -100,6 +104,16 @@ export function ImportExportCard({ onExport, onImport }: ImportExportCardProps) 
     }
   }
 
+  async function handleConfirmReset() {
+    setBusy(true);
+    try {
+      await onReset();
+    } finally {
+      setBusy(false);
+      setConfirmReset(false);
+    }
+  }
+
   return (
     <Card
       title="Import / Export"
@@ -136,7 +150,32 @@ export function ImportExportCard({ onExport, onImport }: ImportExportCardProps) 
           tabIndex={-1}
           data-testid="import-settings-file"
         />
+        <button
+          type="button"
+          onClick={() => setConfirmReset(true)}
+          disabled={busy}
+          class="px-4 py-2 border border-destructive text-destructive hover:bg-destructive hover:text-destructive-contrast transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none"
+          data-testid="reset-all-settings"
+        >
+          Reset all settings
+        </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmReset}
+        title="Reset all settings?"
+        message={
+          <>
+            Every setting returns to its default. Profile directories, the never-ask list,
+            and cached download counts will be cleared. This cannot be undone.
+          </>
+        }
+        confirmLabel={busy ? "Resetting…" : "Reset everything"}
+        cancelLabel="Cancel"
+        destructive
+        onConfirm={handleConfirmReset}
+        onCancel={() => setConfirmReset(false)}
+      />
     </Card>
   );
 }

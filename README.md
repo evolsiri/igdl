@@ -1,6 +1,8 @@
-# igdl
+<p align="center">
+  <img src="public/logo.svg" width="96" height="96" alt="igdl" />
+</p>
 
-An Instagram and Threads media downloader extension for Chrome and Firefox, with per-profile download directories, a polished settings page, and more. Heavily inspired by [instagram-download-browser-extension](https://github.com/TheKonka/instagram-download-browser-extension).
+An Instagram and Threads media downloader extension for Chrome and Firefox, with per-profile download directories. Heavily inspired by [instagram-download-browser-extension](https://github.com/TheKonka/instagram-download-browser-extension).
 
 ## Browser extension
 
@@ -62,7 +64,7 @@ pnpm install
 | `pnpm run package:chrome`  | Zip `dist/chrome/` to `artifacts/igdl-chrome-<version>.zip` (Chrome Web Store upload) |
 | `pnpm run package:firefox` | `web-ext build` to `artifacts/igdl-firefox-<version>.zip` (Mozilla AMO upload)        |
 | `pnpm run sign:firefox`    | Sign `dist/firefox/` via the AMO API to `artifacts/igdl-firefox-<version>.xpi`        |
-| `pnpm run rc:firefox`      | End-to-end Firefox release candidate: bump version → build → package → sign → tag    |
+| `pnpm run rc:firefox`      | End-to-end Firefox release candidate: bump version → build → package → sign → tag     |
 | `pnpm run preview`         | Vite preview server                                                                   |
 | `pnpm run lint`            | ESLint (zero warnings required)                                                       |
 | `pnpm run test`            | Vitest headless                                                                       |
@@ -105,7 +107,7 @@ This builds `dist/firefox/` and copies it to `C:\temp\igdl-ext\` on every `src/`
 
 ### Docs
 
-Deeper documentation lives under [`docs/`](./docs/).
+Technical documentation lives under [`docs/`](./docs/).
 
 ## License
 

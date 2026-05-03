@@ -1,3 +1,4 @@
+import type { ComponentChildren } from "preact";
 import { useId } from "preact/hooks";
 import { ResetButton } from "./ResetButton";
 
@@ -10,6 +11,12 @@ export interface ToggleProps {
   /** When defined, a per-row reset button is rendered that restores this value. */
   resetValue?: boolean;
   testId?: string;
+  /**
+   * Optional element rendered inline after the label text — used for badges
+   * such as the Experimental indicator. Rendered outside the `<label>` element
+   * so clicking the badge does not toggle the switch.
+   */
+  badge?: ComponentChildren;
 }
 
 export function Toggle({
@@ -20,6 +27,7 @@ export function Toggle({
   id,
   resetValue,
   testId,
+  badge,
 }: ToggleProps) {
   const autoId = useId();
   const inputId = id ?? autoId;
@@ -44,12 +52,15 @@ export function Toggle({
           <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-bg shadow-sm transition-transform duration-200 ease-out peer-checked:translate-x-4" />
         </label>
         <div class="flex-1 min-w-0">
-          <label
-            for={inputId}
-            class="block text-sm font-medium text-fg cursor-pointer"
-          >
-            {label}
-          </label>
+          <div class="flex items-center">
+            <label
+              for={inputId}
+              class="text-sm font-medium text-fg cursor-pointer"
+            >
+              {label}
+            </label>
+            {badge}
+          </div>
           {description && (
             <p id={descriptionId} class="text-xs text-muted mt-0.5">
               {description}
@@ -60,7 +71,7 @@ export function Toggle({
       {resetValue !== undefined && (
         <ResetButton
           onClick={() => onChange(resetValue)}
-          title={`Reset ${label} to default`}
+          title={`Reset to default: ${resetValue ? "on" : "off"}`}
         />
       )}
     </div>

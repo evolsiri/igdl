@@ -38,8 +38,15 @@
       "run_at": "document_start"
     }
   ],
+  "icons": {
+    "16": "logo.svg",
+    "32": "logo.svg",
+    "48": "logo.svg",
+    "128": "logo.svg"
+  },
   "action": {
-    "default_title": "igdl"
+    "default_title": "igdl",
+    "default_icon": "logo.svg"
   },
   "options_page": "options.html",
   "externally_connectable": {

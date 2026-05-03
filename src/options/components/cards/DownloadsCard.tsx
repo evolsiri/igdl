@@ -1,5 +1,5 @@
 import { Fragment } from "preact";
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { SETTINGS_DEFAULTS } from "../../../services/settings/schema";
 import type { Settings } from "../../../types/settings";
 import { matchesQuery } from "../../../utils/search";
@@ -22,6 +22,15 @@ interface SettingItem {
 export function DownloadsCard({ settings, onPatch }: DownloadsCardProps) {
   const [query, setQuery] = useState("");
 
+  // Local state buffers for directory-path fields so trailing slashes are
+  // preserved while the user is typing and stripped only on blur.
+  const [localDefaultDir, setLocalDefaultDir] = useState(settings.defaultDownloadDirectory);
+  const [localPrefix, setLocalPrefix] = useState(settings.prefix);
+
+  // Sync when settings change externally (Reset All, import).
+  useEffect(() => { setLocalDefaultDir(settings.defaultDownloadDirectory); }, [settings.defaultDownloadDirectory]);
+  useEffect(() => { setLocalPrefix(settings.prefix); }, [settings.prefix]);
+
   const items: SettingItem[] = [
     {
       key: "defaultDownloadDirectory",
@@ -30,9 +39,18 @@ export function DownloadsCard({ settings, onPatch }: DownloadsCardProps) {
         <TextField
           label="Default download directory"
           description="Where downloads land when no per-profile directory is set. Relative to the browser's Downloads folder."
-          value={settings.defaultDownloadDirectory}
-          onChange={(v) => onPatch({ defaultDownloadDirectory: v })}
+          value={localDefaultDir}
+          onChange={setLocalDefaultDir}
+          onBlur={() => {
+            const stripped = localDefaultDir.replace(/\/+$/, "");
+            setLocalDefaultDir(stripped);
+            onPatch({ defaultDownloadDirectory: stripped });
+          }}
           resetValue={SETTINGS_DEFAULTS.defaultDownloadDirectory}
+          onReset={() => {
+            setLocalDefaultDir(SETTINGS_DEFAULTS.defaultDownloadDirectory);
+            onPatch({ defaultDownloadDirectory: SETTINGS_DEFAULTS.defaultDownloadDirectory });
+          }}
         />
       ),
     },
@@ -43,9 +61,18 @@ export function DownloadsCard({ settings, onPatch }: DownloadsCardProps) {
         <TextField
           label="Prefix"
           description="Prefills the directory input in the Instagram download popup."
-          value={settings.prefix}
-          onChange={(v) => onPatch({ prefix: v })}
+          value={localPrefix}
+          onChange={setLocalPrefix}
+          onBlur={() => {
+            const stripped = localPrefix.replace(/\/+$/, "");
+            setLocalPrefix(stripped);
+            onPatch({ prefix: stripped });
+          }}
           resetValue={SETTINGS_DEFAULTS.prefix}
+          onReset={() => {
+            setLocalPrefix(SETTINGS_DEFAULTS.prefix);
+            onPatch({ prefix: SETTINGS_DEFAULTS.prefix });
+          }}
         />
       ),
     },
@@ -167,10 +194,11 @@ export function DownloadsCard({ settings, onPatch }: DownloadsCardProps) {
     },
     {
       key: "enableThreadsSupport",
-      tokens: "enable threads.com support meta",
+      tokens: "enable threads.com support meta experimental",
       render: () => (
         <Toggle
           label="Threads.com support"
+          badge={<ExperimentalBadge />}
           description="Shows the download button on Threads.com posts, feeds, and profiles."
           checked={settings.enableThreadsSupport}
           onChange={(v) => onPatch({ enableThreadsSupport: v })}
@@ -193,10 +221,11 @@ export function DownloadsCard({ settings, onPatch }: DownloadsCardProps) {
     },
     {
       key: "enableExploreVideoClickthrough",
-      tokens: "explore video clickthrough navigate post",
+      tokens: "explore video clickthrough navigate post experimental",
       render: () => (
         <Toggle
           label="Explore video clickthrough"
+          badge={<ExperimentalBadge />}
           description="Clicking a video on the Explore page opens its post."
           checked={settings.enableExploreVideoClickthrough}
           onChange={(v) => onPatch({ enableExploreVideoClickthrough: v })}
@@ -212,9 +241,10 @@ export function DownloadsCard({ settings, onPatch }: DownloadsCardProps) {
   return (
     <Card
       title="Downloads"
-      subtitle="Filename template, default directory, and per-surface toggles."
+      subtitle="Configure how you want to download content."
       id="downloads"
       testId="downloads-card"
+      collapsible={true}
     >
       <SearchInput
         value={query}
@@ -228,5 +258,35 @@ export function DownloadsCard({ settings, onPatch }: DownloadsCardProps) {
         ))}
       </div>
     </Card>
+  );
+}
+
+function ExperimentalBadge() {
+  return (
+    <span
+      title="This feature is experimental — it may not be fully tested and could be incomplete or subject to change."
+      class="inline-flex items-center gap-1 ml-2 text-xs text-amber-500 cursor-help select-none"
+    >
+      <FlaskIcon />
+      Experimental
+    </span>
+  );
+}
+
+function FlaskIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M10 3h4M10 3v6L5 20h14L14 9V3" />
+    </svg>
   );
 }

@@ -25,11 +25,14 @@ function defaultProps(sort: ProfileDirectoriesSort = { ...PROFILE_DIRECTORIES_DE
   return {
     profiles: [] as ProfileDirEntry[],
     defaultDirectory: "instagram",
+    prefix: "instagram",
+    neverAskProfiles: [] as { username: string; addedAt: number }[],
     sort,
     onAdd: vi.fn(async () => makeEntry()),
     onUpdate: vi.fn(async () => makeEntry()),
     onDelete: vi.fn(async () => undefined),
     onSortChange: vi.fn(),
+    onRemoveNeverAsk: vi.fn(async () => undefined),
   };
 }
 
@@ -142,6 +145,34 @@ describe("ProfileDirectoriesCard", () => {
     });
   });
 
+  it("shows a conflict dialog when adding a profile already on the Never-Ask list", async () => {
+    const props = defaultProps();
+    props.neverAskProfiles = [{ username: "alice", addedAt: 1 }];
+    render(<ProfileDirectoriesCard {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: /add profile/i }));
+    fireEvent.input(screen.getByLabelText("Instagram username"), { target: { value: "alice" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /add @alice to profile directories/i })).toBeTruthy();
+    });
+    expect(props.onAdd).not.toHaveBeenCalled();
+  });
+
+  it("calls onAdd and onRemoveNeverAsk when the conflict dialog is confirmed", async () => {
+    const props = defaultProps();
+    props.neverAskProfiles = [{ username: "alice", addedAt: 1 }];
+    render(<ProfileDirectoriesCard {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: /add profile/i }));
+    fireEvent.input(screen.getByLabelText("Instagram username"), { target: { value: "ALICE" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    await waitFor(() => screen.getByRole("heading", { name: /add @alice to profile directories/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Add profile" }));
+    await waitFor(() => {
+      expect(props.onAdd).toHaveBeenCalledWith(expect.objectContaining({ username: "alice" }));
+      expect(props.onRemoveNeverAsk).toHaveBeenCalledWith("alice");
+    });
+  });
+
   it("filters rows by search query", () => {
     const props = defaultProps();
     props.profiles = [makeEntry({ username: "alice" }), makeEntry({ username: "bob" })];
@@ -175,13 +206,13 @@ describe("ProfileDirectoriesCard", () => {
       expect(props.onSortChange).toHaveBeenCalledWith({ key: "username", direction: "asc" });
     });
 
-    it("emits onSortChange with desc when the down-arrow is clicked", () => {
+    it("emits onSortChange with desc when the down-arrow of the directory column is clicked", () => {
       const props = defaultProps();
       props.profiles = profiles;
       render(<ProfileDirectoriesCard {...props} />);
-      const header = screen.getByTestId("sortable-th-downloadCount");
+      const header = screen.getByTestId("sortable-th-directory");
       fireEvent.click(within(header).getByTestId("sort-arrow-down"));
-      expect(props.onSortChange).toHaveBeenCalledWith({ key: "downloadCount", direction: "desc" });
+      expect(props.onSortChange).toHaveBeenCalledWith({ key: "directory", direction: "desc" });
     });
 
     it("reverts to the default sort when the already-active arrow is clicked", () => {

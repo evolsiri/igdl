@@ -47,12 +47,40 @@ describe("DownloadsCard", () => {
     expect(within(list).getByLabelText("Threads.com support")).toBeTruthy();
   });
 
-  it("emits onPatch with the new field when a TextField changes", () => {
+  it("emits onPatch with the new value when a non-directory TextField changes", () => {
+    const onPatch = vi.fn();
+    render(<DownloadsCard settings={makeSettings()} onPatch={onPatch} />);
+    const input = screen.getByLabelText("Filename template");
+    fireEvent.input(input, { target: { value: "{username}-{id}" } });
+    expect(onPatch).toHaveBeenCalledWith({ filenameTemplate: "{username}-{id}" });
+  });
+
+  it("does not patch directory fields while typing; saves on blur", () => {
     const onPatch = vi.fn();
     render(<DownloadsCard settings={makeSettings()} onPatch={onPatch} />);
     const input = screen.getByLabelText("Default download directory");
-    fireEvent.input(input, { target: { value: "downloads/igdl" } });
+    fireEvent.input(input, { target: { value: "downloads/igdl/" } });
+    expect(onPatch).not.toHaveBeenCalled();
+    fireEvent.blur(input);
     expect(onPatch).toHaveBeenCalledWith({ defaultDownloadDirectory: "downloads/igdl" });
+  });
+
+  it("strips trailing slashes from directory fields on blur", () => {
+    const onPatch = vi.fn();
+    render(<DownloadsCard settings={makeSettings()} onPatch={onPatch} />);
+    const input = screen.getByLabelText("Prefix");
+    fireEvent.input(input, { target: { value: "instagram///" } });
+    fireEvent.blur(input);
+    expect(onPatch).toHaveBeenCalledWith({ prefix: "instagram" });
+  });
+
+  it("patches the reset value immediately when a directory reset button is clicked", () => {
+    const onPatch = vi.fn();
+    render(<DownloadsCard settings={makeSettings({ defaultDownloadDirectory: "custom/dir" })} onPatch={onPatch} />);
+    fireEvent.click(screen.getAllByTitle(`Reset to default: ${SETTINGS_DEFAULTS.defaultDownloadDirectory}`)[0]);
+    expect(onPatch).toHaveBeenCalledWith({
+      defaultDownloadDirectory: SETTINGS_DEFAULTS.defaultDownloadDirectory,
+    });
   });
 
   it("emits onPatch with the new value when a Toggle changes", () => {

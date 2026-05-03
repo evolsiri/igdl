@@ -24,8 +24,9 @@ export interface DownloadFlowDeps {
  * has extracted the `MediaResource[]`.
  *
  * Flow (PAC-2.3 / 2.4 / 2.5 / 2.6 / 2.7):
- *  1. If the profile has a configured directory → silent download.
- *  2. Else if the profile is on the never-ask list → silent download to default.
+ *  0. If alwaysPromptSaveAs is enabled → Save As prompt, no routing.
+ *  1. Else if the profile has a configured directory → silent download.
+ *  2. Else if the profile is on the never-ask list → Save As prompt (browser dialog).
  *  3. Else → show NoDirPopup with three choices.
  *
  * Toasts fire on success/failure (PAC-3.1 / 3.2).
@@ -39,11 +40,21 @@ export async function handleDownloadClick(
   const normalized = username.trim().toLowerCase();
 
   const settings = deps.settingsSnapshot ?? storageCache.canonical;
+
+  if (settings.alwaysPromptSaveAs) {
+    await downloadAll(resources, deps, { saveAs: true });
+    return;
+  }
+
   const hasCustomDir = settings.profileDirectories.some((p) => p.username === normalized);
   const isNeverAsk = settings.neverAskProfiles.some((e) => e.username === normalized);
 
-  if (hasCustomDir || isNeverAsk) {
+  if (hasCustomDir) {
     await downloadAll(resources, deps);
+    return;
+  }
+  if (isNeverAsk) {
+    await downloadAll(resources, deps, { saveAs: true });
     return;
   }
 
@@ -72,18 +83,22 @@ export async function handleDownloadClick(
       return;
     case "neverAsk":
       await deps.settings.addNeverAsk(username);
-      await downloadAll(resources, deps);
+      await downloadAll(resources, deps, { saveAs: true });
       return;
   }
 }
 
 
-async function downloadAll(resources: MediaResource[], deps: DownloadFlowDeps): Promise<void> {
+async function downloadAll(
+  resources: MediaResource[],
+  deps: DownloadFlowDeps,
+  options: { saveAs?: boolean } = {},
+): Promise<void> {
   let successes = 0;
   let canceled = 0;
   let firstError = "";
   for (const resource of resources) {
-    const result = await deps.download.queue(resource);
+    const result = await deps.download.queue(resource, options.saveAs ? { saveAs: true } : undefined);
     if (result.ok) {
       successes += 1;
     } else if (isUserCanceled(result.error)) {
