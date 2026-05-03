@@ -58,15 +58,28 @@ export function NoDirPopup({
   }
 
   return (
-    <div style={backdrop} role="dialog" aria-modal="true" aria-labelledby="igdl-no-dir-title" onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
+    <div
+      style={backdrop}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="igdl-no-dir-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onCancel();
+      }}
+    >
       <div style={panel}>
-        <button type="button" aria-label="Close" onClick={onCancel} style={closeButton}>×</button>
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={onCancel}
+          style={closeButton}
+        >
+          ×
+        </button>
         <h2 id="igdl-no-dir-title" style={title}>
           Download from @{username}?
         </h2>
-        <p style={body}>
-          No directory set for this profile yet.
-        </p>
+        <p style={body}>No directory set for this profile yet.</p>
 
         {editing ? (
           <form
@@ -80,7 +93,9 @@ export function NoDirPopup({
               ref={inputRef}
               type="text"
               value={draft}
-              onInput={(e) => setDraft((e.currentTarget as HTMLInputElement).value)}
+              onInput={(e) =>
+                setDraft((e.currentTarget as HTMLInputElement).value)
+              }
               onKeyDown={(e) => {
                 if (e.key === "Escape") {
                   // Window-level Escape listener can't fire once the shadow
@@ -93,7 +108,11 @@ export function NoDirPopup({
               style={input}
             />
             <div style={btnRow}>
-              <button type="button" onClick={() => setEditing(false)} style={btnGhost}>
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                style={btnGhost}
+              >
                 Back
               </button>
               <button type="submit" style={btnPrimary}>
@@ -103,7 +122,11 @@ export function NoDirPopup({
           </form>
         ) : (
           <div style={choiceColumn}>
-            <button type="button" onClick={() => setEditing(true)} style={btnPrimary}>
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              style={btnPrimary}
+            >
               Set directory for @{username}
             </button>
             <button
@@ -113,7 +136,9 @@ export function NoDirPopup({
             >
               <span style={btnTextCell}>
                 Download to{" "}
-                <code style={code}>{defaultDirectory || "(browser default)"}</code>
+                <code style={code}>
+                  {defaultDirectory || "(browser default)"}
+                </code>
               </span>
               <InfoGlyphSpan
                 testId="info-tooltip-default"
@@ -128,7 +153,7 @@ export function NoDirPopup({
               <span style={btnTextCell}>Never ask for @{username}</span>
               <InfoGlyphSpan
                 testId="info-tooltip-neverask"
-                text={`Adds @${username} to the never-ask list. Future downloads from this profile go straight to the default directory. Remove them under Settings → Never-Ask Profiles to bring this popup back.`}
+                text={`Adds @${username} to the never-ask list. Downloads from this profile will always prompt the browser's "Save" instead of a saving to a pre-determined directory. To bring this popup back, remove the profile from Settings → Never-Ask Profiles.`}
               />
             </button>
           </div>
