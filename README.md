@@ -4,7 +4,7 @@
 
 # igdl
 
-Chrome and Firefox extension that adds a download button to [Instagram](https://www.instagram.com).
+Chrome and Firefox extension that adds a download button to Instagram.
 
 <p align="center">
   <a href="#igdl">

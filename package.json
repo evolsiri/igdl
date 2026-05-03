@@ -19,7 +19,7 @@
     "sign:firefox": "node scripts/sign-firefox.mjs",
     "rc:firefox": "node scripts/rc-firefox.mjs",
     "preview": "vite preview",
-    "lint": "eslint . --fix",
+    "lint": "eslint --cache --fix .",
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:storybook": "STORYBOOK_TESTS=1 vitest run --project storybook",

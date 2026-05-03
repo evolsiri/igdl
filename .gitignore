@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 
+.eslintcache
+
 # Release artifacts (produced by pnpm run package:*)
 artifacts/
 
@@ -20,6 +22,7 @@ coverage/
 
 # Claude Code local overrides
 .claude/settings.local.json
+.claude/worktrees
 
 # Editor directories and files
 .vscode/*
