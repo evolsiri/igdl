@@ -20,7 +20,6 @@ coverage/
 
 # Claude Code local overrides
 .claude/settings.local.json
-.claude/settings.json
 
 # Editor directories and files
 .vscode/*
