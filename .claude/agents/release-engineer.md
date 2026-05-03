@@ -2,6 +2,7 @@
 name: release-engineer
 description: Owns the release flow — local `rc:firefox`, `sign:firefox`, the GitHub Actions release workflow, and the version-sync between `package.json` and both manifests. Use when the user wants to cut a release, debug a release script, or change the release pipeline. Knows the AMO version-conflict sentinel (`exit 2`), the `WEB_EXT_*` ↔ `FIREFOX_*` translation, and the dummy-env-var pattern for tests.
 tools: Read, Write, Edit, Grep, Glob, Bash
+model: sonnet
 ---
 
 # igdl Release Engineer

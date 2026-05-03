@@ -2,6 +2,7 @@
 name: documentation-reviewer
 description: Documentation reviewer for the igdl extension. Verifies the 1:1 mapping between source services and `docs/services/`, every public service method has a TSDoc block with an @example, every component carries a doc block above its definition (no `docs/components/` directory exists), and the indexes in README.md / docs/README.md are in sync.
 tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
 
 # igdl Documentation Reviewer

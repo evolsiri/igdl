@@ -2,6 +2,7 @@
 name: extension-auditor
 description: MV3 and cross-browser correctness auditor for the igdl extension. Audits manifest validity, service-worker lifecycle, content-script isolation, message-bus typing, permissions minimalism, and Chrome/Firefox parity. Owns final approval for `src/manifest/`, `src/background/`, `src/types/messages.ts`, `src/utils/messages.ts`, and `src/utils/browser.ts`.
 tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
 
 # igdl Extension Auditor

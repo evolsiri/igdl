@@ -2,6 +2,7 @@
 name: service-implementer
 description: Scaffolds new services or components in the igdl extension following the project conventions. Use to create a new `src/services/<name>/`, scaffold a new options-page card / modal, or scaffold a new injected modal / toast. Implements the factory + interface + options-bag pattern, writes a co-located test against `inMemoryStorage()`, creates `docs/services/<name>.md` (services only), and updates `docs/README.md` and `src/stories/DesignSystem.stories.tsx` as needed.
 tools: Read, Write, Edit, Grep, Glob, Bash
+model: sonnet
 ---
 
 # igdl Service / Component Implementer
