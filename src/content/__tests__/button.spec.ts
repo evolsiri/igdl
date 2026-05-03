@@ -41,7 +41,7 @@ describe("addCustomBtn", () => {
 
     const btn = host.querySelector(`.${CLASS_CUSTOM_BUTTON}.download-btn`);
     expect(btn).toBeTruthy();
-    expect(btn?.getAttribute("title")).toBe("Download");
+    expect(btn?.getAttribute("title")).toBe("Download. Or, right-click to 'Save as'");
     expect(btn?.innerHTML).toContain("<svg");
   });
 
