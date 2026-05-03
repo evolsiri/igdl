@@ -34,9 +34,9 @@ describe("Toast", () => {
     const onDismiss = vi.fn();
     render(<Toast kind="success" message="x" durationMs={1000} onDismiss={onDismiss} />);
     expect(onDismiss).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(999);
+    vi.advanceTimersByTime(1199); // durationMs(1000) + fade(200) - 1ms: not yet
     expect(onDismiss).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(300);
+    vi.advanceTimersByTime(1);    // exactly at boundary
     expect(onDismiss).toHaveBeenCalled();
   });
 });

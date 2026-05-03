@@ -14,7 +14,7 @@ import { storageCache } from "../extractors/storage";
 async function fetchVideoURL(
   articleNode: HTMLElement,
   videoElem: HTMLVideoElement,
-): Promise<string> {
+): Promise<string | null> {
   const poster = videoElem.getAttribute("poster");
   const timeNodes = articleNode.querySelectorAll("time");
   const posterUrl = (timeNodes[timeNodes.length - 1].parentNode!.parentNode as HTMLAnchorElement)
@@ -26,7 +26,9 @@ async function fetchVideoURL(
   const content = await resp.text();
   const pattern = new RegExp(`${postFileName}.*?video_versions.*?url":("[^"]*")`, "s");
   const match = content.match(pattern);
-  let videoUrl = JSON.parse(match?.[1] ?? "");
+  if (!match?.[1]) return null;
+  let videoUrl = JSON.parse(match[1]) as string;
+  if (typeof videoUrl !== "string") return null;
   videoUrl = videoUrl.replace(
     /^(?:https?:\/\/)?(?:[^@/\n]+@)?(?:www\.)?([^:/?\n]+)/g,
     "https://scontent.cdninstagram.com",

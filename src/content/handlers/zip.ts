@@ -137,17 +137,20 @@ function buildCarouselResources(
   owner: string,
   postId: string,
 ): MediaResource[] {
-  return carousel.map((item, i) => {
+  return carousel.flatMap((item, i) => {
     const url = getImgOrVideoUrl(item);
-    return {
-      url,
-      id: postId,
-      type: "post" as const,
-      username: owner,
-      index: i + 1,
-      extension: inferExtension(url),
-      isVideo: "video_versions" in item,
-    };
+    if (!url) return [];
+    return [
+      {
+        url,
+        id: postId,
+        type: "post" as const,
+        username: owner,
+        index: i + 1,
+        extension: inferExtension(url),
+        isVideo: "video_versions" in item,
+      },
+    ];
   });
 }
 

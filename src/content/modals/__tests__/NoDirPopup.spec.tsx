@@ -74,6 +74,30 @@ describe("NoDirPopup", () => {
     expect(props.onCancel).toHaveBeenCalled();
   });
 
+  it("does NOT fire onCancel on Backspace keypress (regression: was closing modal)", () => {
+    const props = defaults();
+    render(<NoDirPopup {...props} />);
+    fireEvent.keyDown(window, { key: "Backspace" });
+    expect(props.onCancel).not.toHaveBeenCalled();
+  });
+
+  it("fires onCancel when the backdrop is clicked directly", () => {
+    const props = defaults();
+    const { container } = render(<NoDirPopup {...props} />);
+    // The backdrop is the outermost element with role="dialog".
+    const backdrop = container.querySelector('[role="dialog"]')!;
+    fireEvent.click(backdrop, { target: backdrop });
+    expect(props.onCancel).toHaveBeenCalled();
+  });
+
+  it("does NOT fire onCancel when clicking inside the panel (not the backdrop)", () => {
+    const props = defaults();
+    render(<NoDirPopup {...props} />);
+    // Clicking the panel interior must NOT close the modal.
+    fireEvent.click(screen.getByRole("button", { name: /download to/i }));
+    expect(props.onCancel).not.toHaveBeenCalled();
+  });
+
   it("hovering the info glyph inside 'Download to' shows a tooltip about the default directory", () => {
     render(<NoDirPopup {...defaults()} />);
     const trigger = screen.getByTestId("info-tooltip-default");

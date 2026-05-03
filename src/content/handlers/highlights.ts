@@ -95,7 +95,9 @@ export async function highlightsOnClicked(target: HTMLAnchorElement, saveAs = fa
 
     const handleNode = async (data: HighlightNode) => {
       const media = data.items[mediaIndex];
-      const url = media.video_versions?.[0].url || media.image_versions2.candidates[0].url;
+      const url =
+        media.video_versions?.[0]?.url ?? media.image_versions2?.candidates[0]?.url;
+      if (!url) { reportFailure("highlight: cannot extract media URL"); return; }
       await download(url, {
         url,
         username: data.user.username,

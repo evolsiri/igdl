@@ -7,27 +7,15 @@ vi.mock("../handlers/zip", () => ({
 vi.mock("../handlers/post", () => ({
   postOnClicked: vi.fn(async () => undefined),
 }));
-vi.mock("../handlers/post-detail", () => ({
-  postDetailOnClicked: vi.fn(async () => undefined),
-}));
-vi.mock("../handlers/profile", () => ({
-  profileOnClicked: vi.fn(async () => undefined),
-}));
-vi.mock("../handlers/profile-reel", () => ({
-  handleProfileReel: vi.fn(async () => undefined),
-}));
-vi.mock("../handlers/reels", () => ({
-  reelsOnClicked: vi.fn(async () => undefined),
-}));
-vi.mock("../handlers/stories", () => ({
-  storyOnClicked: vi.fn(async () => undefined),
-}));
-vi.mock("../handlers/highlights", () => ({
-  highlightsOnClicked: vi.fn(async () => undefined),
-}));
-vi.mock("../threads/button", () => ({
-  handleThreadsButton: vi.fn(),
-}));
+// Remaining handlers are imported transitively by button.ts; mock to prevent
+// chrome API access during tests.
+vi.mock("../handlers/post-detail", () => ({ postDetailOnClicked: vi.fn() }));
+vi.mock("../handlers/profile", () => ({ profileOnClicked: vi.fn() }));
+vi.mock("../handlers/profile-reel", () => ({ handleProfileReel: vi.fn() }));
+vi.mock("../handlers/reels", () => ({ reelsOnClicked: vi.fn() }));
+vi.mock("../handlers/stories", () => ({ storyOnClicked: vi.fn() }));
+vi.mock("../handlers/highlights", () => ({ highlightsOnClicked: vi.fn() }));
+vi.mock("../threads/button", () => ({ handleThreadsButton: vi.fn() }));
 
 import { zipOnClicked } from "../handlers/zip";
 import { postOnClicked } from "../handlers/post";

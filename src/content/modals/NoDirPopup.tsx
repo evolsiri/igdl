@@ -36,7 +36,7 @@ export function NoDirPopup({
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent): void {
-      if (e.key === "Escape" || e.key === "Backspace") onCancel();
+      if (e.key === "Escape") onCancel();
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
