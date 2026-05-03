@@ -64,6 +64,24 @@ afterEach(() => {
 });
 
 describe("handleDownloadClick", () => {
+  it("triggers Save As immediately when alwaysPromptSaveAs is enabled, bypassing all routing", async () => {
+    const { settings, download, toast, mountFactory } = setup();
+    await settings.addProfile({ username: "alice", directory: "ig/alice" });
+    const base = await settings.get();
+    const settingsSnapshot = { ...base, alwaysPromptSaveAs: true };
+
+    await handleDownloadClick([makeResource()], {
+      settings,
+      download,
+      toast,
+      mountFactory,
+      settingsSnapshot,
+    });
+
+    expect(download.queue).toHaveBeenCalledWith(expect.anything(), { saveAs: true });
+    expect(mountFactory).not.toHaveBeenCalled();
+  });
+
   it("downloads silently when the profile has a configured directory", async () => {
     const { settings, download, toast, mountFactory } = setup();
     await settings.addProfile({ username: "alice", directory: "ig/alice" });
@@ -82,7 +100,7 @@ describe("handleDownloadClick", () => {
     expect(mountFactory).not.toHaveBeenCalled(); // no popup
   });
 
-  it("downloads silently when the profile is on the never-ask list", async () => {
+  it("triggers Save As (no popup) when the profile is on the never-ask list", async () => {
     const { settings, download, toast, mountFactory } = setup();
     await settings.addNeverAsk("alice");
     const settingsSnapshot = await settings.get();
@@ -95,7 +113,7 @@ describe("handleDownloadClick", () => {
       settingsSnapshot,
     });
 
-    expect(download.queue).toHaveBeenCalled();
+    expect(download.queue).toHaveBeenCalledWith(expect.anything(), { saveAs: true });
     expect(mountFactory).not.toHaveBeenCalled();
   });
 
@@ -147,7 +165,7 @@ describe("handleDownloadClick", () => {
     expect(download.queue).toHaveBeenCalled();
   });
 
-  it("adds the profile to never-ask when user picks neverAsk", async () => {
+  it("adds the profile to never-ask when user picks neverAsk, and triggers Save As", async () => {
     const { settings, download, toast, modal, mountFactory } = setup();
     const pending = handleDownloadClick([makeResource()], {
       settings,
@@ -164,7 +182,7 @@ describe("handleDownloadClick", () => {
 
     const updated = await settings.get();
     expect(updated.neverAskProfiles.map((e) => e.username)).toContain("alice");
-    expect(download.queue).toHaveBeenCalled();
+    expect(download.queue).toHaveBeenCalledWith(expect.anything(), { saveAs: true });
   });
 
   it("cancels gracefully when user dismisses the popup", async () => {

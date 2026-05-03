@@ -78,13 +78,13 @@ export async function findMediaId(postId: string): Promise<string | null> {
   return mediaIdCache.get(postId) ?? null;
 }
 
-export function getImgOrVideoUrl(item: Record<string, unknown>): string {
+export function getImgOrVideoUrl(item: Record<string, unknown>): string | null {
   if ("video_versions" in item) {
     const versions = item.video_versions as Array<{ url: string }>;
-    return versions[0].url;
+    return versions[0]?.url ?? null;
   }
-  const image = item.image_versions2 as { candidates: Array<{ url: string }> };
-  return image.candidates[0].url;
+  const image = item.image_versions2 as { candidates: Array<{ url: string }> } | undefined;
+  return image?.candidates[0]?.url ?? null;
 }
 
 export async function getDataFromAPI(

@@ -61,11 +61,10 @@ export function normalize(input: unknown): Settings {
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     theme: pickEnum(input.theme, VALID_THEMES, SETTINGS_DEFAULTS.theme),
-    defaultDownloadDirectory: pickString(
-      input.defaultDownloadDirectory,
-      SETTINGS_DEFAULTS.defaultDownloadDirectory,
+    defaultDownloadDirectory: stripTrailingSlashes(
+      pickString(input.defaultDownloadDirectory, SETTINGS_DEFAULTS.defaultDownloadDirectory),
     ),
-    prefix: pickString(input.prefix, SETTINGS_DEFAULTS.prefix),
+    prefix: stripTrailingSlashes(pickString(input.prefix, SETTINGS_DEFAULTS.prefix)),
     alwaysPromptSaveAs: pickBool(input.alwaysPromptSaveAs, SETTINGS_DEFAULTS.alwaysPromptSaveAs),
     filenameTemplate: pickString(input.filenameTemplate, SETTINGS_DEFAULTS.filenameTemplate),
     datetimeFormat: pickString(input.datetimeFormat, SETTINGS_DEFAULTS.datetimeFormat),
@@ -141,6 +140,16 @@ function pickString(v: unknown, fallback: string): string {
   return typeof v === "string" ? v : fallback;
 }
 
+/**
+ * Strips trailing forward slashes from directory-shaped settings so values
+ * stored on disk never end in `/`. Applied during `normalize()` so every
+ * write — patch, set, addProfile, updateProfile, import — is sanitized at
+ * the storage boundary.
+ */
+function stripTrailingSlashes(v: string): string {
+  return v.replace(/\/+$/, "");
+}
+
 function pickBool(v: unknown, fallback: boolean): boolean {
   return typeof v === "boolean" ? v : fallback;
 }
@@ -169,7 +178,7 @@ function normalizeProfileDirectories(v: unknown): ProfileDirEntry[] {
     seen.add(username);
     out.push({
       username,
-      directory: pickString(entry.directory, ""),
+      directory: stripTrailingSlashes(pickString(entry.directory, "")),
       downloadCount: Math.max(0, Math.floor(pickNumber(entry.downloadCount, 0))),
       lastDownloadAt: pickNullableNumber(entry.lastDownloadAt, null),
       addedAt: pickNumber(entry.addedAt, 0),

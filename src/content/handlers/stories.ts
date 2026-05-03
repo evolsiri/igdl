@@ -31,7 +31,8 @@ async function storyGetUrl(target: HTMLElement, sectionNode: Element): Promise<s
       url = img.srcset.split(/ \d+w/g)[0].trim();
       if (!url || url.length === 0) url = img.getAttribute("src");
     } else if (sectionNode.querySelector("video")) {
-      url = sectionNode.querySelector<HTMLVideoElement>("video")!.getAttribute("src");
+      const vid = sectionNode.querySelector<HTMLVideoElement>("video")!;
+      url = vid.src.length > 0 ? vid.src : vid.getAttribute("src");
     }
   }
   return url;
@@ -49,7 +50,9 @@ export async function storyOnClicked(target: HTMLAnchorElement, saveAs = false):
     const media = item.items[mediaIndex];
     if (!media) return false;
     if (dayjs.unix(media.expiring_at).isBefore(dayjs())) return false;
-    const url = media.video_versions?.[0].url || media.image_versions2.candidates[0].url;
+    const url =
+      media.video_versions?.[0]?.url ?? media.image_versions2?.candidates[0]?.url;
+    if (!url) return false;
     if (target.className.includes("download-btn") || saveAs) {
       await downloadViaFlow(
         {
@@ -73,7 +76,8 @@ export async function storyOnClicked(target: HTMLAnchorElement, saveAs = false):
 
     if (pathnameArr.length === 2) {
       let mediaIndex = 0;
-      const steps = target.parentElement!.firstElementChild!.querySelectorAll(":scope>div");
+      const steps =
+        target.parentElement?.firstElementChild?.querySelectorAll(":scope>div") ?? [];
       if (steps.length > 1) {
         steps.forEach((item, index) => {
           if (item.childNodes.length === 1) mediaIndex = index;
@@ -101,7 +105,19 @@ export async function storyOnClicked(target: HTMLAnchorElement, saveAs = false):
     }
 
     // DOM fallback
-    const sectionNode = getParentSectionNode(target);
+    let sectionNode: Element | null = getParentSectionNode(target);
+    if (!sectionNode) {
+      // Feed story: <section> is a descendant, not an ancestor of the button.
+      // Walk up until we reach an ancestor that contains story media.
+      let el: Element | null = target.parentElement;
+      while (el && el !== document.body) {
+        if (el.querySelector("video") || el.querySelector('img[decoding="sync"]')) {
+          sectionNode = el;
+          break;
+        }
+        el = el.parentElement;
+      }
+    }
     if (!sectionNode) return;
     const url = await storyGetUrl(target, sectionNode);
     if (!url) return;

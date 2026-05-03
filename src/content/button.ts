@@ -8,10 +8,9 @@ import { getMediaName, inferExtension } from "./extractors/filename";
  * injected download button (+ optional "open in new tab" and "zip" siblings)
  * and exposes the global click dispatcher.
  *
- * Visual differences from the reference (per PAC-2.2): smaller SVG (18px),
- * deepskyblue drop-shadow replaced with an accent-green glow, and a scale-up
- * hover transform. Same `a.igdl-custom-btn` class so the click delegator in
- * `content/index.ts` recognizes our elements.
+ * Visual differences from the reference (per PAC-2.2): 24px SVG icons with a
+ * scale-up hover transform. Same `a.igdl-custom-btn` class so the click
+ * delegator in `content/index.ts` recognizes our elements.
  */
 
 import { highlightsOnClicked } from "./handlers/highlights";
@@ -29,15 +28,15 @@ export const CLASS_CUSTOM_BUTTON = "igdl-custom-btn";
 export type IconColor = "black" | "white";
 export type IconClassName = "download-btn" | "newtab-btn" | "zip-btn";
 
-const DOWNLOAD_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+const DOWNLOAD_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
   <path d="M12 4v10.586l3.293-3.293 1.414 1.414L12 17.414 7.293 13.707l1.414-1.414L12 14.586V4h0zM4 20h16v2H4z"/>
 </svg>`;
 
-const NEWTAB_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+const NEWTAB_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
   <path d="M14 3h7v7h-2V6.41l-8.29 8.3-1.42-1.42 8.3-8.29H14V3zM5 5h6v2H5v12h12v-6h2v8H3V5h2z"/>
 </svg>`;
 
-const ZIP_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+const ZIP_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
   <path d="M4 3h11l5 5v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm1 2v14h14V9h-4V5H5zm6 3h2v2h-2V8zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
 </svg>`;
 
@@ -62,11 +61,9 @@ function createCustomBtn(
   );
   btn.onmouseenter = () => {
     btn.style.setProperty("transform", "scale(1.08)");
-    btn.style.setProperty("filter", "drop-shadow(0 0 6px #1db954)");
   };
   btn.onmouseleave = () => {
     btn.style.removeProperty("transform");
-    btn.style.removeProperty("filter");
   };
   switch (className) {
     case "newtab-btn":

@@ -95,7 +95,9 @@ export async function highlightsOnClicked(target: HTMLAnchorElement, saveAs = fa
 
     const handleNode = async (data: HighlightNode) => {
       const media = data.items[mediaIndex];
-      const url = media.video_versions?.[0].url || media.image_versions2.candidates[0].url;
+      const url =
+        media.video_versions?.[0]?.url ?? media.image_versions2?.candidates[0]?.url;
+      if (!url) { reportFailure("highlight: cannot extract media URL"); return; }
       await download(url, {
         url,
         username: data.user.username,
@@ -113,17 +115,23 @@ export async function highlightsOnClicked(target: HTMLAnchorElement, saveAs = fa
       return;
     }
 
+    // Script tags are set at SSR time and never update during SPA navigation.
+    // Only use script-tag data when it contains an edge whose id matches the
+    // highlight currently in the URL — otherwise it's stale from a prior view.
+    const targetId = "highlight:" + pathnameArr[3];
     for (const script of Array.from(window.document.scripts)) {
       try {
         const innerHTML = script.innerHTML;
+        if (!innerHTML.includes("xdt_api__v1__feed__reels_media__connection")) continue;
         const data = JSON.parse(innerHTML);
-        if (innerHTML.includes("xdt_api__v1__feed__reels_media__connection")) {
-          const res = findHighlight(data);
-          if (res) {
-            await handleNode(res.edges[0].node);
-            return;
-          }
+        const res = findHighlight(data);
+        if (!res) continue;
+        const matchingEdge = res.edges.find((e) => e.node.id === targetId);
+        if (matchingEdge) {
+          await handleNode(matchingEdge.node);
+          return;
         }
+        // Script tag has highlights data but not for this highlight ID — fall through to DOM.
       } catch {
         /* skip malformed script */
       }

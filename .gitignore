@@ -39,3 +39,4 @@ storybook-static
 # .env
 .env
 .env.*
+web-ext-artifacts

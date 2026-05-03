@@ -335,6 +335,99 @@ describe("normalize()", () => {
     } as unknown);
     expect(out.profileDirectoriesSort).toEqual({ key: "addedAt", direction: "desc" });
   });
+
+  describe("trailing-slash sanitization on directory fields", () => {
+    it("strips trailing slashes from defaultDownloadDirectory", () => {
+      const out = normalize({ defaultDownloadDirectory: "instagram/" } as unknown);
+      expect(out.defaultDownloadDirectory).toBe("instagram");
+    });
+
+    it("strips trailing slashes from prefix", () => {
+      const out = normalize({ prefix: "instagram///" } as unknown);
+      expect(out.prefix).toBe("instagram");
+    });
+
+    it("strips trailing slashes from each profileDirectories[].directory", () => {
+      const out = normalize({
+        profileDirectories: [
+          { username: "alice", directory: "ig/alice/", addedAt: 1, lastEditedAt: 1 },
+          { username: "bob", directory: "ig/bob//", addedAt: 1, lastEditedAt: 1 },
+        ],
+      } as unknown);
+      expect(out.profileDirectories.map((p) => p.directory)).toEqual([
+        "ig/alice",
+        "ig/bob",
+      ]);
+    });
+
+    it("collapses an all-slashes value to an empty string", () => {
+      const out = normalize({ defaultDownloadDirectory: "///" } as unknown);
+      expect(out.defaultDownloadDirectory).toBe("");
+    });
+
+    it("leaves leading slashes and inner slashes untouched", () => {
+      const out = normalize({ defaultDownloadDirectory: "/foo/bar/" } as unknown);
+      expect(out.defaultDownloadDirectory).toBe("/foo/bar");
+    });
+
+    it("leaves filenameTemplate alone (not a directory)", () => {
+      const out = normalize({ filenameTemplate: "{username}/" } as unknown);
+      expect(out.filenameTemplate).toBe("{username}/");
+    });
+  });
+});
+
+describe("trailing-slash sanitization through the service", () => {
+  it("patch() strips trailing slashes from defaultDownloadDirectory and prefix", async () => {
+    const { service } = setup();
+    const s = await service.patch({
+      defaultDownloadDirectory: "downloads/instagram/",
+      prefix: "ig/",
+    });
+    expect(s.defaultDownloadDirectory).toBe("downloads/instagram");
+    expect(s.prefix).toBe("ig");
+  });
+
+  it("addProfile() strips trailing slashes from the supplied directory", async () => {
+    const { service } = setup();
+    const entry = await service.addProfile({
+      username: "alice",
+      directory: "instagram/alice/",
+    });
+    expect(entry.directory).toBe("instagram/alice");
+    const s = await service.get();
+    expect(s.profileDirectories[0].directory).toBe("instagram/alice");
+  });
+
+  it("updateProfile() strips trailing slashes when changing the directory", async () => {
+    const { service } = setup();
+    await service.addProfile({ username: "alice", directory: "ig/old" });
+    const updated = await service.updateProfile("alice", { directory: "ig/alice-new///" });
+    expect(updated.directory).toBe("ig/alice-new");
+  });
+
+  it("set() (e.g. via Import) strips trailing slashes from every directory field", async () => {
+    const { service } = setup();
+    await service.set({
+      ...SETTINGS_DEFAULTS,
+      defaultDownloadDirectory: "ig/",
+      prefix: "ig//",
+      profileDirectories: [
+        {
+          username: "alice",
+          directory: "ig/alice/",
+          downloadCount: 0,
+          lastDownloadAt: null,
+          addedAt: 1,
+          lastEditedAt: 1,
+        },
+      ],
+    });
+    const s = await service.get();
+    expect(s.defaultDownloadDirectory).toBe("ig");
+    expect(s.prefix).toBe("ig");
+    expect(s.profileDirectories[0].directory).toBe("ig/alice");
+  });
 });
 
 describe("setProfileDirectoriesSort", () => {

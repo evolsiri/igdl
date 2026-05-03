@@ -172,6 +172,12 @@ export function createSettingsService(options: SettingsServiceOptions = {}): Set
     return normalized;
   }
 
+  function findProfile(settings: Settings, username: string): ProfileDirEntry {
+    const found = settings.profileDirectories.find((p) => p.username === username);
+    if (!found) throw new Error(`profile "${username}" missing after save`);
+    return found;
+  }
+
   function normalizeUsername(raw: string): string {
     return raw.trim().toLowerCase();
   }
@@ -213,8 +219,8 @@ export function createSettingsService(options: SettingsServiceOptions = {}): Set
         ...current,
         profileDirectories: [...current.profileDirectories, entry],
       };
-      await save(next);
-      return entry;
+      const saved = await save(next);
+      return findProfile(saved, username);
     },
 
     async updateProfile(username, fields) {
@@ -244,8 +250,8 @@ export function createSettingsService(options: SettingsServiceOptions = {}): Set
       };
       const nextList = [...current.profileDirectories];
       nextList[index] = updated;
-      await save({ ...current, profileDirectories: nextList });
-      return updated;
+      const saved = await save({ ...current, profileDirectories: nextList });
+      return findProfile(saved, nextUsername);
     },
 
     async deleteProfile(username) {

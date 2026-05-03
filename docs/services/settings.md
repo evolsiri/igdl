@@ -96,7 +96,7 @@ off();
 
 ## Consumers
 
-- **Options page** (`src/options/App.tsx`): subscribes, re-renders cards on change, threads Theme changes through to `ThemeService`.
+- **Options page** (`src/options/App.tsx`): subscribes, re-renders cards on change, threads Theme changes through to `ThemeService`. The Import / Export card calls `get()` to serialize settings to a JSON file, and `set()` with a key-filtered payload to apply an imported file (the schema layer fills missing fields with defaults and coerces invalid types).
 - **Content-script download flow** (`src/content/flow/download.tsx`): reads to decide silent vs popup path; writes via `addProfile` / `addNeverAsk` after user choices.
 - **Background download handler** (`src/background/shared/downloads.ts`): reads `alwaysPromptSaveAs`, calls `incrementDownload` after a successful `chrome.downloads.download`.
 

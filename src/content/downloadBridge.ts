@@ -45,17 +45,20 @@ function getFlowDeps(): DownloadFlowDeps {
   return cached;
 }
 
-function referenceTypeToCanonical(t: string | undefined): MediaType {
-  switch (t) {
-    case "POST":
+export function referenceTypeToCanonical(t: string | undefined): MediaType {
+  switch ((t ?? "").toLowerCase()) {
+    case "post":
       return "post";
-    case "REEL":
+    case "reel":
       return "reel";
-    case "STOR":
+    case "stor":
+    case "story":
       return "story";
-    case "HGHT":
+    case "hght":
+    case "highlight":
       return "highlight";
-    case "THRD":
+    case "thrd":
+    case "threads":
       return "threads";
     default:
       return "post";

@@ -1,33 +1,18 @@
 import { useEffect, useId, useRef, useState } from "preact/hooks";
 
-export interface AddProfileModalProps {
+export interface AddNeverAskModalProps {
   open: boolean;
-  /** Pre-populates the directory input; typically `defaultDownloadDirectory + "/"`. */
-  initialDirectory: string;
-  onSubmit: (input: { username: string; directory: string }) => Promise<void> | void;
+  onSubmit: (username: string) => Promise<void> | void;
   onCancel: () => void;
 }
 
-/**
- * Opens via `showModal()` (falls back to the `open` attribute in jsdom).
- * On open: resets `directory` to `initialDirectory` and auto-focuses the
- * username input on the next frame. Esc closes via the native `close` event,
- * which routes to `onCancel`.
- */
-export function AddProfileModal({
-  open,
-  initialDirectory,
-  onSubmit,
-  onCancel,
-}: AddProfileModalProps) {
+export function AddNeverAskModal({ open, onSubmit, onCancel }: AddNeverAskModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
   const usernameId = useId();
-  const directoryId = useId();
   const errorId = useId();
 
   const [username, setUsername] = useState("");
-  const [directory, setDirectory] = useState(initialDirectory);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -36,7 +21,6 @@ export function AddProfileModal({
     if (!dlg) return;
     if (open && !dlg.open) {
       setUsername("");
-      setDirectory(initialDirectory);
       setError(null);
       if (typeof dlg.showModal === "function") dlg.showModal();
       else dlg.setAttribute("open", "");
@@ -45,18 +29,18 @@ export function AddProfileModal({
       if (typeof dlg.close === "function") dlg.close();
       else dlg.removeAttribute("open");
     }
-  }, [open, initialDirectory]);
+  }, [open]);
 
   async function handleSubmit(event: Event) {
     event.preventDefault();
-    const trimmedUser = username.trim();
-    if (!trimmedUser) {
+    const trimmed = username.trim();
+    if (!trimmed) {
       setError("Username is required.");
       return;
     }
     setBusy(true);
     try {
-      await onSubmit({ username: trimmedUser, directory });
+      await onSubmit(trimmed);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -67,16 +51,16 @@ export function AddProfileModal({
   return (
     <dialog
       ref={dialogRef}
-      aria-labelledby="add-profile-title"
+      aria-labelledby="add-never-ask-title"
       onClose={onCancel}
       class="bg-surface border border-border text-fg p-6 min-w-[420px] max-w-[560px] backdrop:bg-black/50 backdrop:backdrop-blur-sm"
     >
       <form onSubmit={handleSubmit} novalidate>
-        <h2 id="add-profile-title" class="text-lg font-semibold mb-1">
-          Add profile directory
+        <h2 id="add-never-ask-title" class="text-lg font-semibold mb-1">
+          Add to Never-Ask
         </h2>
         <p class="text-sm text-muted mb-4">
-          Choose a download folder for a specific Instagram profile. igdl will send files there automatically from now on.
+          Downloads from this profile will skip the directory prompt and go straight to your browser's Save As dialog.
         </p>
 
         <div class="py-2">
@@ -91,21 +75,6 @@ export function AddProfileModal({
             onInput={(e) => setUsername((e.currentTarget as HTMLInputElement).value)}
             autoComplete="off"
             placeholder="alice_delish"
-            class="w-full bg-bg border border-border text-fg px-3 py-2 outline-none focus:border-accent transition-[border-color] duration-200"
-          />
-        </div>
-
-        <div class="py-2">
-          <label for={directoryId} class="block text-sm font-medium text-fg mb-1">
-            Download directory
-          </label>
-          <input
-            id={directoryId}
-            type="text"
-            value={directory}
-            onInput={(e) => setDirectory((e.currentTarget as HTMLInputElement).value)}
-            autoComplete="off"
-            placeholder="instagram/alice"
             class="w-full bg-bg border border-border text-fg px-3 py-2 outline-none focus:border-accent transition-[border-color] duration-200"
           />
         </div>
