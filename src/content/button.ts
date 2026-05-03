@@ -72,7 +72,7 @@ function createCustomBtn(
       btn.setAttribute("rel", "noopener,noreferrer");
       break;
     case "download-btn":
-      btn.setAttribute("title", "Download");
+      btn.setAttribute("title", "Download. Or, right-click to 'Save as'");
       break;
     case "zip-btn":
       btn.setAttribute("title", "Download ZIP");
