@@ -22,6 +22,7 @@ function makeDeps(overrides: Partial<ZipHandlerDeps> = {}): ZipHandlerDeps {
     sendDownloadZip: vi.fn(async () => ({ ok: true })),
     getInfo: vi.fn(async () => null),
     getArticle: vi.fn(() => article),
+    getDetailContainer: vi.fn(() => null),
     getSettings: () => SETTINGS_DEFAULTS,
     onFailure: vi.fn(),
     ...overrides,
@@ -154,6 +155,24 @@ describe("zipOnClicked", () => {
 
     const [, outerName] = (deps.sendDownloadZip as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(outerName).toMatch(/^instagram-ABC-/);
+  });
+
+  it("falls back to getDetailContainer when no ancestor <article> exists (permalink page)", async () => {
+    const info = carouselInfo("alice", "ABC", 1_700_000_000, 2);
+    const sectionMain = document.createElement("section");
+    const deps = makeDeps({
+      getInfo: vi.fn(async () => info),
+      getArticle: vi.fn(() => null),           // no <article> on permalink page
+      getDetailContainer: vi.fn(() => sectionMain), // section main is the container
+    });
+    const anchor = document.createElement("a");
+
+    await zipOnClicked(anchor, deps);
+
+    expect(deps.getDetailContainer).toHaveBeenCalled();
+    expect(deps.getInfo).toHaveBeenCalledWith(sectionMain);
+    expect(deps.sendDownloadZip).toHaveBeenCalledTimes(1);
+    expect(deps.onFailure).not.toHaveBeenCalled();
   });
 
   it("passes carousel_media video items through with video_versions[0].url", async () => {

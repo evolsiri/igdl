@@ -26,8 +26,14 @@ export interface ZipHandlerDeps {
   sendDownloadZip: (dataUrl: string, filename: string) => Promise<{ ok: boolean; error?: string }>;
   /** Resolves the Instagram info-API payload for the article that owns `node`. */
   getInfo: (articleNode: HTMLElement | null) => Promise<Record<string, unknown> | null>;
-  /** Walks up from `node` to the enclosing `<article>`. */
+  /** Walks up from `node` to the enclosing `<article>`. Used on feed / dialog pages. */
   getArticle: (node: HTMLElement | null) => HTMLElement | null;
+  /**
+   * Returns the page-level container on permalink pages (`/p/POSTID`) where
+   * there is no wrapping `<article>`. Defaults to
+   * `document.querySelector("section main")`.
+   */
+  getDetailContainer: () => HTMLElement | null;
   /** Synchronous Settings snapshot — content script pulls from `storageCache.canonical`. */
   getSettings: () => Settings;
   /** Reports a user-facing failure message. */
@@ -45,6 +51,7 @@ function getDefaultDeps(): ZipHandlerDeps {
         sendMessage({ type: "DOWNLOAD_ZIP", dataUrl, filename, saveAs: true }),
       getInfo: getDataFromAPI,
       getArticle: getParentArticleNode,
+      getDetailContainer: () => document.querySelector<HTMLElement>("section main"),
       getSettings: () => storageCache.canonical,
       onFailure: reportFailure,
     };
@@ -85,7 +92,7 @@ export async function zipOnClicked(
   deps: ZipHandlerDeps = getDefaultDeps(),
 ): Promise<void> {
   try {
-    const articleNode = deps.getArticle(target);
+    const articleNode = deps.getArticle(target) ?? deps.getDetailContainer();
     if (!articleNode) throw new Error("cannot find article node");
 
     const info = await deps.getInfo(articleNode);
