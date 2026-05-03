@@ -82,6 +82,7 @@ for the contract.
 | `.claude/` config / agent-file drift              | `claude-config-reviewer`                     |
 | WCAG / screen-reader audit                        | `voltagent-qa-sec:accessibility-tester`      |
 | Threat-modeling / supply-chain audit              | `voltagent-qa-sec:security-auditor`          |
+| Content-script perf / memory regressions          | `voltagent-qa-sec:performance-engineer`      |
 | Runtime verification (Chrome / Firefox)           | `chrome-devtools-mcp:chrome-devtools`        |
 | Codebase exploration                              | `Explore`                                    |
 | Implementation planning                           | `Plan`                                       |

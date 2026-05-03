@@ -166,3 +166,14 @@ Window-capture stops descent through the capture phase before reaching Instagram
 ## Pre-warming
 
 `src/content/downloadBridge.ts:prewarmModalMount()` creates a shadow mount eagerly during init and refreshes it after each use. The first paint of `NoDirPopup` would otherwise involve creating a host, attaching a shadow root, and registering six event listeners on the click — pre-warming hides that work.
+
+## Performance review
+
+The content script runs on every Instagram and Threads pageview, so its CPU and memory footprint is load-bearing. Route to `voltagent-qa-sec:performance-engineer` for review when changing any of:
+
+- Polling cadence in `processPage()`.
+- The XHR / fetch interception in `src/inject.ts` and `src/xhr.ts`.
+- ZIP-blob assembly in `src/services/zip/zip.ts` (large carousels can hold tens of MB on the main thread).
+- Shadow-DOM mount counts or pre-warming in `src/content/modals/mount.ts` and `src/content/downloadBridge.ts`.
+
+`code-reviewer` covers correctness; this routing is for the runtime budget specifically.

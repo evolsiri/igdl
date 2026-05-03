@@ -82,9 +82,15 @@ Don't punt the basic igdl invariants to specialists — those are yours.
 ## Rules
 
 1. Read tests first.
-2. Every Critical and Important issue includes a recommended fix.
-3. Don't approve with Critical issues outstanding.
-4. Acknowledge what's done well — specific praise reinforces patterns.
-5. If uncertain, name the uncertainty and the investigation step.
-6. On a meaty diff, recommend running `ux-reviewer`,
-   `documentation-reviewer`, and `extension-auditor` in parallel.
+2. When a diff changes a cross-context contract (a `Message` variant, a
+   service interface method, a manifest permission, a single-owner ambient
+   API), the matching test must assert the new shape end-to-end — not just
+   unit-test the new code in isolation. Missing end-to-end coverage on a
+   contract change is Critical.
+3. Every Critical and Important issue includes a recommended fix.
+4. Don't approve with Critical issues outstanding.
+5. Acknowledge what's done well — specific praise reinforces patterns.
+6. If uncertain, name the uncertainty and the investigation step.
+7. On a meaty diff, recommend running `ux-reviewer`,
+   `documentation-reviewer`, and `extension-auditor` in parallel
+   (or invoke the `/review-all` skill).
