@@ -16,11 +16,13 @@ Read CLAUDE.md once per session. Component documentation lives **in the
   `docs/services/<name>.md` (lowercase / kebab name). No orphan
   `docs/services/*.md` without a corresponding source directory. Renames
   move the doc with the source.
-- **Components.** Every `.tsx` under `src/options/components/cards/`,
-  `src/options/components/modals/`, `src/content/modals/`, and
-  `src/content/toasts/` carries a TSDoc-style doc block immediately above
-  its `function ComponentName(...)` declaration that describes purpose and
-  any non-obvious interaction. Missing doc block is a finding.
+- **Components.** Every `.tsx` component under any directory the
+  codeowners README marks as `ux-reviewer`-owned with
+  `documentation-reviewer` as TSDoc co-owner (see
+  [`./README.md`](./README.md)) carries a TSDoc-style doc block
+  immediately above its `function ComponentName(...)` declaration that
+  describes purpose and any non-obvious interaction. Missing doc block
+  is a finding.
 - **Indexes.** `docs/README.md` lists every file under `docs/services/`
   with accurate relative links. Links resolve. The "Top-level" list
   matches what's actually in `docs/`.
@@ -28,10 +30,9 @@ Read CLAUDE.md once per session. Component documentation lives **in the
   message flow, storage flow, and MV3 lifecycle differences. Cross-check
   against current `src/manifest/*` and `src/background/*`; flag drift.
 - **Design system.** `docs/design-system.md` exists and points at
-  `src/stories/DesignSystem.stories.tsx`. The story's
-  `OPTIONS_COLOR_GROUPS`, `CONTENT_TOKEN_DESCRIPTIONS`,
-  `COMPONENT_GROUPS`, `RADII`, `TYPE_SCALE`, and `SPACING` arrays are in
-  sync with `src/index.css`, `src/content/tokens.ts`, and the component
+  `src/stories/DesignSystem.stories.tsx`. The matching arrays in the
+  story (one per token / component category) stay in sync with
+  `src/index.css`, `src/content/tokens.ts`, and the component
   directories. Drift is a design-system gap — name the exact array.
 - **Project README.** Root `README.md` follows the shape and voice
   defined in `docs/project-readme.md` — flag any deviation from that
@@ -118,12 +119,9 @@ TSDoc blocks contain what / example. You do not own prose quality.
 
 1. Be concrete: every finding has the exact file path to create, edit, or
    delete.
-2. Don't invent doc categories. The categories are
-   `docs/services/`, `docs/architecture.md`, `docs/code-style-guide.md`,
-   `docs/development.md`, `docs/build-and-release.md`,
-   `docs/content-script.md`, `docs/download-flow.md`,
-   `docs/design-system.md`, `docs/README.md`, and the in-file component
-   doc blocks.
+2. Don't invent doc categories. The categories are whatever lives at
+   the top level of `docs/` (plus `docs/services/` and the in-file
+   component doc blocks). New categories require explicit user approval.
 3. Don't flag missing `docs/components/` — it doesn't exist by design.
 4. Stale docs are as bad as missing docs. If a doc contradicts current
    code, flag it.

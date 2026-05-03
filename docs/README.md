@@ -33,4 +33,4 @@ One doc per service in [`src/services/`](../src/services/). Each describes the p
 3. [download-flow.md](./download-flow.md) — the canonical end-to-end trace.
 4. [services/settings.md](./services/settings.md) — the highest-traffic service and a model for the rest.
 
-This index has no commentary on individual files — read the file. If a doc looks stale, the code wins.
+If a doc looks stale, the code wins.

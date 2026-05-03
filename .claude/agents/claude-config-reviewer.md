@@ -26,13 +26,7 @@ Run all six on every review.
 
 ### 1. Path resolution
 
-Every path reference must `test -e` against the real filesystem. Generate the candidate list with:
-
-```
-grep -rho 'src/[a-zA-Z0-9/_.-]*\.[a-z]\+\|docs/[a-zA-Z0-9/_.-]*\.md\|\.claude/[a-zA-Z0-9/_.-]*\|eslint.config.mjs' .claude/agents/ .claude/rules/ CLAUDE.md
-```
-
-For each candidate, run `test -e <path>` and report misses.
+Every path reference in the audited files must `test -e` against the real filesystem. Extract every path-shaped reference (anything that looks like a relative or absolute repo path) and verify each resolves. Don't pin yourself to a fixed list of path prefixes — new top-level surfaces (`scripts/`, `web-ext.config.mjs`, future ones) appear over time. Forward-looking paths that an agent will create on demand are acceptable — flag them as Info, not Blocking.
 
 ### 2. Cross-artifact consistency
 
