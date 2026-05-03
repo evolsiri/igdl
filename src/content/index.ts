@@ -14,6 +14,8 @@ import {
 } from "./extractors/video";
 import { handleThreads } from "./threads";
 import { prewarmModalMount } from "./downloadBridge";
+import { sendMessage } from "../utils/messages";
+import type { XhrPageMessage } from "../types/messages";
 
 /**
  * Content-script orchestrator — ported from the reference extension's
@@ -153,7 +155,7 @@ function processPage(): void {
         if (videos[i].controls) continue;
         videos[i].style.zIndex = "1";
         videos[i].style.position = "relative";
-        videos[i].setAttribute("controls", "true");
+        videos[i].controls = true;
         videos[i].onvolumechange = handleStoriesVideoVolumeChange;
       }
     }
@@ -276,6 +278,14 @@ function handleGlobalClick(e: MouseEvent): void {
 function init(): void {
   void initStorageCache().catch(() => undefined);
   prewarmModalMount();
+
+  window.addEventListener("message", (event: MessageEvent) => {
+    if (event.source !== window) return;
+    const data = event.data as { source?: unknown };
+    if (!data || data.source !== "igdl-xhr") return;
+    const msg = data as XhrPageMessage;
+    void sendMessage({ type: "XHR_SNAPSHOT", endpoint: msg.endpoint, body: msg.body });
+  });
 
   // Early burst: scan every 2s for the first 10s to catch late React renders,
   // then the steady-state 3s interval takes over.
