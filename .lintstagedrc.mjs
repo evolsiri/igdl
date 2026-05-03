@@ -12,9 +12,16 @@ const config = {
       "npm run test",
     ],
   },
-  "**/*.{json,md}": {
-    title: "{json,md} format",
+  "**/*.json": {
+    title: "{json} format",
     task: async (files) => [`prettier --write ${files.join(" ")}`],
+  },
+  "**/*.md": {
+    title: "{md} format and hex-literal guard",
+    task: async (files) => [
+      `prettier --write ${files.join(" ")}`,
+      `node ./scripts/check-hex-literals.mjs ${files.join(" ")}`,
+    ],
   },
   "**/*.css": {
     title: "{css} format",
