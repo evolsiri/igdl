@@ -77,7 +77,7 @@ The click-to-file trace. Every download — from the feed, a reel, a story, a hi
 
 | Token | Source |
 | --- | --- |
-| `{username}` | `MediaResource.username` (lowercased; `"instagram"` if missing) |
+| `{username}` | `MediaResource.username`, set upstream by the handler. `downloadBridge.ts` falls back to `instagram` when the resource has no username. |
 | `{id}` | `MediaResource.id` (post / reel / story id) |
 | `{type}` | One of `post`, `reel`, `story`, `highlight`, `avatar`, `threads` |
 | `{datetime}` | `formatDate(now, settings.datetimeFormat)` (default `YYYYMMDD_HHmmss`). Replaced with empty string if `settings.enableDatetimeFormat` is false. |
@@ -100,16 +100,19 @@ instagram/alice/alice-ABC-20260416_150742_2.jpg
 
 ## ZIP carousel path (the divergence)
 
-Carousel posts can be downloaded as a single ZIP via the second injected button. That path **does not** go through the message bus or `chrome.downloads`. The handler at `src/content/handlers/zip.ts`:
+Carousel posts can be downloaded as a single ZIP via the second injected button. The handler at `src/content/handlers/zip.ts`:
 
 1. Resolves all carousel items to `MediaResource[]` the same way the regular flow does.
-2. Calls `ZipService.build(entries)` (`src/services/zip/zip.ts`), which fetches every URL with `credentials: "omit"`, streams them into a `ZipWriter`, and returns an `application/zip` `Blob`.
-3. Uses `URL.createObjectURL` + an anchor click (`triggerAnchorDownload` in `src/services/zip/download.ts`) to save the blob.
+2. Calls `ZipService.build(entries)` (`src/services/zip/zip.ts`), which fetches every URL with `credentials: "omit"` and assembles them via `fflate` into an `application/zip` `Blob`.
+3. Converts the blob to a base64 data URL with `FileReader.readAsDataURL` and dispatches `DOWNLOAD_ZIP` to the background.
+4. The background's `handleDownloadZip` calls `chrome.downloads.download(saveAs: true)` with the data URL — the Save As dialog opens and the user picks the destination.
 
 Consequences:
 
-- The ZIP lands in the **browser's Downloads folder root**, not the per-profile directory. The anchor-click path doesn't reach `chrome.downloads`, which means we can't supply a `filename` with a directory prefix.
+- The filename has **no directory prefix** — per-profile routing does not apply. The destination is whatever the user picks in the Save As dialog.
 - Profile counters are **not** incremented for ZIP downloads — `incrementDownload` is only called from `handleDownloadMedia`.
+- The blob crosses the SW boundary as a data URL because blob URLs are origin-scoped and don't survive the round trip.
+- A persistent loading toast is shown during the build so the user knows the page may briefly freeze; it dismisses on completion or failure.
 - `credentials: "omit"` is load-bearing: Instagram's CDN serves signed URLs without `Access-Control-Allow-Credentials`, so a credentialed fetch fails CORS.
 
 ## Cancellation

@@ -29,7 +29,7 @@ All under `src/services/<name>/<name>.ts`. Each service is a `createXxxService(o
 - **SettingsService** — single owner of `chrome.storage.local["igdl_settings"]`. Read, patch, profile-directory CRUD, never-ask CRUD, theme preference, download counters. Subscribes to storage changes so the options page and content script stay in sync.
 - **MediaCacheService** — ephemeral cache backed by other `chrome.storage.local` keys. Populated by the XHR-interception layer; cleared on `chrome.runtime.onStartup`. Provides `resolveMediaForPost/Reel/Story/Highlight/Avatar/ThreadsPost` and `getUsernameForPost`.
 - **DownloadService** — content-script-side wrapper that sends a `DOWNLOAD_MEDIA` message and surfaces the result. Never throws.
-- **ZipService** — main-thread `@zip.js/zip.js` wrapper for carousel ZIP downloads. Fetches with `credentials: "omit"` because Instagram's CDN URLs are signed/public and don't return `Access-Control-Allow-Credentials`.
+- **ZipService** — main-thread `fflate` wrapper for carousel ZIP downloads. Fetches with `credentials: "omit"` because Instagram's CDN URLs are signed/public and don't return `Access-Control-Allow-Credentials`.
 - **ThemeService** — toggles a `dark` class on `<html>`. Does **not** persist the preference; the options page feeds it from `SettingsService` and re-applies on settings change.
 - **ToastService** — lazy Shadow-DOM toast stack used by the content script. `success` / `failure` / `info`; auto-dismiss after ~4 s.
 
@@ -40,6 +40,7 @@ The discriminated union in `src/types/messages.ts`:
 | Variant | Sender | Handler | Returns |
 | --- | --- | --- | --- |
 | `DOWNLOAD_MEDIA` | content / options | `background/shared/downloads.ts:handleDownloadMedia` | `{ downloadId }` and bumps profile counters |
+| `DOWNLOAD_ZIP` | content (carousel button) | `background/shared/downloads.ts:handleDownloadZip` | `{ downloadId }`; data URL handed to `chrome.downloads.download(saveAs: true)`, no profile-counter bump |
 | `OPEN_URL` | content | `background/shared/open-url.ts:handleOpenUrl` | `null` (opens new tab) |
 | `XHR_SNAPSHOT` | content | `background/shared/router.ts` → `mediaCache.ingestXhrSnapshot` | `null` (writes to media cache) |
 
@@ -71,7 +72,7 @@ Direct `chrome.storage.*` access outside those two services is a hard-rule viola
 
 - **Background**: `scripts: ["background.js"]` (IIFE — Firefox MV3 doesn't yet load module workers reliably). No `service_worker` key.
 - **Content script**: a single entry that loads `content.js` + `loader.js` at `document_idle` (Firefox runs scripts later than Chrome by default). Firefox MV3 has no `world: "MAIN"` support, so `loader.js` (`src/content/loader.ts`) appends a `<script src="inject.js">` tag to the page — the `inject.js` reaches `web_accessible_resources` via `chrome.runtime.getURL`.
-- **Permissions**: adds `webRequest` (used for ZIP-related concerns). No `externally_connectable` — the Threads bridge degrades gracefully on Firefox.
+- **Permissions**: adds `webRequest` for the Firefox-only XHR-capture stub in `src/background/firefox.ts` (registered listener is currently a no-op pending implementation). No `externally_connectable` — the Threads bridge degrades gracefully on Firefox.
 - **Options entry**: `options_ui.page: "options.html"` with `open_in_tab: true`.
 - **Add-on identity**: `browser_specific_settings.gecko.id = "igdl@evolsiri.local"`, `strict_min_version: "115.0"`.
 

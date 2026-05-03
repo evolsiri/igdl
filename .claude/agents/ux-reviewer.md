@@ -31,8 +31,9 @@ for tokens, motion, typography, and the component inventory.
   inherit those pairings; new fills introduce new tokens that must clear
   reasonable contrast.
 - Layout. The options page is a single-column stack — Downloads → Profile
-  Directories → Never-Ask → Appearance → Import/Export → Reset. No
-  multi-column layouts. No reordering without an explicit task.
+  Directories → Never-Ask → Appearance → Import/Export. No multi-column
+  layouts. No reordering without an explicit task. (The Reset action is a
+  button inside `ImportExportCard`; there is no separate Reset card.)
 - Interaction. CSS-animated hover on every interactive element (scale,
   brightness, border, shadow — never layout). Focus-visible outline on
   inputs. Tab reaches every control. Esc closes modals. Enter submits.

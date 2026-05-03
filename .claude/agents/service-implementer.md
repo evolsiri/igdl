@@ -48,7 +48,8 @@ When creating a new service `<name>`:
    with `LightMode` and `DarkMode` variants.
 4. Wire into `src/options/App.tsx` in the canonical card order
    (Downloads → Profile Directories → Never-Ask → Appearance →
-   Import/Export → Reset, plus the new card in its agreed slot).
+   Import/Export, plus the new card in its agreed slot). Reset is a
+   button inside `ImportExportCard`, not a separate card.
 5. Add a `COMPONENT_GROUPS` row in
    `src/stories/DesignSystem.stories.tsx`.
 

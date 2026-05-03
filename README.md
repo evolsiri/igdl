@@ -4,7 +4,7 @@
 
 # igdl
 
-Chrome and Firefox extension that adds a download button to Instagram.
+Chrome and Firefox extension that adds a download button to Instagram and Threads.
 
 <p align="center">
   <a href="#igdl">
@@ -20,8 +20,8 @@ Chrome and Firefox extension that adds a download button to Instagram.
 
 Grab the [latest release](https://github.com/evolsiri/igdl/releases/latest) and sideload:
 
-- **Chrome** — download the Chrome `igdl-chrome-version.zip` and unzip. Go to `chrome://extensions/` → Developer mode → **Load unpacked**.
-- **Firefox** — download `igdl-firefox-version.xpi`. Go to `about:addons` → gear ⚙ → **Install Add-on From File…** → pick the `.xpi`. Alternatively, double-click the `.xpi` to open in Firefox.
+- **Chrome** — download `igdl-chrome-<version>.zip` and unzip. Go to `chrome://extensions/` → Developer mode → **Load unpacked**.
+- **Firefox** — download `igdl-firefox-<version>.xpi`. Go to `about:addons` → gear ⚙ → **Install Add-on From File…** → pick the `.xpi`. Alternatively, double-click the `.xpi` to open in Firefox.
 
 ## Contributing
 

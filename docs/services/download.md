@@ -50,5 +50,5 @@ The filename is computed in the **background**, not the content script — so th
 
 ## Invariants
 
-- Content scripts MUST NOT call `chrome.downloads.*` directly. The single declared call is in `src/background/shared/downloads.ts`.
-- The carousel ZIP path is the deliberate exception: it uses an anchor click on a blob URL so the file lands in the Downloads folder root. See `../download-flow.md` and `zip.md`.
+- Content scripts MUST NOT call `chrome.downloads.*` directly. The two declared calls are in `src/background/shared/downloads.ts` (`handleDownloadMedia` and `handleDownloadZip`).
+- The carousel ZIP path is a separate message variant: `DOWNLOAD_ZIP` carries a base64 data URL, skips per-profile routing, and always opens the Save As dialog. Profile counters are not incremented. See `../download-flow.md` and `zip.md`.

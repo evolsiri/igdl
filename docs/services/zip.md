@@ -2,7 +2,7 @@
 
 Bundles a carousel's media into a single `application/zip` blob using `fflate`. Used by the carousel ZIP-download button (`src/content/handlers/zip.ts`) so users can save a multi-image carousel as one file.
 
-This is the one download path that **bypasses** `chrome.downloads`: the content script anchor-clicks a blob URL directly. Consequence: ZIPs land in the browser's Downloads folder root, not the per-profile directory, and don't increment profile counters. See `../download-flow.md`.
+The handler converts the blob to a base64 data URL, sends it to the background as `DOWNLOAD_ZIP`, and the background hands the data URL to `chrome.downloads.download` with `saveAs: true` — the user picks the destination in the Save As dialog. Per-profile routing is skipped (no directory prefix on the filename) and profile counters are not bumped. See `../download-flow.md`.
 
 ## Public API
 
@@ -19,7 +19,7 @@ interface ZipService {
 function createZipService(options?: ZipServiceOptions): ZipService;
 ```
 
-`build()` fetches every URL **sequentially** with `credentials: "omit"`, collects each response as a `Uint8Array`, then assembles them via `fflate.zipSync` with `level: 0` (store, no deflate). Sequential by design — Instagram CDNs throttle parallel fetches from the same client. Level 0 because JPEG/MP4 files are already compressed; deflating them adds latency for no size gain.
+`build()` fetches every URL **sequentially** with `credentials: "omit"`, collects each response as a `Uint8Array`, then assembles them asynchronously via `fflate`'s callback-style `zip(fileMap, cb)` with `level: 0` (store, no deflate). Sequential fetches by design — Instagram CDNs throttle parallel fetches from the same client. Level 0 because JPEG/MP4 files are already compressed; deflating them adds latency for no size gain.
 
 Rejects on:
 - Empty entry list.
@@ -38,7 +38,7 @@ None.
 
 ## Call sites
 
-- `src/content/handlers/zip.ts` — fetches every carousel item's `MediaResource`, calls `build()`, then anchor-clicks the resulting blob via `triggerAnchorDownload()` (`src/services/zip/download.ts`).
+- `src/content/handlers/zip.ts` — fetches every carousel item, calls `build()`, converts the blob to a data URL via `FileReader.readAsDataURL`, and dispatches a `DOWNLOAD_ZIP` message so the background can call `chrome.downloads.download(saveAs: true)`. (`triggerAnchorDownload()` in `src/services/zip/download.ts` is reachable but currently used only by tests.)
 
 ## Invariants
 

@@ -33,10 +33,11 @@ Read CLAUDE.md once per session. Component documentation lives **in the
   `COMPONENT_GROUPS`, `RADII`, `TYPE_SCALE`, and `SPACING` arrays are in
   sync with `src/index.css`, `src/content/tokens.ts`, and the component
   directories. Drift is a design-system gap — name the exact array.
-- **Project README.** Root `README.md` covers project purpose,
-  install/sideload steps for Chrome and Firefox, "How to use it" prose,
-  privacy section, build-from-source pointer to `docs/development.md`.
-  (You don't write or edit README.md — only flag missing sections.)
+- **Project README.** Root `README.md` follows the shape and voice
+  defined in `docs/project-readme.md` — flag any deviation from that
+  rule (missing or extra sections, banned vocabulary, marketing language,
+  dev/build sections that should live in `docs/`). You don't write or
+  edit `README.md` — only flag findings.
 
 ## TSDoc checks
 

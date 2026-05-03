@@ -9,6 +9,7 @@ interface ToastService {
   success(message: string): () => void;
   failure(message: string): () => void;
   info(message: string): () => void;
+  loading(message: string): () => void;
   dispose(): void;
 }
 
@@ -17,9 +18,10 @@ function createToastService(options?: ToastServiceOptions): ToastService;
 
 | Method | What it does |
 | --- | --- |
-| `success` | Brand-green left bar. Auto-dismisses after ~4 s. Returns a manual-dismiss function. |
-| `failure` | Brand-pink left bar. Same auto-dismiss. |
+| `success` | Accent-coloured left bar. Auto-dismisses after ~4 s. Returns a manual-dismiss function. |
+| `failure` | Destructive-coloured left bar. Same auto-dismiss. |
 | `info` | Neutral. Used for non-error user actions (e.g. the user dismissed the Save-As dialog). |
+| `loading` | Persistent toast with an inline spinner. Does **not** auto-dismiss; call the returned function when the operation completes. Used by the carousel-zip flow to indicate work in progress. |
 | `dispose` | Removes the shadow host. Idempotent — safe to call during page unload even if no toast was ever shown. |
 
 The returned dismiss function lets callers cancel a toast early (e.g. when navigating away).

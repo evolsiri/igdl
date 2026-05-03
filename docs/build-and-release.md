@@ -33,7 +33,7 @@ Both manifests live at `src/manifest/{chrome,firefox}.manifest.json`. The `versi
 | --- | --- | --- |
 | Background | `service_worker: "background.js"`, `type: "module"` | `scripts: ["background.js"]`, IIFE |
 | Content scripts | Two entries: `content.js` on both domains at `document_start`; `inject.js` on Instagram with `world: "MAIN"` | One entry: `content.js` + `loader.js` on both domains at `document_idle` |
-| Permissions | `storage`, `unlimitedStorage`, `downloads` | + `webRequest` |
+| Permissions | `storage`, `unlimitedStorage`, `downloads` | + `webRequest` (Firefox-only XHR-capture stub in `src/background/firefox.ts`) |
 | Threads bridge | `externally_connectable.matches: ["*://*.threads.com/*"]` | Not declared (no Firefox equivalent) |
 | Options entry | `options_page: "options.html"` | `options_ui: { page, open_in_tab: true }` |
 | Add-on identity | — | `browser_specific_settings.gecko.id`, `strict_min_version: "115.0"` |
