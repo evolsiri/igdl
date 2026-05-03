@@ -292,14 +292,6 @@ export const ColorPalette: Story = {
 // Design Tokens (non-color primitives)
 // ---------------------------------------------------------------------------
 
-const RADII = [
-  { token: "--radius-none", value: "0" },
-  { token: "--radius-sm", value: "0" },
-  { token: "--radius-md", value: "0" },
-  { token: "--radius-lg", value: "0" },
-  { token: "--radius-xl", value: "0" },
-  { token: "--radius-full", value: "0" },
-];
 
 const TYPE_SCALE = [
   {
@@ -382,37 +374,17 @@ export const DesignTokens: Story = {
         </p>
       </header>
 
-      <section>
-        <h2 class="text-lg font-semibold text-fg mb-1">Radii</h2>
-        <p class="text-sm text-muted mb-4">
-          CLAUDE.md rule: every UI element is a sharp rectangle. All radius
-          tokens are pinned to <code class="font-mono text-xs">0</code>, and a
-          global reset (
-          <code class="font-mono text-xs">src/index.css:80-83</code>) forces{" "}
+      <section class="bg-surface border border-border px-5 py-4">
+        <h2 class="text-sm font-semibold text-fg mb-1">Radii — all zero</h2>
+        <p class="text-sm text-muted">
+          Every radius token (<code class="font-mono text-xs">--radius-none</code>{" "}
+          through <code class="font-mono text-xs">--radius-full</code>) is{" "}
+          <code class="font-mono text-xs">0</code>. A global reset in{" "}
+          <code class="font-mono text-xs">src/index.css</code> enforces{" "}
           <code class="font-mono text-xs">border-radius: 0 !important</code> on
           every element. Only SVG <code class="font-mono text-xs">rx</code>{" "}
-          attributes opt out (the Instagram logo in the profile table).
+          attributes opt out (brand logo glyphs).
         </p>
-        <div class="bg-surface border border-border overflow-hidden">
-          <table class="w-full text-sm">
-            <thead class="text-xs uppercase tracking-wide text-muted border-b border-border">
-              <tr>
-                <th class="text-left px-4 py-2 font-medium">Token</th>
-                <th class="text-left px-4 py-2 font-medium">Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {RADII.map((r) => (
-                <tr key={r.token} class="border-t border-border">
-                  <td class="px-4 py-2 font-mono text-xs text-fg">{r.token}</td>
-                  <td class="px-4 py-2 font-mono text-xs text-muted">
-                    {r.value}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </section>
 
       <section>
@@ -434,9 +406,8 @@ export const DesignTokens: Story = {
           />
         </div>
         <p class="text-xs text-muted mt-2">
-          Defined in <code class="font-mono text-xs">src/index.css:45-47</code>{" "}
-          and <code class="font-mono text-xs">src/content/tokens.ts:37-40</code>
-          . Ease:{" "}
+          Defined in <code class="font-mono text-xs">src/index.css</code> and{" "}
+          <code class="font-mono text-xs">src/content/tokens.ts</code>. Ease:{" "}
           <code class="font-mono text-xs">
             {MOTION.hover.split(" ").slice(1).join(" ")}
           </code>
