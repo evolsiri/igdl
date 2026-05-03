@@ -99,7 +99,7 @@ The post-loop toast logic is bucket-based:
 
 | Bucket                                          | Toast                                                      |
 | ----------------------------------------------- | ---------------------------------------------------------- |
-| At least one success, zero errors               | ✔ green "Downloaded @alice" / "Downloaded N items from @alice" |
+| At least one success, zero errors               | ✔ success "Downloaded @alice" / "Downloaded N items from @alice" |
 | Zero success, ≥1 cancel, zero errors            | ℹ neutral "Download canceled" / "N downloads canceled"     |
 | At least one error, zero success                | ✕ red "Download failed: <first error>"                     |
 | Partial error (some success + ≥1 error)         | ✕ red "Only N/M downloaded — <first error>"                |

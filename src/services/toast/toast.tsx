@@ -4,7 +4,8 @@ import { createShadowMount, type ShadowMount } from "../../content/modals/mount"
 
 export interface ToastService {
   /**
-   * Shows a green success toast on the page. Auto-dismisses after ~4s
+   * Shows a success toast on the page (accent-coloured left bar, follows the
+   * brand). Auto-dismisses after ~4s
    * (PAC-3.3). Returns a dismiss function for early cancellation.
    *
    * @example

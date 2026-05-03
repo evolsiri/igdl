@@ -139,7 +139,7 @@ export function ProfileDirectoriesCard({
     <button
       type="button"
       onClick={() => setShowAdd(true)}
-      class="px-3 py-1.5 bg-accent text-accent-contrast text-sm font-medium hover:bg-accent-hover transition-[background-color,transform] duration-150 hover:scale-[1.02] active:scale-[0.98]"
+      class="px-3 py-1.5 bg-accent text-accent-contrast text-sm font-medium hover:bg-accent-hover transition-colors duration-150"
     >
       + Add profile
     </button>

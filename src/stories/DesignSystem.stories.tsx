@@ -67,12 +67,12 @@ const OPTIONS_COLOR_GROUPS: readonly CssGroup[] = [
     swatches: [
       {
         varName: "--color-accent",
-        description: "Primary green — buttons, focus, links",
+        description: "brand-green — buttons, focus, links",
       },
       { varName: "--color-accent-hover", description: "Accent hover state" },
       {
         varName: "--color-accent-contrast",
-        description: "Text on accent fills (~11:1 AAA)",
+        description: "Black text on accent fills (~15.7:1 AAA)",
       },
     ],
   },
@@ -106,6 +106,19 @@ const OPTIONS_COLOR_GROUPS: readonly CssGroup[] = [
       {
         varName: "--color-focus-ring",
         description: "Global :focus-visible outline",
+      },
+    ],
+  },
+  {
+    name: "Brand",
+    swatches: [
+      {
+        varName: "--color-brand-green",
+        description: "Logo background + accent — brand-green",
+      },
+      {
+        varName: "--color-brand-pink",
+        description: "Destructive / error / failure — brand-pink",
       },
     ],
   },
@@ -178,9 +191,9 @@ const CONTENT_TOKEN_DESCRIPTIONS: Record<keyof typeof TOKENS, string> = {
   border: "1px border inside shadow-DOM panels",
   fg: "Primary text inside injected UI",
   muted: "Secondary text inside injected UI",
-  accent: "Primary green in content-script UI",
+  accent: "brand-green in content-script UI",
   accentHover: "Accent hover (e.g., Save & download button)",
-  accentContrast: "Text on accent fills (always black)",
+  accentContrast: "Black text on accent fills",
   destructive: "Destructive state inside injected UI",
   destructiveHover: "Destructive hover state",
   destructiveContrast: "Text on destructive fills",
@@ -188,6 +201,8 @@ const CONTENT_TOKEN_DESCRIPTIONS: Record<keyof typeof TOKENS, string> = {
   failure: "Failure toast accent bar",
   info: "Info toast accent bar (e.g., user-canceled download)",
   focusRing: ":focus-visible outline in injected UI",
+  brandGreen: "Logo background + accent — brand-green",
+  brandPink: "Destructive / error / failure — brand-pink",
 };
 
 export const ColorPalette: Story = {
@@ -253,13 +268,20 @@ export const ColorPalette: Story = {
       <section class="bg-surface border border-border px-5 py-4">
         <h3 class="text-sm font-semibold text-fg mb-1">Contrast note</h3>
         <p class="text-sm text-muted">
-          <span class="font-mono text-xs">#1ED760</span> +{" "}
-          <span class="font-mono text-xs">#000000</span> ≈{" "}
-          <strong class="text-fg">11:1</strong> (WCAG AAA). Every green fill in
-          igdl pairs with black text. The previous{" "}
-          <span class="font-mono text-xs">#1DB954</span> green + white text was{" "}
-          <span class="font-mono text-xs">2.5:1</span> and failed AA — the
-          palette was tightened for this reason.
+          <span class="font-mono text-xs">#000000</span> +{" "}
+          <span class="font-mono text-xs">#a8f368</span> ≈{" "}
+          <strong class="text-fg">15.7:1</strong> (WCAG AAA). Every brand-green
+          fill in igdl pairs with black text — that's the accent, success
+          toast bar, focus ring, and the logo's square background.
+        </p>
+        <p class="text-sm text-muted mt-3">
+          Destructive / error / failure states use{" "}
+          <code class="font-mono text-xs">--color-brand-pink</code> (
+          <span class="font-mono text-xs">#f9035e</span>) paired with white
+          text (~<span class="font-mono text-xs">4.0:1</span>, AA Large).
+          Same hex backs both <code class="font-mono text-xs">--color-destructive</code>{" "}
+          and <code class="font-mono text-xs">--color-failure</code>, so
+          confirm dialogs, reset-all flows, and failure toasts all match.
         </p>
       </section>
     </div>

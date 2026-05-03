@@ -39,8 +39,8 @@ Any UI-touching change should pass these self-checks before review:
 
 These are enforced by the `ux-reviewer` agent and cross-checked here:
 
-- **Zero border-radius** on every UI element (the global reset in `src/index.css` makes this load-bearing). SVG `rx` attributes are the only opt-out — used for brand glyphs like the Instagram icon in the profile table.
-- **Dark-first** palette. Accent: `#1ED760` paired with black text (~11:1, AAA). Previous `#1DB954` / white failed AA — don't regress.
+- **Zero border-radius** on every UI element (the global reset in `src/index.css` makes this load-bearing). SVG `rx` attributes (and SVG primitives like `<circle>`) are the only opt-out — used for brand glyphs like the Instagram icon in the profile table and the round igdl logo. The rule still applies to every UI element with `border-radius`.
+- **Dark-first** palette. Accent: `#a8f368` ('brand-green') paired with black text (~15.7:1, AAA). The accent shares its hex with `--color-brand-green`, so the UI's primary fills match the logo's square background. Destructive / error / failure states use `--color-brand-pink` (`#f9035e`) paired with white text — that's the same brand-pink token, used as the destructive fill across confirm dialogs, failure toasts, and reset-all flows.
 - **CSS-only** micro-animations using `--duration-hover` / `--duration-focus` + `--ease-out-swift`. No JS animation libraries.
 - **Shadow-DOM isolation** for every injected UI element. Content-script tokens never flip — they're dark-only because they render on Instagram's own themed surfaces.
 

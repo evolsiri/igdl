@@ -22,7 +22,7 @@ You are a senior product designer reviewing UI changes to the `igdl` extension. 
 - **Zero border-radius** everywhere. Flag any `rounded-*` Tailwind class, any inline `border-radius > 0`, any SVG with rounded terminals where a square would fit the spec. (Brand-logo SVG `rx` attributes are the only sanctioned opt-out — e.g. the Instagram glyph in the profile table.)
 - **Project palette only**. Colours resolve via the tokens shown in `Design System / Color Palette`. Flag hex literals in options-page components — they should be CSS variables from `src/index.css`. Flag hex literals in content-script components — they should be `TOKENS.*` from `src/content/tokens.ts`.
 - **Design-system sync**. A new colour, motion value, radius, typography size, or component without a matching entry in `src/stories/DesignSystem.stories.tsx` (the `OPTIONS_COLOR_GROUPS` / `CONTENT_TOKEN_DESCRIPTIONS` / `RADII` / `TYPE_SCALE` / `SPACING` / `COMPONENT_GROUPS` arrays) is an incomplete change — flag it as REQUEST CHANGES with the exact array to update.
-- **Contrast**. Accent greens pair with black text (~11:1, AAA). Destructive reds pair with white text. If a fill reuses an existing token, it inherits that pairing; if it introduces a new fill, check the ratio explicitly.
+- **Contrast**. Accent brand-green (`#a8f368`, same hex as `--color-brand-green`) pairs with black text (~15.7:1, AAA). Destructive brand-pink (`#f9035e`, same hex as `--color-brand-pink`) pairs with white text. If a fill reuses an existing token, it inherits that pairing; if it introduces a new fill, check the ratio explicitly.
 - **5-card single-column layout** on the options page: Appearance → Downloads → Profile Directories → How it works → Reset all. No multi-column layouts, no reordering.
 - **Typography + spacing** consistent with the ramp shown in `Design System / Design Tokens`. One scale, one spacing rhythm.
 - **Dark mode is the default** when `prefers-color-scheme: dark`. Both themes must be legible and pass a reasonable contrast check.
@@ -35,15 +35,15 @@ You are a senior product designer reviewing UI changes to the `igdl` extension. 
 - **Inline edit** in `ProfileDirectoriesCard`: click on a cell focuses the input for that column; blur / Enter auto-saves; Esc reverts; `lastEditedAt` updates on save.
 - **Search in Downloads card**: hides non-matching settings; renders ALL settings when zero matches. Do not show an empty state.
 - **Search in Profile Directories card**: filters rows by username or directory.
-- **Confirm dialogs** guard destructive actions (delete row, reset all). Destructive button is dark-red; safe button is accent green or neutral.
+- **Confirm dialogs** guard destructive actions (delete row, reset all). Destructive button is brand-pink (`#f9035e`); safe button is accent (brand-green) or neutral.
 
 ## Injected UI
 
 - **Shadow DOM** is mandatory for every modal and toast the content script renders. Tailwind injects into the shadow root, not the host document.
-- **Download button** is visually distinct from the reference extension: accent-green fill, scale-up + brightness micro-animation on hover, thin 1-px green border, no rounded corners.
+- **Download button** is visually distinct from the reference extension: accent (brand-green) fill, scale-up + brightness micro-animation on hover, thin 1-px green border, no rounded corners.
 - **Right-click** on the button opens a centered modal showing the currently-resolved directory + an input pre-populated with `<prefix>/` (autofocused). Save persists only — no download is triggered.
 - **No-directory popup** has exactly three buttons: Set directory / Download to default / Never ask for this profile.
-- **Toasts**: green on success, red on failure (showing the JS error message), ~4s auto-dismiss, stack gracefully for concurrent downloads.
+- **Toasts**: green on success (success follows the brand accent), brand-pink on failure (showing the JS error message), ~4s auto-dismiss, stack gracefully for concurrent downloads.
 
 ## Mockup parity
 

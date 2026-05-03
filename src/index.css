@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 /*
- * Dark-first palette with a green accent.
+ * Dark-first palette with a brand-green accent (#a8f368 — same hex as the
+ * square logo background, so the UI's accent matches the brand glyph).
  * Light theme ships as the default; dark theme activates via a `.dark` class on :root.
  * Tokens live in CSS variables so ThemeService can flip the class without re-rendering Preact.
  */
@@ -16,24 +17,33 @@
   --color-fg: #000000;
   --color-muted: #535353;
 
-  /* Accent (green family) — #1ed760 is the brighter saturated green, pairs
-   * with black text for ~11:1 contrast in both themes. Hover drops to
-   * the classic #1db954 to give a "press down" feel in light mode. */
-  --color-accent: #1ed760;
-  --color-accent-hover: #1db954;
+  /* Accent (brand-green, #a8f368) — pairs with black text for ~15.7:1
+   * (WCAG AAA). Same hex as --color-brand-green so the UI's accent and the
+   * logo's square background stay aligned. Hover variants go darker in
+   * light mode and lighter in dark mode to give a consistent "press down" feel. */
+  --color-accent: #a8f368;
+  --color-accent-hover: #92e84e;
   --color-accent-contrast: #000000;
 
-  /* Destructive (delete row, reset-all) */
-  --color-destructive: #d72638;
-  --color-destructive-hover: #b71c2c;
+  /* Brand identity colours — used in the logo glyph (`public/logo.svg`)
+   * and across the UI. brand-green fills the logo background and the
+   * accent / success / focus-ring. brand-pink is the destructive / error /
+   * failure colour. Same value in light + dark since they're brand
+   * identity, not surface. */
+  --color-brand-green: #a8f368;
+  --color-brand-pink: #f9035e;
+
+  /* Destructive (delete row, reset-all, error states) — brand-pink, white text */
+  --color-destructive: #f9035e;
+  --color-destructive-hover: #d40253;
   --color-destructive-contrast: #ffffff;
 
   /* Toasts */
-  --color-success: #1ed760;
-  --color-failure: #d72638;
+  --color-success: #a8f368;
+  --color-failure: #f9035e;
 
   /* Focus ring */
-  --color-focus-ring: #1ed760;
+  --color-focus-ring: #a8f368;
 
   /* Radii — zero everywhere per CLAUDE.md / TAC-7.1 */
   --radius-none: 0;
@@ -58,18 +68,21 @@
   --color-fg: #ffffff;
   --color-muted: #b3b3b3;
 
-  --color-accent: #1ed760;
-  --color-accent-hover: #25e06b;
+  --color-accent: #a8f368;
+  --color-accent-hover: #b9f583;
   --color-accent-contrast: #000000;
 
-  --color-destructive: #e22134;
-  --color-destructive-hover: #f25062;
+  --color-destructive: #f9035e;
+  --color-destructive-hover: #fb3580;
   --color-destructive-contrast: #ffffff;
 
-  --color-success: #1ed760;
-  --color-failure: #e22134;
+  --color-success: #a8f368;
+  --color-failure: #f9035e;
 
-  --color-focus-ring: #1ed760;
+  --color-focus-ring: #a8f368;
+
+  --color-brand-green: #a8f368;
+  --color-brand-pink: #f9035e;
 }
 
 /*

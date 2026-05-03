@@ -13,7 +13,7 @@ Manages the stack of success / failure / info toasts rendered over Instagram or 
 
 ### `success(message): () => void`
 
-Green toast, auto-dismiss ~4s (PAC-3.1). Returns an early-dismiss function.
+Success toast (accent-coloured left bar — follows the brand), auto-dismiss ~4s (PAC-3.1). Returns an early-dismiss function.
 
 ```ts
 const dismiss = toast.success("Downloaded @alice");

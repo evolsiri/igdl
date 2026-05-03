@@ -16,19 +16,22 @@ export const TOKENS = {
   fg: "#ffffff",
   muted: "#b3b3b3",
 
-  accent: "#1ed760",
-  accentHover: "#25e06b",
+  accent: "#a8f368",
+  accentHover: "#b9f583",
   accentContrast: "#000000",
 
-  destructive: "#e22134",
-  destructiveHover: "#f25062",
+  destructive: "#f9035e",
+  destructiveHover: "#fb3580",
   destructiveContrast: "#ffffff",
 
-  success: "#1ed760",
-  failure: "#e22134",
+  success: "#a8f368",
+  failure: "#f9035e",
   info: "#b3b3b3",
 
-  focusRing: "#1ed760",
+  focusRing: "#a8f368",
+
+  brandGreen: "#a8f368",
+  brandPink: "#f9035e",
 } as const;
 
 /**

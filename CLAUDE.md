@@ -23,7 +23,7 @@ Chrome + Firefox MV3 browser extension (Preact + TypeScript + Tailwind v4) that 
 ## Non-negotiable styling rules
 
 - **Zero border-radius** on every element in all extension UI (options page + injected modals + toasts). Enforced via a global reset.
-- **Dark-first** palette. Accent: green (#1ED760 family — brighter green, pairs with black text for ~11:1 contrast in both themes). Default to dark when `prefers-color-scheme: dark`.
+- **Dark-first** palette. Accent / success: brand-green (#a8f368, pairs with black text for ~15.7:1 AAA contrast — same hex as the square logo background). Destructive / error / failure: brand-pink (#f9035e, pairs with white text). Default to dark when `prefers-color-scheme: dark`.
 - Animations are **CSS transitions only** — no JS animation libraries. Trigger on `:hover`, `:focus`, `:focus-visible`, `:active`, or stateful class changes.
 - Theme switching toggles a single root class; never re-renders the tree for theme changes.
 

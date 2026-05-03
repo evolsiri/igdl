@@ -28,9 +28,9 @@ through each of these. All must pass in both browsers.
 - [ ] Left-click on a new-to-you profile → NoDirPopup with the three
       expected buttons.
 - [ ] "Set directory" → input pre-populated with `<prefix>/` + autofocus →
-      save → download completes → green toast → new row in Profile Download
+      save → download completes → success toast → new row in Profile Download
       Directories card.
-- [ ] Left-click on a configured profile → silent download + green toast +
+- [ ] Left-click on a configured profile → silent download + success toast +
       downloadCount increments + lastDownloadAt updates.
 - [ ] Right-click the button → OS Save As dialog appears immediately (no
       modal); file downloads to the chosen location.

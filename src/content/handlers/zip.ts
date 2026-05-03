@@ -68,7 +68,7 @@ export function __resetZipHandlerDepsForTesting(): void {
  * disk via an anchor-click (see `ZipService/download.ts` for why this path
  * is used instead of `chrome.downloads`).
  *
- * On success, fires a green "Downloaded zip from @user" toast. On any
+ * On success, fires a success "Downloaded zip from @user" toast. On any
  * failure — missing article node, non-carousel post, info-API miss, fetch
  * error — fires a red failure toast with the cause in the message.
  *
