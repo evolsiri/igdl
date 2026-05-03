@@ -575,6 +575,12 @@ const COMPONENT_GROUPS: readonly ComponentGroup[] = [
         storyPath: "Options / Cards / DownloadsCard",
       },
       {
+        name: "ImportExportCard",
+        summary:
+          "Export current settings to a JSON file or import a previously exported file.",
+        storyPath: "Options / Cards / ImportExportCard",
+      },
+      {
         name: "NeverAskCard",
         summary: "Manage the never-ask profile list.",
         storyPath: "Options / Cards / NeverAskCard",

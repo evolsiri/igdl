@@ -9,6 +9,7 @@ import type { ThemeService } from "../services/theme/theme";
 import type { ProfileDirectoriesSort, Settings, ThemeSetting } from "../types/settings";
 import { AppearanceCard } from "./components/cards/AppearanceCard";
 import { DownloadsCard } from "./components/cards/DownloadsCard";
+import { ImportExportCard } from "./components/cards/ImportExportCard";
 import { NeverAskCard } from "./components/cards/NeverAskCard";
 import { ProfileDirectoriesCard } from "./components/cards/ProfileDirectoriesCard";
 import { ResetAllCard } from "./components/cards/ResetAllCard";
@@ -64,6 +65,11 @@ export function App({ settingsService, mediaCacheService, themeService }: AppPro
     await settingsService.resetAll();
     await mediaCacheService.clearAll();
   };
+  const handleExport = () => settingsService.get();
+  const handleImport = (parsed: Record<string, unknown>) =>
+    // SettingsService.set re-normalizes via the schema, so missing fields fall
+    // back to defaults and invalid types are coerced — the cast is safe.
+    settingsService.set(parsed as unknown as Settings);
 
   return (
     <main class="min-h-screen bg-bg text-fg">
@@ -93,6 +99,8 @@ export function App({ settingsService, mediaCacheService, themeService }: AppPro
           entries={settings.neverAskProfiles}
           onRemove={handleRemoveNeverAsk}
         />
+
+        <ImportExportCard onExport={handleExport} onImport={handleImport} />
 
         <ResetAllCard onReset={handleReset} />
       </div>
