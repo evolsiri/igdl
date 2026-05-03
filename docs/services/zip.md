@@ -2,7 +2,7 @@
 
 Bundles a carousel's media into a single `application/zip` blob using `fflate`. Used by the carousel ZIP-download button (`src/content/handlers/zip.ts`) so users can save a multi-image carousel as one file.
 
-The handler converts the blob to a base64 data URL, sends it to the background as `DOWNLOAD_ZIP`, and the background hands the data URL to `chrome.downloads.download` with `saveAs: true` — the user picks the destination in the Save As dialog. Per-profile routing is skipped (no directory prefix on the filename) and profile counters are not bumped. See `../download-flow.md`.
+The handler converts the blob to a base64 data URL and sends it to the background as `DOWNLOAD_ZIP` with `saveAs: true`. The background hands the data URL to `chrome.downloads.download`, which opens the Save As dialog so the user picks the destination. Per-profile routing is skipped (no directory prefix on the filename) and profile counters are not bumped. See `../download-flow.md`.
 
 ## Public API
 

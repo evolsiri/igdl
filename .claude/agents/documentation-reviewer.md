@@ -40,6 +40,45 @@ Read CLAUDE.md once per session. Component documentation lives **in the
   dev/build sections that should live in `docs/`). You don't write or
   edit `README.md` — only flag findings.
 
+## Factual cross-check (mandatory on every doc you review)
+
+Structural coverage isn't enough. Every doc you review gets at least
+**three substantive technical claims** verified against `src/`. Pick
+claims that would mislead a reader if wrong, and grep / read the
+source. Examples of claims that need verifying:
+
+- Which variants exist in a discriminated union (`Message`, `ToastKind`,
+  etc.) — open the type file, count, compare to the doc table.
+- Which methods exist on a service interface — open the interface, count,
+  compare to every doc section that enumerates methods.
+- Which file holds the actual implementation of a behavior the doc
+  attributes (e.g. "permission X is for feature Y" — grep the permission
+  in `src/`, confirm what it's used for).
+- Which library / API a service wraps — open the import, compare.
+- Which file owns a single-owner contract (storage, downloads, message
+  router) — `grep -r` the API and confirm no other call sites.
+
+Claims that survive verification are silent passes. Claims that don't
+become Critical findings, not Suggestions — code-vs-docs drift is the
+worst-failure mode for documentation. Cite as `doc:line says X; src/foo:line shows Y`.
+
+## API-change ripple
+
+When a diff adds, removes, or renames a method on a service interface
+(or a variant in a discriminated union, a token in a token bag, a
+permission in a manifest), **every section of the matching doc gets
+re-read** — not just the section that mirrors the changed symbol.
+Sections that commonly drift on this kind of change:
+
+- Public API code block.
+- Method / variant table.
+- Lifecycle paragraph (often enumerates the methods that trigger a
+  state transition).
+- Call sites list.
+- Invariants list.
+
+Mismatches here are findings, not Suggestions.
+
 ## TSDoc checks
 
 For every exported function in `src/services/*/<name>.ts` and every public
@@ -73,6 +112,14 @@ Trivial getters and type-only re-exports are exempt.
 ### Architecture drift
 - docs/architecture.md <section> stale vs current code. Update to reflect
   <change>.
+
+### Factual drift (Critical)
+- doc:line says "<claim>"; src/<file>:line shows "<reality>". Pick the
+  fix.
+
+### API-change ripple
+- src/services/<name> changed; docs/services/<name>.md <section> still
+  describes the old shape.
 
 ### Design-system drift
 - src/stories/DesignSystem.stories.tsx — <array> missing entry for

@@ -18,8 +18,8 @@ function createToastService(options?: ToastServiceOptions): ToastService;
 
 | Method | What it does |
 | --- | --- |
-| `success` | Accent-coloured left bar. Auto-dismisses after ~4 s. Returns a manual-dismiss function. |
-| `failure` | Destructive-coloured left bar. Same auto-dismiss. |
+| `success` | Brand-green left bar. Auto-dismisses after ~4 s. Returns a manual-dismiss function. |
+| `failure` | Brand-pink left bar. Same auto-dismiss. |
 | `info` | Neutral. Used for non-error user actions (e.g. the user dismissed the Save-As dialog). |
 | `loading` | Persistent toast with an inline spinner. Does **not** auto-dismiss; call the returned function when the operation completes. Used by the carousel-zip flow to indicate work in progress. |
 | `dispose` | Removes the shadow host. Idempotent — safe to call during page unload even if no toast was ever shown. |
@@ -28,7 +28,7 @@ The returned dismiss function lets callers cancel a toast early (e.g. when navig
 
 ## Lifecycle
 
-Lazy: the shadow mount is created on first `success`/`failure`/`info` call and reused for every subsequent toast. Empty stacks `render(null, container)` to drop the Preact tree but leave the host attached so the next toast doesn't pay the mount-creation cost again.
+Lazy: the shadow mount is created on the first toast call (any kind) and reused for every subsequent toast. Empty stacks `render(null, container)` to drop the Preact tree but leave the host attached so the next toast doesn't pay the mount-creation cost again.
 
 ## Storage
 
