@@ -68,13 +68,13 @@ export const TypesAndResets: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     // getByRole("textbox") avoids matching the ResetButton's
-    // aria-label="Reset Default download directory to default", which
+    // aria-label="Reset to default: instagram", which
     // getByLabelText would also pick up.
     const input = canvas.getByRole("textbox", { name: /default download directory/i }) as HTMLInputElement;
     fireEvent.input(input, { target: { value: "threads" } });
     await expect((args.onChange as ReturnType<typeof fn>).mock.calls.at(-1)?.[0]).toBe("threads");
 
-    const resetBtn = canvas.getByRole("button", { name: /reset .* to default/i });
+    const resetBtn = canvas.getByRole("button", { name: /reset to default/i });
     await userEvent.click(resetBtn);
     await expect(args.onChange).toHaveBeenLastCalledWith("instagram");
   },

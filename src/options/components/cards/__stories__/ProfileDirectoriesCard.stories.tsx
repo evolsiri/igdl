@@ -40,11 +40,14 @@ const meta: Meta<typeof ProfileDirectoriesCard> = {
   parameters: { layout: "padded" },
   args: {
     defaultDirectory: "instagram",
+    prefix: "",
+    neverAskProfiles: [],
     sort: { ...PROFILE_DIRECTORIES_DEFAULT_SORT },
     onAdd: fn(),
     onUpdate: fn(),
     onDelete: fn(),
     onSortChange: fn(),
+    onRemoveNeverAsk: fn(),
   },
   render: (args) => {
     const [profiles, setProfiles] = useState<ProfileDirEntry[]>(args.profiles);
@@ -54,11 +57,14 @@ const meta: Meta<typeof ProfileDirectoriesCard> = {
         <ProfileDirectoriesCard
           profiles={profiles}
           defaultDirectory={args.defaultDirectory}
+          prefix={args.prefix}
+          neverAskProfiles={args.neverAskProfiles}
           sort={sort}
           onSortChange={(next) => {
             setSort(next);
             args.onSortChange(next);
           }}
+          onRemoveNeverAsk={args.onRemoveNeverAsk}
           onAdd={async (input: AddProfileInput) => {
             const next: ProfileDirEntry = {
               username: input.username,
