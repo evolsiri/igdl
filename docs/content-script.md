@@ -95,28 +95,19 @@ Instagram serves most media URLs (especially video) as **short-lived signed URLs
 
 ### How the snapshot reaches the cache
 
-```
-inject.ts (MAIN world)                 content/index.ts (isolated)              background
-                                                                            
-xhr/fetch fires
-   │
-   ├─ onSnapshot({ endpoint, body })
-   │
-   └─ window.postMessage(
-         { source: "igdl-xhr", endpoint, body },
-         window.location.origin)
-                                       │
-                                       ▼
-                                  message listener filters by source
-                                       │
-                                       └─ sendMessage({ type: "XHR_SNAPSHOT", endpoint, body })
-                                                                                   │
-                                                                                   ▼
-                                                                        routeMessage → 
-                                                                        mediaCache.ingestXhrSnapshot()
-                                                                        dispatches by endpoint substring
-                                                                        into post / reels / stories /
-                                                                        highlight / username caches
+```mermaid
+sequenceDiagram
+    participant inject as inject.ts (MAIN world)
+    participant content as content/index.ts (isolated)
+    participant bg as background
+
+    inject->>inject: xhr / fetch fires
+    inject->>inject: onSnapshot({ endpoint, body })
+    inject->>content: window.postMessage<br/>{ source: "igdl-xhr", ... }
+    content->>content: filter by source tag
+    content->>bg: sendMessage({ type: "XHR_SNAPSHOT", ... })
+    bg->>bg: routeMessage → mediaCache.ingestXhrSnapshot
+    Note over bg: dispatches by endpoint substring into<br/>post / reels / stories / highlight / username caches
 ```
 
 Why the round-trip through the background? `MediaCacheService` is owned by the background so the cache lives across content-script re-injections (SPA navigations) and stays consistent between options page and content scripts. Content scripts only **read** from it.

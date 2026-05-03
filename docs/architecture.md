@@ -4,15 +4,22 @@ Module boundaries, the message bus, the storage contract, and the MV3 lifecycle 
 
 ## Module map
 
-```
-options page  ──┐
-                ├── (chrome.runtime.sendMessage) ──→  background worker  ──→  chrome.downloads / chrome.tabs
-content script ─┘                                           │
-                                                            └── SettingsService / MediaCacheService → chrome.storage.local
-        ▲                                                           ▲
-        │ window.postMessage                                        │ chrome.runtime.onMessageExternal
-        │                                                           │
-   inject.ts (MAIN world)                                  threads.com page scripts
+```mermaid
+flowchart LR
+    options[options page]
+    content[content script]
+    inject["inject.ts<br/>(MAIN world)"]
+    threads[threads.com page scripts]
+    bg[background worker]
+    chromeDl["chrome.downloads<br/>chrome.tabs"]
+    chromeStorage["chrome.storage.local<br/>(via Settings / MediaCache)"]
+
+    options -- chrome.runtime.sendMessage --> bg
+    content -- chrome.runtime.sendMessage --> bg
+    inject -- window.postMessage --> content
+    threads -- chrome.runtime.onMessageExternal --> bg
+    bg --> chromeDl
+    bg --> chromeStorage
 ```
 
 The four script contexts are isolated:

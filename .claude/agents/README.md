@@ -84,20 +84,20 @@ A diff that touches a co-owned path needs **both** agents to APPROVE before `cod
 
 `code-reviewer` is the final merge gate for any non-trivial diff. Specialist verdicts feed into it; `code-reviewer` does not approve while any specialist has open Critical findings.
 
-```
-                                  ┌─────────────────┐
-                                  │  code-reviewer  │  ← final merge gate
-                                  └────────▲────────┘
-                                           │
-            ┌─────────────────┬────────────┼────────────┬─────────────────────────┐
-            │                 │            │            │                         │
-   ┌────────┴───────┐ ┌───────┴──────┐ ┌───┴──────┐ ┌───┴───────────────┐ ┌───────┴────────────┐
-   │  ux-reviewer   │ │ extension-   │ │ docs-    │ │ instagram-dom-    │ │ claude-config-     │
-   │                │ │   auditor    │ │ reviewer │ │   engineer        │ │   reviewer         │
-   │ visual /       │ │ MV3 / SW /   │ │ docs /   │ │ selectors /       │ │ .claude/ + CLAUDE  │
-   │ tokens /       │ │ parity /     │ │ TSDoc /  │ │ XHR bridge /      │ │ drift              │
-   │ design-system  │ │ message bus  │ │ indexes  │ │ DOM walks         │ │                    │
-   └────────────────┘ └──────────────┘ └──────────┘ └───────────────────┘ └────────────────────┘
+```mermaid
+flowchart BT
+    ux["ux-reviewer<br/>visual / tokens / design-system"]
+    ext["extension-auditor<br/>MV3 / SW / parity / message bus"]
+    docs["documentation-reviewer<br/>docs / TSDoc / indexes"]
+    dom["instagram-dom-engineer<br/>selectors / XHR bridge / DOM walks"]
+    cfg["claude-config-reviewer<br/>.claude/ + CLAUDE drift"]
+    cr["code-reviewer<br/>final merge gate"]
+
+    ux --> cr
+    ext --> cr
+    docs --> cr
+    dom --> cr
+    cfg --> cr
 ```
 
 On a non-trivial diff, run the relevant specialists in parallel (single message, multiple tool calls), then `code-reviewer`. On a release-candidate diff, run `code-reviewer` + `ux-reviewer` + `documentation-reviewer` + `extension-auditor` in parallel — a release passes all four (see `extension-auditor.md` "Rules").
