@@ -9,6 +9,17 @@ This file is canonical. Per-agent `## Codeownership` sections are local restatem
 - **Not a `.github/CODEOWNERS` file.** GitHub doesn't auto-request reviewers from this map. It's the project's agent equivalent.
 - **Not the runtime/code ownership of ambient APIs.** "Storage is owned by `src/services/settings/storage.ts`" lives in [`CLAUDE.md`](../../CLAUDE.md) under "Hard rules" and [`docs/code-style-guide.md`](../../docs/code-style-guide.md) under "Single-owner ambient APIs". Those describe which **module** owns a runtime API. This file describes which **agent** approves a diff. Don't conflate them.
 
+## External plugin references
+
+The CLAUDE.md routing table and several agent `Escalation` sections reference plugin-namespaced agents that have no local file in `.claude/agents/`:
+
+- `voltagent-qa-sec:accessibility-tester` — deep WCAG / screen-reader audit.
+- `voltagent-qa-sec:security-auditor` — threat modeling, supply-chain audit.
+- `voltagent-qa-sec:performance-engineer` — runtime / memory regression review (escalate when content-script polling, XHR interception, or ZIP-blob handling changes).
+- `chrome-devtools-mcp:chrome-devtools` — runtime verification in a real browser session.
+
+These are external Claude Code plugins resolved at session-start by the harness. If a plugin isn't installed (or gets renamed), every escalation that points at one silently fails to dispatch. Don't vendor or wrap them locally — keep them as escalation-only references and document the dependency here.
+
 ## Agent roster
 
 | Agent | Purpose | Mode | Model |

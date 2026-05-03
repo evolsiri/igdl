@@ -13,7 +13,9 @@ Setup, common commands, and where things live. For the rules everyone has to fol
 pnpm install
 ```
 
-The `prepare` script wires up Husky hooks on install. Pre-commit runs lint-staged; pre-push runs the full lint + typecheck + unit + Storybook test suite.
+The `prepare` script wires up Husky hooks on install. Pre-commit runs lint-staged followed by `scripts/check-services-docs.mjs` (enforces 1:1 between `src/services/<name>/` and `docs/services/<name>.md`); pre-push runs the full lint + typecheck + unit + Storybook test suite. Lint-staged also runs `scripts/check-hex-literals.mjs` against staged markdown to keep brand-color hex out of docs (refer to token names from `src/index.css` / `src/content/tokens.ts` instead).
+
+If you use Claude Code, a `PostToolUse` hook in `.claude/settings.json` runs `.claude/hooks/auto-lint.sh` after every Write/Edit to a TypeScript file under `src/` or `e2e/`, reporting ESLint failures inline (non-blocking).
 
 ## Day-to-day commands
 
