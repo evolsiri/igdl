@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 792 576" width="792" height="576" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-labelledby="igdl-mockup-title" aria-describedby="igdl-mockup-desc">
+  <title id="igdl-mockup-title">igdl download buttons on an Instagram post</title>
+  <desc id="igdl-mockup-desc">Instagram post mockup illustrating the three new buttons added to the action bar by the igdl browser extension. To the right of the post are three numbered info toasts. (1) Download content directly to custom folders per-profile. (2) Open the media's direct download link in a new tab. (3) Bundle every carousel item into one .zip file.</desc>
+  <defs>
+    <linearGradient id="m4-storyRing" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#feda75"/>
+      <stop offset="50%" stop-color="#fa7e1e"/>
+      <stop offset="100%" stop-color="#d62976"/>
+    </linearGradient>
+    <linearGradient id="m4-postImg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#cfe7f5"/>
+      <stop offset="100%" stop-color="#a3c8df"/>
+    </linearGradient>
+    <linearGradient id="m4-skel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e6e6e6"/>
+      <stop offset="50%" stop-color="#f1f1f1"/>
+      <stop offset="100%" stop-color="#e6e6e6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ===== Post card (white) — visual scaffold; meaningful content lives in the toasts ===== -->
+  <g aria-hidden="true">
+    <rect x="8" y="8" width="480" height="560" fill="#ffffff" stroke="#dbdbdb"/>
+
+    <!-- Header -->
+    <g transform="translate(24, 28)">
+      <circle cx="16" cy="16" r="16" fill="url(#m4-storyRing)"/>
+      <circle cx="16" cy="16" r="13.5" fill="#ffffff"/>
+      <circle cx="16" cy="16" r="11.5" fill="#c0c0c0"/>
+      <!-- Skeleton: profile name -->
+      <rect x="44" y="6" width="130" height="12" fill="url(#m4-skel)"/>
+      <!-- Skeleton: location · time ago -->
+      <rect x="44" y="24" width="86" height="10" fill="url(#m4-skel)"/>
+      <!-- ... menu -->
+      <g fill="#262626">
+        <circle cx="430" cy="16" r="2"/>
+        <circle cx="438" cy="16" r="2"/>
+        <circle cx="446" cy="16" r="2"/>
+      </g>
+    </g>
+
+    <!-- Image -->
+    <rect x="8" y="74" width="480" height="320" fill="url(#m4-postImg)"/>
+    <circle cx="408" cy="158" r="42" fill="#ffffff" opacity="0.5"/>
+    <path d="M8 328 Q128 296 258 311 T488 321 V394 H8 Z" fill="#3d6f8a" opacity="0.55"/>
+    <path d="M8 350 Q128 326 258 336 T488 346 V394 H8 Z" fill="#2c5670" opacity="0.7"/>
+    <!-- Sailboat -->
+    <g fill="#1d3a4d">
+      <path d="M228 298 L230 260 L268 298 Z"/>
+      <path d="M223 298 H278 L270 311 H230 Z"/>
+    </g>
+    <!-- Carousel dots -->
+    <g fill="#ffffff">
+      <circle cx="240" cy="380" r="3"/>
+      <circle cx="252" cy="380" r="3" opacity="0.55"/>
+      <circle cx="264" cy="380" r="3" opacity="0.55"/>
+    </g>
+
+    <!-- ===== Action bar ===== -->
+    <!-- Native: heart, comment, share -->
+    <svg x="22" y="402" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19.5 12.572L12 20l-7.5-7.428A5 5 0 1 1 12 6.001a5 5 0 1 1 7.5 6.572z"/>
+    </svg>
+    <svg x="62" y="402" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+    </svg>
+    <svg x="102" y="402" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 2L11 13"/>
+      <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+    </svg>
+
+    <!-- igdl: download -->
+    <svg x="148" y="402" width="28" height="28" viewBox="0 0 24 24" fill="#262626">
+      <path d="M12 4v10.586l3.293-3.293 1.414 1.414L12 17.414 7.293 13.707l1.414-1.414L12 14.586V4h0zM4 20h16v2H4z"/>
+    </svg>
+    <!-- Badge 1 -->
+    <circle cx="174" cy="408" r="11" fill="#ffffff"/>
+    <circle cx="174" cy="408" r="9" fill="#a8f368"/>
+    <text x="174" y="408" text-anchor="middle" dominant-baseline="central" font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="900" fill="#000000">1</text>
+
+    <!-- igdl: open in new tab -->
+    <svg x="198" y="402" width="28" height="28" viewBox="0 0 24 24" fill="#262626">
+      <path d="M14 3h7v7h-2V6.41l-8.29 8.3-1.42-1.42 8.3-8.29H14V3zM5 5h6v2H5v12h12v-6h2v8H3V5h2z"/>
+    </svg>
+    <!-- Badge 2 -->
+    <circle cx="224" cy="408" r="11" fill="#ffffff"/>
+    <circle cx="224" cy="408" r="9" fill="#a8f368"/>
+    <text x="224" y="408" text-anchor="middle" dominant-baseline="central" font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="900" fill="#000000">2</text>
+
+    <!-- igdl: zip -->
+    <svg x="248" y="402" width="28" height="28" viewBox="0 0 24 24" fill="#262626">
+      <path d="M4 3h11l5 5v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm1 2v14h14V9h-4V5H5zm6 3h2v2h-2V8zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
+    </svg>
+    <!-- Badge 3 -->
+    <circle cx="274" cy="408" r="11" fill="#ffffff"/>
+    <circle cx="274" cy="408" r="9" fill="#a8f368"/>
+    <text x="274" y="408" text-anchor="middle" dominant-baseline="central" font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="900" fill="#000000">3</text>
+
+    <!-- Bookmark (right) -->
+    <svg x="442" y="402" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+    </svg>
+
+    <!-- ===== Skeletons below the post ===== -->
+    <!-- Likes -->
+    <rect x="22" y="456" width="88" height="12" fill="url(#m4-skel)"/>
+    <!-- Caption (2 lines) -->
+    <rect x="22" y="480" width="380" height="12" fill="url(#m4-skel)"/>
+    <rect x="22" y="498" width="240" height="12" fill="url(#m4-skel)"/>
+    <!-- Comments -->
+    <rect x="22" y="530" width="148" height="11" fill="url(#m4-skel)"/>
+  </g>
+
+  <!-- ===== Info-toast blurbs (right column) ===== -->
+  <!-- Toast 1 — 2 body lines (no header) -->
+  <g transform="translate(504, 176)">
+    <rect x="3" y="6" width="280" height="64" fill="#000000" opacity="0.18" aria-hidden="true"/>
+    <rect x="0" y="0" width="280" height="64" fill="#181818" aria-hidden="true"/>
+    <rect x="0" y="0" width="4" height="64" fill="#a8f368" aria-hidden="true"/>
+    <circle cx="34" cy="32" r="13" fill="#a8f368" aria-hidden="true"/>
+    <text x="34" y="32" text-anchor="middle" dominant-baseline="central" font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="900" fill="#000000">1</text>
+    <text x="60" y="28" font-size="12" fill="#b3b3b3">Download content directly to</text>
+    <text x="60" y="44" font-size="12" fill="#b3b3b3">custom folders per-profile.</text>
+  </g>
+
+  <!-- Toast 2 — 2 body lines (no header) -->
+  <g transform="translate(504, 256)">
+    <rect x="3" y="6" width="280" height="64" fill="#000000" opacity="0.18" aria-hidden="true"/>
+    <rect x="0" y="0" width="280" height="64" fill="#181818" aria-hidden="true"/>
+    <rect x="0" y="0" width="4" height="64" fill="#a8f368" aria-hidden="true"/>
+    <circle cx="34" cy="32" r="13" fill="#a8f368" aria-hidden="true"/>
+    <text x="34" y="32" text-anchor="middle" dominant-baseline="central" font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="900" fill="#000000">2</text>
+    <text x="60" y="28" font-size="12" fill="#b3b3b3">Open the media's direct download</text>
+    <text x="60" y="44" font-size="12" fill="#b3b3b3">link in a new tab.</text>
+  </g>
+
+  <!-- Toast 3 — 2 body lines (no header), `.zip` rendered as inline code -->
+  <g transform="translate(504, 336)">
+    <rect x="3" y="6" width="280" height="64" fill="#000000" opacity="0.18" aria-hidden="true"/>
+    <rect x="0" y="0" width="280" height="64" fill="#181818" aria-hidden="true"/>
+    <rect x="0" y="0" width="4" height="64" fill="#a8f368" aria-hidden="true"/>
+    <circle cx="34" cy="32" r="13" fill="#a8f368" aria-hidden="true"/>
+    <text x="34" y="32" text-anchor="middle" dominant-baseline="central" font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="900" fill="#000000">3</text>
+    <text x="60" y="28" font-size="12" fill="#b3b3b3">Bundle every item into</text>
+    <!-- Line 2 with inline-code styling on `.zip` -->
+    <text x="60" y="44" font-size="12" fill="#b3b3b3">one</text>
+    <rect x="82" y="33" width="34" height="14" fill="#2a2a2a" aria-hidden="true"/>
+    <text x="86" y="44" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" fill="#e6e6e6">.zip</text>
+    <text x="120" y="44" font-size="12" fill="#b3b3b3">file.</text>
+  </g>
+
+</svg>
