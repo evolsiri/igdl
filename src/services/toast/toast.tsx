@@ -31,6 +31,18 @@ export interface ToastService {
   info(message: string): () => void;
 
   /**
+   * Shows a persistent loading toast with a spinner in place of the info icon.
+   * Does NOT auto-dismiss — call the returned function to remove it once the
+   * operation completes or fails.
+   *
+   * @example
+   * const dismiss = toastService.loading("Building zip…");
+   * await doWork();
+   * dismiss();
+   */
+  loading(message: string): () => void;
+
+  /**
    * Unmounts the stack and removes the shadow host. Idempotent — safe to
    * call during page unload even if no toasts were ever shown.
    *
@@ -103,6 +115,9 @@ export function createToastService(options: ToastServiceOptions = {}): ToastServ
     },
     info(message) {
       return push("info", message);
+    },
+    loading(message) {
+      return push("loading", message);
     },
     dispose() {
       toasts = [];

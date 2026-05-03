@@ -620,7 +620,7 @@ const COMPONENT_GROUPS: readonly ComponentGroup[] = [
     entries: [
       {
         name: "Toast / ToastStack",
-        summary: "Auto-dismissing success/failure toast + a stacking wrapper.",
+        summary: "Auto-dismissing success/failure/info toasts, persistent loading toast with spinner, and a stacking wrapper.",
         storyPath: "Content / Toasts / Toast",
       },
     ],

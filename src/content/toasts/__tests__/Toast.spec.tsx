@@ -30,6 +30,18 @@ describe("Toast", () => {
     expect(screen.getByRole("status").textContent).toContain("i");
   });
 
+  it("renders a loading toast with an SVG spinner and does not auto-dismiss", () => {
+    const onDismiss = vi.fn();
+    render(
+      <Toast kind="loading" message="Building zip…" durationMs={Infinity} onDismiss={onDismiss} />,
+    );
+    const el = screen.getByRole("status");
+    expect(el.textContent).toContain("Building zip…");
+    expect(el.querySelector("svg")).not.toBeNull();
+    vi.advanceTimersByTime(10_000);
+    expect(onDismiss).not.toHaveBeenCalled();
+  });
+
   it("calls onDismiss after durationMs + transition tail", () => {
     const onDismiss = vi.fn();
     render(<Toast kind="success" message="x" durationMs={1000} onDismiss={onDismiss} />);

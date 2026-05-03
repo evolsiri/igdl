@@ -1,15 +1,16 @@
 import { useEffect, useState } from "preact/hooks";
 import { MOTION, TOKENS } from "../tokens";
 
-export type ToastKind = "success" | "failure" | "info";
+export type ToastKind = "success" | "failure" | "info" | "loading";
 
 const TOAST_ACCENT: Record<ToastKind, string> = {
   success: TOKENS.success,
   failure: TOKENS.failure,
   info: TOKENS.info,
+  loading: TOKENS.info,
 };
 
-const TOAST_ICON: Record<ToastKind, string> = {
+const TOAST_ICON: Record<Exclude<ToastKind, "loading">, string> = {
   success: "✓",
   failure: "✕",
   info: "i",
@@ -19,6 +20,7 @@ const TOAST_ROLE: Record<ToastKind, "status" | "alert"> = {
   success: "status",
   failure: "alert",
   info: "status",
+  loading: "status",
 };
 
 export interface ToastProps {
@@ -39,6 +41,10 @@ export function Toast({ kind, message, durationMs = 4000, onDismiss }: ToastProp
   useEffect(() => {
     // Animate in on next frame so the transition runs.
     const raf = requestAnimationFrame(() => setVisible(true));
+    // Loading toasts are dismissed programmatically — skip the auto-dismiss timers.
+    if (!Number.isFinite(durationMs)) {
+      return () => cancelAnimationFrame(raf);
+    }
     const fade = window.setTimeout(() => setVisible(false), durationMs);
     const remove = window.setTimeout(onDismiss, durationMs + 200);
     return () => {
@@ -74,10 +80,30 @@ export function Toast({ kind, message, durationMs = 4000, onDismiss }: ToastProp
         pointerEvents: "auto",
       }}
     >
-      <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-        <span style={{ color: accent, flexShrink: 0, fontSize: "16px", lineHeight: "1" }}>
-          {TOAST_ICON[kind]}
-        </span>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        {kind === "loading" ? (
+          <>
+            <style>{`@keyframes igdl-spin{to{transform:rotate(360deg)}}`}</style>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 16 16"
+              fill="none"
+              style={{
+                width: "14px",
+                height: "14px",
+                flexShrink: 0,
+                animation: "igdl-spin 0.7s linear infinite",
+              }}
+            >
+              <circle cx="8" cy="8" r="5.5" stroke={TOKENS.muted} stroke-width="2.5" stroke-opacity="0.35" />
+              <path d="M8 2.5 A5.5 5.5 0 0 1 13.5 8" stroke={accent} stroke-width="2.5" />
+            </svg>
+          </>
+        ) : (
+          <span style={{ color: accent, flexShrink: 0, fontSize: "16px", lineHeight: "1" }}>
+            {TOAST_ICON[kind]}
+          </span>
+        )}
         <span style={{ flex: 1, wordBreak: "break-word" }}>{message}</span>
       </div>
     </div>
@@ -118,6 +144,7 @@ export function ToastStack({ toasts, onDismiss }: ToastStackProps) {
           <Toast
             kind={t.kind}
             message={t.message}
+            durationMs={t.kind === "loading" ? Infinity : undefined}
             onDismiss={() => onDismiss(t.id)}
           />
         </div>

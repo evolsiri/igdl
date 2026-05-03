@@ -52,6 +52,7 @@ function setup() {
     success: vi.fn(() => () => undefined),
     failure: vi.fn(() => () => undefined),
     info: vi.fn(() => () => undefined),
+    loading: vi.fn(() => vi.fn()),
     dispose: vi.fn(),
   };
   const modal = capturingMount();
