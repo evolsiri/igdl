@@ -25,7 +25,7 @@ Grab the [latest release](https://github.com/evolsiri/igdl/releases/latest) and 
 
 ## Contributing
 
-See [`docs/development.md`](./docs/development).
+See [`docs/development.md`](./docs/development.md).
 
 ## Credits
 
