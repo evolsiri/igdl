@@ -19,7 +19,7 @@ vi.mock("../../extractors/storage", () => ({
   },
 }));
 
-import { storyOnClicked, __setTierATimingsForTesting } from "../stories";
+import { storyOnClicked, __setRetryTimingsForTesting } from "../stories";
 import { downloadViaFlow, reportFailure, reportLoading } from "../../downloadBridge";
 import { openInNewTab } from "../../extractors/fn";
 import { storageCache } from "../../extractors/storage";
@@ -33,8 +33,8 @@ function setPathname(pathname: string) {
 }
 
 beforeEach(() => {
-  // Make the Tier A retry instant so tests don't wait the production 2s.
-  __setTierATimingsForTesting(0, 0);
+  // Single attempt, no delay — tests finish instantly.
+  __setRetryTimingsForTesting(1, 0);
 });
 
 afterEach(() => {
@@ -111,7 +111,7 @@ describe("storyOnClicked — DOM fallback (feed story, 2-part URL)", () => {
 
     expect(downloadViaFlow).not.toHaveBeenCalled();
     expect(reportFailure).toHaveBeenCalledWith(
-      expect.stringContaining("page not fully loaded"),
+      expect.stringContaining("media not ready"),
     );
   });
 
@@ -227,7 +227,7 @@ describe("storyOnClicked — blob: URL conversion (Instagram MSE/HLS)", () => {
     await storyOnClicked(button, false);
 
     expect(downloadViaFlow).not.toHaveBeenCalled();
-    expect(reportFailure).toHaveBeenCalledWith(expect.stringContaining("MSE video stream"));
+    expect(reportFailure).toHaveBeenCalledWith(expect.stringContaining("media not ready"));
 
     fetchSpy.mockRestore();
   });
@@ -545,7 +545,8 @@ describe("storyOnClicked — Tier A polling retry (race recovery)", () => {
 
   it("shows the loading toast and resolves when the cache populates after click", async () => {
     setPathname("/stories/eve/77777/");
-    __setTierATimingsForTesting(500, 50);
+    // 4 attempts at 50ms spacing = 150ms total window; cache fires at 100ms.
+    __setRetryTimingsForTesting(4, 50);
 
     // Empty cache at click time — simulates Instagram's XHR not yet returned.
     expect((storageCache.storiesReelsMedia as Map<string, unknown>).size).toBe(0);
@@ -568,8 +569,9 @@ describe("storyOnClicked — Tier A polling retry (race recovery)", () => {
       (storageCache.storiesReelsMedia as Map<string, unknown>).set("eve-uid", reel);
     }, 100);
 
-    // DOM has only a blob video — Tier C would fail. Tier A retry should
-    // catch the populated cache before we get there.
+    // DOM has only a blob video — early attempts reach Tier C and fail the
+    // blob conversion, but the retry loop keeps going. Once the cache
+    // populates, Tier A fires and the CDN URL is used.
     const wrapper = document.createElement("div");
     const button = document.createElement("a") as HTMLAnchorElement;
     button.className = "download-btn";
@@ -582,25 +584,21 @@ describe("storyOnClicked — Tier A polling retry (race recovery)", () => {
     wrapper.appendChild(video);
     document.body.appendChild(wrapper);
 
-    const fetchSpy = vi.spyOn(globalThis, "fetch");
-
     await storyOnClicked(button, false);
 
     // Loading toast surfaced during the wait.
-    expect(reportLoading).toHaveBeenCalledWith(expect.stringContaining("Loading story"));
-    // No blob conversion attempt — Tier A retry resolved first.
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(reportLoading).toHaveBeenCalledWith(expect.stringContaining("Downloading"));
+    // Ultimately resolved via Tier A CDN URL, not the blob data URL.
     expect(downloadViaFlow).toHaveBeenCalledWith(
       expect.objectContaining({ url: "https://cdn.example.com/eve.mp4", username: "eve" }),
       false,
     );
-
-    fetchSpy.mockRestore();
+    expect(reportFailure).not.toHaveBeenCalled();
   });
 
   it("falls through to DOM tier when the cache never populates", async () => {
     setPathname("/stories/finn/88888/");
-    __setTierATimingsForTesting(80, 20);
+    __setRetryTimingsForTesting(1, 0);
 
     const wrapper = document.createElement("div");
     const button = document.createElement("a") as HTMLAnchorElement;
@@ -663,7 +661,7 @@ describe("storyOnClicked — silent-exit replacements", () => {
 
     expect(downloadViaFlow).not.toHaveBeenCalled();
     expect(reportFailure).toHaveBeenCalledWith(
-      expect.stringContaining("cannot extract media URL"),
+      expect.stringContaining("media not ready"),
     );
   });
 });
