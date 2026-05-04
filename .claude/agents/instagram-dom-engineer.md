@@ -145,7 +145,21 @@ selectors, parent-walks, and capture predicates are yours.
    rejects blob URLs with an actionable error, but content-script
    code should never rely on that as a primary defense.
 
-8. Blob-URL conversion is the **last resort, not the primary defense**.
+8. When adding, removing, or modifying an injected button type in
+   `src/content/button.ts` — a new `const *_SVG` string, a new
+   `IconClassName` value, or a new conditional branch in `addCustomBtn` —
+   also update the `IconsAndButtons` story in
+   `src/stories/DesignSystem.stories.tsx` in the same diff:
+   - Add or remove the `InjectedBtnDemo` row in the "Injected download
+     buttons" section.
+   - Add, remove, or update the matching entry in the `GLYPHS` array if
+     the SVG path changed.
+   - Update the conditional-injection note below the demo panels if the
+     `addCustomBtn` guards changed.
+   `ux-reviewer` catches drift at review time; you close the loop at
+   implementation time so the story never falls behind.
+
+9. Blob-URL conversion is the **last resort, not the primary defense**.
    When `<video>.src` is set from a `MediaSource` (Instagram's MSE/HLS
    player), the blob URL references the MediaSource — not a real Blob —
    and `fetch()` cannot dereference it; `resolveBlobUrlToDataUrl`
