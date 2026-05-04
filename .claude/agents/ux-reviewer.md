@@ -120,5 +120,8 @@ mockup parity are yours — don't punt them.
    each separately.
 4. Missing focus traps, missing keyboard paths, contrast failures are
    Critical.
-5. If a diff adds a component, recommend `documentation-reviewer` for the
+5. Every Critical finding cites `file:line`. Findings without a citation
+   are downgraded to Suggestion — if you can't ground it, you can't
+   block on it.
+6. If a diff adds a component, recommend `documentation-reviewer` for the
    in-file TSDoc block.

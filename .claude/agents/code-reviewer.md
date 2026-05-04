@@ -88,9 +88,12 @@ Don't punt the basic igdl invariants to specialists — those are yours.
    unit-test the new code in isolation. Missing end-to-end coverage on a
    contract change is Critical.
 3. Every Critical and Important issue includes a recommended fix.
-4. Don't approve with Critical issues outstanding.
-5. Acknowledge what's done well — specific praise reinforces patterns.
-6. If uncertain, name the uncertainty and the investigation step.
-7. On a meaty diff, recommend running `ux-reviewer`,
+4. Every Critical finding cites `file:line`. Findings without a citation
+   are downgraded to Suggestion — if you can't ground it, you can't
+   block on it.
+5. Don't approve with Critical issues outstanding.
+6. Acknowledge what's done well — specific praise reinforces patterns.
+7. If uncertain, name the uncertainty and the investigation step.
+8. On a meaty diff, recommend running `ux-reviewer`,
    `documentation-reviewer`, and `extension-auditor` in parallel
    (or invoke the `/review-all` skill).

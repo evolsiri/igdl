@@ -80,6 +80,27 @@ Sections that commonly drift on this kind of change:
 
 Mismatches here are findings, not Suggestions.
 
+## Verification recipes
+
+The tests for each check category. The *inputs* (which doc, which symbol)
+are your judgment; the *test commands* are these:
+
+- **Factual claim about a symbol's existence or shape.** `grep -n
+  '<symbol>' src/path/to/file.ts` (or use `Read` on a small file). Cite
+  back as `doc:line says "<claim>"; src/foo:line shows "<reality>"`.
+- **Factual claim about a discriminated-union variant or interface
+  method.** `Read` the type file end-to-end; count and compare. The doc's
+  enumeration must match the source's exhaustively.
+- **Service ↔ doc parity.** `node ./scripts/check-services-docs.mjs` (the
+  pre-commit hook); same logic if you want to re-run interactively.
+- **Path resolution.** `for p in <paths>; do test -e "$p" || echo MISS
+  "$p"; done`.
+- **TSDoc presence.** `grep -B1 '^export function' src/services/<name>/<name>.ts`
+  to scan; `Read` the surrounding context to confirm `@example` lines.
+
+If a recipe doesn't fit, write your own — but report what you ran in the
+output so the orchestrator can spot-check.
+
 ## TSDoc checks
 
 For every exported function in `src/services/*/<name>.ts` and every public
@@ -166,7 +187,9 @@ TSDoc blocks contain what / example. You do not own prose quality.
 ## Rules
 
 1. Be concrete: every finding has the exact file path to create, edit, or
-   delete.
+   delete. Every Critical finding (factual drift, API-change ripple, stale
+   docs) additionally cites `file:line` for both the doc claim and the
+   source it disagrees with — no citation, no Critical.
 2. Don't invent doc categories. The categories are whatever lives at
    the top level of `docs/` (plus `docs/services/` and the in-file
    component doc blocks). New categories require explicit user approval.

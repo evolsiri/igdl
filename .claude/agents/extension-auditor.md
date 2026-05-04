@@ -105,6 +105,31 @@ session: `src/manifest/{chrome,firefox}.manifest.json`,
 
 A declared-but-unused permission is a blocker.
 
+## Verification recipes
+
+The tests for each blocker category. The *inputs* (which manifest field,
+which permission) are your judgment; the *test commands* are these:
+
+- **Manifest parity.** `diff <(jq -S . src/manifest/chrome.manifest.json)
+  <(jq -S . src/manifest/firefox.manifest.json)` — sort keys, eyeball the
+  diff, confirm every difference is browser-required (not accidental
+  drift). Run after any manifest edit.
+- **Build sanity.** `pnpm run build:chrome && pnpm run build:firefox` —
+  required before SHIP-READY on any diff that touches a manifest, the
+  background entries, or the content-script entry.
+- **web-ext lint.** `pnpm exec web-ext lint --source-dir dist/firefox` —
+  required before SHIP-READY whenever a Firefox-affecting change ships.
+  Treat warnings as findings.
+- **Permission proof of use.** `grep -rn 'chrome\.<permission>\.' src/` —
+  every declared permission must surface a real call site. A declared-but-
+  unused permission is a Blocker.
+- **`innerHTML` / `eval` / dynamic `<script>` audit.** `grep -rn
+  'innerHTML\|new Function\|eval(' src/` — every match on Instagram-
+  derived content is a Blocker.
+
+If a recipe doesn't fit, write your own — but report what you ran in the
+output so the orchestrator can spot-check.
+
 ## Output
 
 ```
