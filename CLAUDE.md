@@ -104,6 +104,7 @@ story in the same PR. The canonical token values live in `src/index.css`
 | ------------------------------------------------- | -------------------------------------------- |
 | Five-axis review + igdl invariants                | `code-reviewer`                              |
 | Visual / interaction / design-system parity       | `ux-reviewer`                                |
+| User-facing copy / voice / American spelling      | `ux-copy-auditor`                            |
 | Storybook story coverage / drift / autodocs       | `storybook-curator`                          |
 | Docs coverage + TSDoc                             | `documentation-reviewer`                     |
 | MV3 manifest, SW lifecycle, Chrome/Firefox parity | `extension-auditor`                          |
@@ -121,8 +122,10 @@ story in the same PR. The canonical token values live in `src/index.css`
 The four reviewers compose: on a non-trivial diff, run them in parallel
 (single message, multiple tool calls). When the diff touches UI component
 code or any `*.stories.tsx`, `storybook-curator` joins the parallel
-review. The implementers are single-purpose — pick one, then run the
-relevant reviewers afterward.
+review. When the diff touches any user-visible string (cards, modals,
+toasts, the download button, story args, or the three user-visible
+manifest fields), `ux-copy-auditor` joins the set. The implementers are
+single-purpose — pick one, then run the relevant reviewers afterward.
 
 For the canonical path → agent map, co-ownership rules, and the hand-off
 graph, see [`.claude/agents/README.md`](./.claude/agents/README.md). The

@@ -110,6 +110,17 @@ Co-owner with `instagram-dom-engineer`:
   injection + click-delegation logic. A diff that touches both surfaces
   needs both agents to APPROVE.
 
+Co-owner with `ux-copy-auditor`:
+
+- `src/options/components/cards/**`, `src/options/components/modals/**`,
+  `src/options/components/shared/**`, `src/content/modals/**`,
+  `src/content/toasts/**` — you own the visual rendering; `ux-copy-auditor`
+  owns the user-visible strings inside it. A diff that changes a
+  user-facing string on any of these paths needs both agents to APPROVE.
+- `src/content/button.ts` — `ux-copy-auditor` owns the four `title=`
+  tooltip strings; you own the visual surface. See the three-way
+  co-ownership with `instagram-dom-engineer` above.
+
 A change to any solely-owned file merges only after a `ux-reviewer`
 APPROVE.
 
@@ -119,6 +130,9 @@ APPROVE.
 - Stale or missing component doc block → `documentation-reviewer`.
 - Missing or stale story coverage / orphan stories / autodocs
   description gaps → `storybook-curator`.
+- User-facing copy accuracy / voice / terminology / spelling →
+  `ux-copy-auditor`. Visual surface is yours; the words inside it are
+  theirs.
 - Shadow-DOM mount, message-bus, or manifest concerns →
   `extension-auditor`.
 - Deep WCAG / screen-reader / ARIA →

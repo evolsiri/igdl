@@ -80,6 +80,12 @@ Co-owner with `ux-reviewer`:
   focus, icon glyph). A diff that touches both surfaces needs both
   agents to APPROVE.
 
+Co-owner with `ux-copy-auditor`:
+
+- `src/content/button.ts` — `ux-copy-auditor` owns the four `title=`
+  strings (download, new-tab, ZIP, and video-cover button tooltips). A
+  diff that changes any of those strings needs both agents to APPROVE.
+
 Code-reviewer still gates merge — but the implementation choices on
 selectors, parent-walks, and capture predicates are yours.
 
@@ -88,6 +94,8 @@ selectors, parent-walks, and capture predicates are yours.
 - Manifest changes (e.g. switching `world: "MAIN"`, adding a new host
   permission) → `extension-auditor`.
 - Visual changes to the injected button → `ux-reviewer`.
+- Button `title=` copy changes (the four tooltip strings in
+  `src/content/button.ts`) → `ux-copy-auditor`.
 - New `MediaResource` shape, new ID format, new media type →
   `code-reviewer` (data-shape compatibility) plus
   `documentation-reviewer` (`docs/services/media-cache.md`,

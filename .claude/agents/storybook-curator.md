@@ -258,6 +258,14 @@ Co-owner with `ux-reviewer`:
   use, mockup parity, theme variants render correctly). A diff that
   changes story rendering needs both APPROVE.
 
+Co-owner with `ux-copy-auditor`:
+
+- Same story paths as the `ux-reviewer` co-ownership block above —
+  `ux-copy-auditor` owns story-arg copy + the rendered user-visible
+  strings. A diff that changes a story's rendered output needs all three
+  agents (you, `ux-reviewer`, and `ux-copy-auditor`) to APPROVE. Story
+  shape is yours; the words inside it are theirs.
+
 Co-owner with `documentation-reviewer`:
 
 - The autodocs `description.component` strings are yours; the TSDoc-style
@@ -286,6 +294,11 @@ You do not own:
 
 - Component code correctness / architecture → `code-reviewer`.
 - Visual / interaction / mockup parity / token use → `ux-reviewer`.
+- Copy inside story args (`message`, `label`, `title`, etc.) that
+  mismatches the story's scenario name (e.g. a `Success` export rendering
+  failure-flavoured copy), or any user-facing string drift in the rendered
+  output → `ux-copy-auditor`. Story shape is yours; the words inside it
+  are theirs.
 - TSDoc block above the component → `documentation-reviewer`.
 - Shadow-DOM mount, message-bus, or manifest concerns →
   `extension-auditor`.

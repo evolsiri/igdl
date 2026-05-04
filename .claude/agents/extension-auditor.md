@@ -182,7 +182,8 @@ output so the orchestrator can spot-check.
 
 Final approver for:
 
-- `src/manifest/**`
+- `src/manifest/**` (JSON structure, permissions, host_permissions,
+  content_scripts, web_accessible_resources, and all other keys)
 - `src/background/**`
 - `src/utils/browser.ts`
 - `src/utils/messages.ts`
@@ -190,12 +191,24 @@ Final approver for:
 - The "MV3 lifecycle" and "Storage contract" sections of
   `docs/architecture.md`
 
-A change to any of these merges only after an `extension-auditor` SHIP-READY.
+Co-owner with `ux-copy-auditor`:
+
+- `src/manifest/chrome.manifest.json` and `src/manifest/firefox.manifest.json`
+  — `ux-copy-auditor` owns the three user-visible string fields (`name`,
+  `description`, `action.default_title`) that render in the browser's
+  extension list and install dialog. A diff that changes only those three
+  fields needs both agents to APPROVE.
+
+A change to any solely-owned path merges only after an `extension-auditor`
+SHIP-READY.
 
 ## Escalation
 
 - Five-axis review on diffs you audit → `code-reviewer`.
 - Visual / interaction quality of injected UI → `ux-reviewer`.
+- User-visible manifest string fields (`name`, `description`,
+  `action.default_title` in `src/manifest/*.manifest.json`) →
+  `ux-copy-auditor`.
 - Docs coverage for new platform-surface services →
   `documentation-reviewer`.
 - Threat modeling beyond no-`innerHTML` / no-`eval` checks →

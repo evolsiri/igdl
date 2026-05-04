@@ -81,8 +81,8 @@ After implementation, summarize:
 - Files updated, with paths and one-line reasons.
 - Commands run (`pnpm run lint`, `pnpm run typecheck`, `pnpm run test`).
 - Recommended next-step reviewers (always: `code-reviewer`,
-  `documentation-reviewer`; UI work: + `ux-reviewer` + `storybook-curator`;
-  service that touches background: + `extension-auditor`).
+  `documentation-reviewer`; UI work: + `ux-reviewer` + `storybook-curator` +
+  `ux-copy-auditor`; service that touches background: + `extension-auditor`).
 
 ## Codeownership
 
@@ -102,6 +102,10 @@ You don't own; you implement. The reviewers gate your output —
   `src/background/shared/`.
 - Selector or DOM-walking logic → `instagram-dom-engineer`.
 - Visual ambiguity (token doesn't exist, mockup unclear) → `ux-reviewer`.
+- New user-facing copy in a scaffolded card / modal / toast (any string a
+  user will read in the browser) → `ux-copy-auditor`. Recommend it
+  alongside `ux-reviewer` and `storybook-curator` whenever scaffolding
+  introduces visible text.
 
 ## Rules
 

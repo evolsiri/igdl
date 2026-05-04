@@ -34,6 +34,8 @@ If agent A's file says "B owns X" or "hand off to B for X," then B's own file mu
 
 Also check: any step-numbered workflow that spans multiple agents is internally consistent — the step number an agent claims to occupy matches the step number listed in the parent workflow.
 
+**New-co-owner completeness check.** When the diff introduces a new agent as co-owner of paths already owned by existing agents, verify that **every** existing agent whose `## Codeownership` or `## Escalation` section is now stale has been updated in the same diff. Concretely: for each path in the README path table that lists the new agent as co-owner, open the existing owner's file and confirm it acknowledges the new co-owner. Missing acknowledgements are Blocking — a developer reading only the existing owner's file will not discover the new co-owner exists.
+
 **Agent ↔ project rule docs.** When an agent file describes a project rule that has a canonical home (e.g. `docs/project-readme.md` for the root README, `docs/code-style-guide.md` for service shape, `docs/design-system.md` for tokens), the agent's restatement must align with the canonical doc. Concretely: open the canonical doc, compare the requirements it states (sections required/banned, conventions enforced, voice rules) against the agent's restatement, flag any contradiction as Blocking. This is the lesson from the `documentation-reviewer.md` README spec that required a "How to use it" section + "privacy section" that `project-readme.md` explicitly bans.
 
 ### 3. Internal consistency per file

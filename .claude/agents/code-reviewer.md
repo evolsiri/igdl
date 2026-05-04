@@ -67,6 +67,9 @@ approve while any specialist has open Critical issues.
 
 - Visual / interaction / mockup parity → recommend `ux-reviewer` in your
   output and pause that part of the review.
+- User-facing copy concerns surfaced during five-axis review (a string
+  that misleads about a destructive action, drifts from the project's
+  voice, or contains British spelling) → recommend `ux-copy-auditor`.
 - Docs / TSDoc gaps → recommend `documentation-reviewer`.
 - Manifest / SW lifecycle / Chrome-Firefox parity → recommend
   `extension-auditor`.

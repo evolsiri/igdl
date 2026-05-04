@@ -1,6 +1,6 @@
 # Agent codeowners
 
-Canonical map of which agent owns which paths in the `igdl` repo, and how reviews compose. The nine agents in `.claude/agents/*.md` carry their own briefs and escalation rules; this file is the bird's-eye view that a contributor (or any agent) can open to answer **"who has to APPROVE a diff to this path?"**
+Canonical map of which agent owns which paths in the `igdl` repo, and how reviews compose. The ten agents in `.claude/agents/*.md` carry their own briefs and escalation rules; this file is the bird's-eye view that a contributor (or any agent) can open to answer **"who has to APPROVE a diff to this path?"**
 
 This file is canonical. Per-agent `## Codeownership` sections are local restatements; if the two ever disagree, this file wins. [`claude-config-reviewer`](./claude-config-reviewer.md) audits drift between the two on every change to `.claude/` (see its "Cross-artifact consistency" check).
 
@@ -26,6 +26,7 @@ These are external Claude Code plugins resolved at session-start by the harness.
 | --- | --- | --- | --- |
 | [`code-reviewer`](./code-reviewer.md) | Five-axis review + igdl invariants. Final merge gate. | review | (default) |
 | [`ux-reviewer`](./ux-reviewer.md) | Visual / interaction / design-system parity. | review | (default) |
+| [`ux-copy-auditor`](./ux-copy-auditor.md) | User-facing copy accuracy, voice, terminology, American spelling. Severity → Critical / Suggestion bin. | review (read-only) | sonnet |
 | [`storybook-curator`](./storybook-curator.md) | Story coverage, orphan pruning, interaction-test floor, autodocs descriptions. | implement + review | sonnet |
 | [`documentation-reviewer`](./documentation-reviewer.md) | Docs coverage + TSDoc contract. | review | (default) |
 | [`extension-auditor`](./extension-auditor.md) | MV3 manifest, SW lifecycle, Chrome/Firefox parity. | review | (default) |
@@ -38,7 +39,7 @@ These are external Claude Code plugins resolved at session-start by the harness.
 
 | Path | Final approver | Co-owner | Notes |
 | --- | --- | --- | --- |
-| `src/manifest/**` | `extension-auditor` | — | Manifest parity Chrome ↔ Firefox |
+| `src/manifest/**` | `extension-auditor` | `ux-copy-auditor` (`name`, `description`, `action.default_title` user-strings only) | Manifest parity Chrome ↔ Firefox |
 | `src/background/**` | `extension-auditor` | — | SW lifecycle, message routing |
 | `src/utils/messages.ts` | `extension-auditor` | — | Typed message sender |
 | `src/utils/browser.ts` | `extension-auditor` | — | The only `chrome` ↔ `browser` bridge |
@@ -48,16 +49,18 @@ These are external Claude Code plugins resolved at session-start by the harness.
 | `src/content/extractors/**` | `instagram-dom-engineer` | — | API response parsing |
 | `src/content/threads/**` | `instagram-dom-engineer` | — | Threads pagelet detection |
 | `src/content/selectors.ts` | `instagram-dom-engineer` | — | Centralized SVG path selectors |
-| `src/content/button.ts` | `instagram-dom-engineer` | `ux-reviewer` | DOM + click vs visual surface; **both** must APPROVE |
-| `src/content/modals/**` | `ux-reviewer` | `documentation-reviewer` (TSDoc block) | Injected modals (Shadow DOM) |
-| `src/content/toasts/**` | `ux-reviewer` | `documentation-reviewer` (TSDoc block) | Injected toasts (Shadow DOM) |
+| `src/content/button.ts` | `instagram-dom-engineer` | `ux-reviewer` (visual), `ux-copy-auditor` (button `title=` strings) | DOM + click vs visual surface vs button copy; relevant agents must APPROVE on a diff that touches their respective surface |
+| `src/content/modals/**` | `ux-reviewer` | `documentation-reviewer` (TSDoc), `ux-copy-auditor` (user-facing strings) | Injected modals (Shadow DOM) |
+| `src/content/toasts/**` | `ux-reviewer` | `documentation-reviewer` (TSDoc), `ux-copy-auditor` (user-facing strings) | Injected toasts (Shadow DOM) |
+| `src/content/flow/**` | `code-reviewer` | `ux-copy-auditor` (toast templates: success / partial / cancel / failure / single+plural) | Content-script orchestration; user-facing copy is the toast templates |
 | `src/content/tokens.ts` | `ux-reviewer` | — | Injected-UI design tokens |
-| `src/options/components/cards/**` | `ux-reviewer` | `documentation-reviewer` (TSDoc block) | Options-page cards (Tailwind) |
-| `src/options/components/modals/**` | `ux-reviewer` | `documentation-reviewer` (TSDoc block) | Options-page modals (Tailwind) |
+| `src/options/components/cards/**` | `ux-reviewer` | `documentation-reviewer` (TSDoc), `ux-copy-auditor` (user-facing strings) | Options-page cards (Tailwind) |
+| `src/options/components/modals/**` | `ux-reviewer` | `documentation-reviewer` (TSDoc), `ux-copy-auditor` (user-facing strings) | Options-page modals (Tailwind) |
+| `src/options/components/shared/**` | `ux-reviewer` | `documentation-reviewer` (TSDoc), `ux-copy-auditor` (user-facing strings) | Shared options-page primitives (Card, ConfirmDialog, TextField, Toggle, etc.) |
 | `src/index.css` | `ux-reviewer` | — | Options-page tokens + global zero-radius reset |
 | `src/stories/DesignSystem.stories.tsx` | `ux-reviewer` | — | Design-system source of truth |
-| `src/options/components/**/__stories__/**` | `storybook-curator` | `ux-reviewer` (visual fidelity) | Coverage / orphans / play tests / autodocs description |
-| `src/content/{modals,toasts}/**/__stories__/**` | `storybook-curator` | `ux-reviewer` (visual fidelity) | Coverage / orphans / play tests / autodocs description |
+| `src/options/components/**/__stories__/**` | `storybook-curator` | `ux-reviewer` (visual fidelity), `ux-copy-auditor` (story args + rendered copy) | Coverage / orphans / play tests / autodocs description |
+| `src/content/{modals,toasts}/**/__stories__/**` | `storybook-curator` | `ux-reviewer` (visual fidelity), `ux-copy-auditor` (story args + rendered copy) | Coverage / orphans / play tests / autodocs description |
 | `src/inject.ts` | `instagram-dom-engineer` | — | MAIN-world XHR / fetch interception |
 | `src/xhr.ts` | `instagram-dom-engineer` | — | XHR snapshot bridge |
 | `src/services/**` | `code-reviewer` | `documentation-reviewer` (TSDoc) | Scaffolded by `service-implementer`; each has a `docs/services/<name>.md` |
@@ -81,20 +84,23 @@ A diff that touches a co-owned path needs **both** agents to APPROVE before `cod
 
 **Surface co-ownership** — the two agents own different surfaces of the same file:
 
-- `src/content/button.ts` — `instagram-dom-engineer` owns DOM injection + click delegation; `ux-reviewer` owns the visual surface (fill, border, hover, focus, icon glyph).
+- `src/content/button.ts` — `instagram-dom-engineer` owns DOM injection + click delegation; `ux-reviewer` owns the visual surface (fill, border, hover, focus, icon glyph); `ux-copy-auditor` owns the four `title=` strings (button tooltip copy).
 - `docs/architecture.md` — `extension-auditor` owns the MV3-lifecycle and Storage-contract sections; `documentation-reviewer` owns the rest of the file.
 - `docs/build-and-release.md` — `release-engineer` owns the release-flow sections; `documentation-reviewer` owns the rest.
+- `src/manifest/*.manifest.json` — `extension-auditor` owns the JSON structure, permissions, host_permissions, content_scripts, etc.; `ux-copy-auditor` owns the three user-visible string fields (`name`, `description`, `action.default_title`) that render in the browser's extension list / install dialog.
 
 **TSDoc co-ownership** — `documentation-reviewer` is the final approver of TSDoc blocks, while another agent is the final approver of the file's code:
 
 - `src/services/**` — `code-reviewer` owns the service code; `documentation-reviewer` owns the TSDoc on every exported symbol (with `@example`) and the matching `docs/services/<name>.md`.
 - `src/content/{modals,toasts}/**` and `src/options/components/{cards,modals}/**` — `ux-reviewer` owns the component code; `documentation-reviewer` owns the TSDoc-style doc block above each `function ComponentName(...)` declaration.
 
-**Story / autodocs co-ownership** — `storybook-curator` is the final approver of `__stories__/<Name>.stories.tsx` and the autodocs `description.component` strings; `ux-reviewer` is co-owner for visual fidelity (token use, mockup parity, theme-variant rendering). Both must APPROVE a diff that changes a story's rendered output. The autodocs `description.component` string is curator-owned and does not overlap with the `documentation-reviewer`-owned TSDoc block above the component — they live in different files and both must be present.
+**Story / autodocs co-ownership** — `storybook-curator` is the final approver of `__stories__/<Name>.stories.tsx` and the autodocs `description.component` strings; `ux-reviewer` is co-owner for visual fidelity (token use, mockup parity, theme-variant rendering); `ux-copy-auditor` is co-owner for story-arg copy + the rendered user-visible strings (a `Success` story whose copy reads "Failed to download" is an `ux-copy-auditor` finding, not a `storybook-curator` finding). All three must APPROVE a diff that changes a story's rendered output. The autodocs `description.component` string is curator-owned and does not overlap with the `documentation-reviewer`-owned TSDoc block above the component — they live in different files and both must be present.
+
+**Copy co-ownership** — `ux-copy-auditor` is the final approver of user-visible strings in files whose structural / visual surface another agent owns. Concretely: a diff to `src/options/components/cards/DownloadsCard.tsx` that changes a `description="…"` prop value needs both `ux-reviewer` (the component file's owner) and `ux-copy-auditor` (the string's owner) to APPROVE. The same applies to `src/content/modals/**`, `src/content/toasts/**`, `src/content/flow/**`, `src/options/components/modals/**`, every `*.stories.tsx`, and the three user-visible manifest fields. `ux-copy-auditor` only blocks on Severe + High findings (per its severity model); Medium + Low findings are logged and don't block, so the co-ownership doesn't add merge friction on routine copy diffs.
 
 ### Read-only owners
 
-`documentation-reviewer` for `README.md` and `claude-config-reviewer` for `.claude/**` + `CLAUDE.md` are **read-only auditors**. They flag findings and block merge on Critical issues, but they don't write the fix — the file's author or the main session does.
+`documentation-reviewer` for `README.md`, `claude-config-reviewer` for `.claude/**` + `CLAUDE.md`, and `ux-copy-auditor` for every user-visible string in its scope are **read-only auditors**. They flag findings and block merge on Critical issues, but they don't write the fix — the file's author or the main session does. (`ux-copy-auditor`'s "Critical" bucket is its Severe + High tiers; its Medium + Low tiers are logged but don't block.)
 
 ## Merge-gate hierarchy
 
@@ -103,6 +109,7 @@ A diff that touches a co-owned path needs **both** agents to APPROVE before `cod
 ```mermaid
 flowchart BT
     ux["ux-reviewer<br/>visual / tokens / design-system"]
+    copy["ux-copy-auditor<br/>user-facing strings / voice / spelling"]
     ext["extension-auditor<br/>MV3 / SW / parity / message bus"]
     docs["documentation-reviewer<br/>docs / TSDoc / indexes"]
     sb["storybook-curator<br/>story coverage / orphans / autodocs"]
@@ -111,6 +118,7 @@ flowchart BT
     cr["code-reviewer<br/>final merge gate"]
 
     ux --> cr
+    copy --> cr
     ext --> cr
     docs --> cr
     sb --> cr
@@ -125,15 +133,23 @@ On a non-trivial diff, run the relevant specialists in parallel (single message,
 Each arrow means "agent A explicitly recommends escalating to agent B in its `## Escalation` section."
 
 ```
-code-reviewer            → ux-reviewer, documentation-reviewer, extension-auditor,
-                           instagram-dom-engineer, accessibility-tester, security-auditor,
+code-reviewer            → ux-reviewer, ux-copy-auditor, documentation-reviewer,
+                           extension-auditor, instagram-dom-engineer, accessibility-tester,
+                           security-auditor, chrome-devtools
+
+ux-reviewer              → code-reviewer, ux-copy-auditor, documentation-reviewer,
+                           extension-auditor, storybook-curator, accessibility-tester,
                            chrome-devtools
 
-ux-reviewer              → code-reviewer, documentation-reviewer, extension-auditor,
-                           storybook-curator, accessibility-tester, chrome-devtools
+ux-copy-auditor          → code-reviewer (when copy reveals a real bug),
+                           ux-reviewer (visual surface of the string container),
+                           documentation-reviewer (TSDoc blocks; README voice),
+                           extension-auditor (rest of manifest JSON),
+                           storybook-curator (story shape vs copy mismatch),
+                           accessibility-tester (a11y attribute strings)
 
-storybook-curator        → ux-reviewer, documentation-reviewer, code-reviewer,
-                           accessibility-tester, chrome-devtools
+storybook-curator        → ux-reviewer, ux-copy-auditor, documentation-reviewer,
+                           code-reviewer, accessibility-tester, chrome-devtools
 
 documentation-reviewer   → code-reviewer, ux-reviewer, extension-auditor
 
@@ -145,6 +161,7 @@ instagram-dom-engineer   → extension-auditor, ux-reviewer, code-reviewer,
 
 service-implementer      → code-reviewer, documentation-reviewer (always),
                            ux-reviewer (UI work), storybook-curator (UI work),
+                           ux-copy-auditor (UI work — adds new copy),
                            extension-auditor (background-touching)
 
 release-engineer         → extension-auditor, code-reviewer
@@ -163,6 +180,8 @@ For the concern-keyed summary (which agent handles which kind of work), see [`CL
 
 Before merging any change to `.claude/` or `CLAUDE.md`, run `claude-config-reviewer` to catch path drift, broken cross-references, stale tool fields, and contradictions between this README and the per-agent files. It is read-only — findings come back as Blocking / Suggestion, and the file's author makes the fix.
 
-For ordinary code diffs, the four reviewers compose: on a non-trivial diff, run `code-reviewer`, `ux-reviewer`, `documentation-reviewer`, and `extension-auditor` in parallel. When the diff touches UI component code or any `*.stories.tsx`, add `storybook-curator` to that parallel set. The hand-off graph above resolves any specialist that needs to fan out further.
+For ordinary code diffs, the four reviewers compose: on a non-trivial diff, run `code-reviewer`, `ux-reviewer`, `documentation-reviewer`, and `extension-auditor` in parallel. When the diff touches UI component code or any `*.stories.tsx`, add `storybook-curator` to that parallel set. When the diff touches any user-visible string (cards, modals, toasts, the download button, story args, or the three user-visible manifest fields), add `ux-copy-auditor` — its triggers are documented in `.claude/skills/review-all/SKILL.md` Step 3. The hand-off graph above resolves any specialist that needs to fan out further.
+
+**Agent-introduction checklist.** When a new agent acquires co-ownership of paths already owned by existing agents, the same diff that introduces the new agent must also update the `## Codeownership` and `## Escalation` sections of **every** existing agent whose paths are now co-owned. A new co-owner wired only into this README and the skill triggers but not into the existing agents' own files creates a navigation bug: a developer reading only an existing agent's file will not discover the new co-owner. `claude-config-reviewer` audits this in its Cross-artifact consistency check.
 
 For the formal pre-commit review and post-mortem-on-misses rules that govern this workflow, see [`CLAUDE.md`](../../CLAUDE.md) "Review discipline".

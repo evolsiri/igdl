@@ -5,7 +5,8 @@ description: >
   code-reviewer, ux-reviewer, documentation-reviewer, and extension-auditor in
   parallel; conditionally adds instagram-dom-engineer when src/content/ is
   touched, storybook-curator when UI components or *.stories.tsx are touched,
-  and claude-config-reviewer when .claude/ or CLAUDE.md is touched. Use when
+  ux-copy-auditor when user-facing strings or stories are touched, and
+  claude-config-reviewer when .claude/ or CLAUDE.md is touched. Use when
   the user says "run all reviewers", "review the branch", "ship check", or
   invokes /review-all. Use before any non-trivial merge.
 ---
@@ -39,6 +40,11 @@ summary). Don't sequence them — parallelism is the entire point.
   `src/xhr.ts`.
 - Add `storybook-curator` if any of: `src/options/components/**`,
   `src/content/{modals,toasts}/**`, or any `*.stories.tsx`.
+- Add `ux-copy-auditor` if any of: `src/options/**`,
+  `src/content/{modals,toasts,flow}/**`, `src/content/button.ts`, any
+  `*.stories.tsx`, `src/manifest/*.manifest.json`. Its findings split
+  cleanly into the existing Critical / Suggestion buckets — Severe + High
+  block, Medium + Low log — so Step 5 needs no special-casing.
 - Add `claude-config-reviewer` if any of: `.claude/**`, `CLAUDE.md`.
 
 These don't replace the base four — they join them.
