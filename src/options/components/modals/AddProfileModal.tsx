@@ -93,6 +93,11 @@ export function AddProfileModal({
             placeholder="alice_delish"
             class="w-full bg-bg border border-border text-fg px-3 py-2 outline-none focus:border-accent transition-[border-color] duration-200"
           />
+          {error && (
+            <p id={errorId} role="alert" class="mt-1 text-xs text-destructive">
+              {error}
+            </p>
+          )}
         </div>
 
         <div class="py-2">
@@ -109,12 +114,6 @@ export function AddProfileModal({
             class="w-full bg-bg border border-border text-fg px-3 py-2 outline-none focus:border-accent transition-[border-color] duration-200"
           />
         </div>
-
-        {error && (
-          <p id={errorId} role="alert" class="mt-3 text-sm text-destructive">
-            {error}
-          </p>
-        )}
 
         <div class="flex justify-end gap-2 mt-6">
           <button

@@ -1,4 +1,5 @@
 import type { Decorator, Preview } from "@storybook/preact-vite";
+import { themes } from "storybook/theming";
 import "../src/index.css";
 
 type Theme = "light" | "dark";
@@ -33,6 +34,9 @@ const preview: Preview = {
     },
   },
   parameters: {
+    docs: {
+      theme: themes.dark,
+    },
     controls: {
       matchers: {
         color: /(background|color)$/i,

@@ -46,9 +46,22 @@ describe("Toast", () => {
     const onDismiss = vi.fn();
     render(<Toast kind="success" message="x" durationMs={1000} onDismiss={onDismiss} />);
     expect(onDismiss).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(1199); // durationMs(1000) + fade(200) - 1ms: not yet
+    vi.advanceTimersByTime(1249); // durationMs(1000) + safety(250) - 1ms: not yet
     expect(onDismiss).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(1);    // exactly at boundary
+    vi.advanceTimersByTime(1);    // exactly at boundary (1250)
     expect(onDismiss).toHaveBeenCalled();
+  });
+
+  it("renders a progress bar for finite-duration toasts", () => {
+    const { container } = render(<Toast kind="success" message="ok" durationMs={1000} onDismiss={() => {}} />);
+    // Progress bar wrapper is a div[aria-hidden], distinct from loading's svg[aria-hidden]
+    expect(container.querySelector('div[aria-hidden="true"]')).not.toBeNull();
+  });
+
+  it("does not render a progress bar for loading toasts", () => {
+    const { container } = render(
+      <Toast kind="loading" message="Building zip…" durationMs={Infinity} onDismiss={() => {}} />,
+    );
+    expect(container.querySelector('div[aria-hidden="true"]')).toBeNull();
   });
 });

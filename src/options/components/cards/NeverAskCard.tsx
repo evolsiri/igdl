@@ -123,8 +123,8 @@ export function NeverAskCard({
             <thead>
               <tr class="text-left text-xs font-medium text-muted uppercase tracking-wide border-b border-border">
                 <th class="py-2 pr-3 w-[4%]" aria-label="Instagram" />
-                <th class="py-2 px-3 w-[76%]">Username</th>
-                <th class="py-2 px-3 w-[12%]">Added on</th>
+                <th class="py-2 px-3 w-[61%]">Username</th>
+                <th class="py-2 px-3 w-[27%]">Added on</th>
                 <th class="py-2 pl-3 w-[8%]" aria-label="Actions" />
               </tr>
             </thead>

@@ -66,11 +66,10 @@ covers tone and what-belongs-where only. Applies only to `/README.md` —
 ## Design system
 
 `src/stories/DesignSystem.stories.tsx` is the source of truth for tokens,
-motion, typography, and the component inventory. New tokens / components
-must update the matching array in the story in the same PR. The canonical
-token values live in `src/index.css` (options page) and
-`src/content/tokens.ts` (injected UI); see [`docs/design-system.md`](./docs/design-system.md)
-for the contract.
+motion, and typography. New tokens must update the matching section in the
+story in the same PR. The canonical token values live in `src/index.css`
+(options page) and `src/content/tokens.ts` (injected UI); see
+[`docs/design-system.md`](./docs/design-system.md) for the contract.
 
 ## Subagent routing
 

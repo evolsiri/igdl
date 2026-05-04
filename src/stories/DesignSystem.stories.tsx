@@ -3,13 +3,11 @@ import { useEffect, useState } from "preact/hooks";
 import { MOTION, TOKENS } from "../content/tokens";
 
 /**
- * Design System pages — one-stop visual reference for the igdl palette,
- * primitives, and component inventory. Three sibling stories under a
- * shared `Design System/*` title:
+ * Design System pages — visual reference for the igdl palette and primitives.
+ * Two sibling stories under a shared `Design System/*` title:
  *
  *   Design System / Color Palette   (swatches, flip with the theme toolbar)
  *   Design System / Design Tokens   (radii, motion, typography)
- *   Design System / Components      (hand-maintained inventory)
  *
  * Swatches read live CSS vars via `getComputedStyle`, so the hex values
  * update whenever the theme decorator in .storybook/preview.ts toggles
@@ -208,6 +206,9 @@ const CONTENT_TOKEN_DESCRIPTIONS: Record<keyof typeof TOKENS, string> = {
 export const ColorPalette: Story = {
   render: () => (
     <div class="max-w-5xl mx-auto space-y-8">
+      <div class="flex justify-center">
+        <img src="/logo.svg" width="96" height="96" alt="igdl" />
+      </div>
       <header>
         <h1 class="text-3xl font-bold text-fg tracking-tight">Color Palette</h1>
         <p class="text-sm text-muted mt-2 max-w-prose">
@@ -366,6 +367,9 @@ function MotionDemo({
 export const DesignTokens: Story = {
   render: () => (
     <div class="max-w-5xl mx-auto space-y-8">
+      <div class="flex justify-center">
+        <img src="/logo.svg" width="96" height="96" alt="igdl" />
+      </div>
       <header>
         <h1 class="text-3xl font-bold text-fg tracking-tight">Design Tokens</h1>
         <p class="text-sm text-muted mt-2 max-w-prose">
@@ -486,181 +490,3 @@ export const DesignTokens: Story = {
   ),
 };
 
-// ---------------------------------------------------------------------------
-// Components inventory
-// ---------------------------------------------------------------------------
-
-interface ComponentEntry {
-  readonly name: string;
-  readonly summary: string;
-  readonly storyPath: string;
-}
-
-interface ComponentGroup {
-  readonly name: string;
-  readonly note: string;
-  readonly entries: readonly ComponentEntry[];
-}
-
-// Kept in sync with src/options/components/ + src/content/. When a new
-// component ships under one of those roots, add a row here.
-const COMPONENT_GROUPS: readonly ComponentGroup[] = [
-  {
-    name: "Options · Shared",
-    note: "Primitives used across every options-page card.",
-    entries: [
-      {
-        name: "Card",
-        summary:
-          "Framed section container with title, subtitle, and optional header action.",
-        storyPath: "Options / Shared / Card",
-      },
-      {
-        name: "ConfirmDialog",
-        summary:
-          "Native <dialog> modal for confirm / cancel flows. Info + destructive variants.",
-        storyPath: "Options / Shared / ConfirmDialog",
-      },
-      {
-        name: "ResetButton",
-        summary:
-          "32×32 icon button — reset or delete glyph, for inline row actions.",
-        storyPath: "Options / Shared / ResetButton",
-      },
-      {
-        name: "SearchInput",
-        summary: "Single-row search field used to filter rows inside cards.",
-        storyPath: "Options / Shared / SearchInput",
-      },
-      {
-        name: "SortableTableHeader",
-        summary:
-          "Table `<th>` with a stacked up/down chevron pair; drives per-column asc/desc sort.",
-        storyPath: "Options / Shared / SortableTableHeader",
-      },
-      {
-        name: "TextField",
-        summary:
-          "Labelled text input with optional description and per-row reset button.",
-        storyPath: "Options / Shared / TextField",
-      },
-      {
-        name: "Toggle",
-        summary: "Switch with label, description, and optional reset.",
-        storyPath: "Options / Shared / Toggle",
-      },
-    ],
-  },
-  {
-    name: "Options · Cards",
-    note: "Top-level sections on the options page. Each composes the shared primitives above.",
-    entries: [
-      {
-        name: "AppearanceCard",
-        summary:
-          "Theme selector (system / light / dark) — controls ThemeService.",
-        storyPath: "Options / Cards / AppearanceCard",
-      },
-      {
-        name: "DownloadsCard",
-        summary:
-          "Every download-related setting (directories, filename, toggles) with search.",
-        storyPath: "Options / Cards / DownloadsCard",
-      },
-      {
-        name: "ImportExportCard",
-        summary:
-          "Export current settings to a JSON file or import a previously exported file.",
-        storyPath: "Options / Cards / ImportExportCard",
-      },
-      {
-        name: "NeverAskCard",
-        summary: "Manage the never-ask profile list.",
-        storyPath: "Options / Cards / NeverAskCard",
-      },
-      {
-        name: "ProfileDirectoriesCard",
-        summary:
-          "Per-profile routing table: edit, add, delete, open on Instagram.",
-        storyPath: "Options / Cards / ProfileDirectoriesCard",
-      },
-      {
-        name: "ResetAllCard",
-        summary: "Destructive reset-all flow with confirm dialog.",
-        storyPath: "Options / Cards / ResetAllCard",
-      },
-    ],
-  },
-  {
-    name: "Options · Modals",
-    note: "Native <dialog> modals launched from cards.",
-    entries: [
-      {
-        name: "AddProfileModal",
-        summary: "Add a new per-profile directory from ProfileDirectoriesCard.",
-        storyPath: "Options / Modals / AddProfileModal",
-      },
-    ],
-  },
-  {
-    name: "Content · Modals",
-    note: "On-page UI mounted inside a Shadow DOM on Instagram / Threads.",
-    entries: [
-      {
-        name: "NoDirPopup",
-        summary:
-          "Three-choice popup for first-time downloads on un-configured profiles.",
-        storyPath: "Content / Modals / NoDirPopup",
-      },
-    ],
-  },
-  {
-    name: "Content · Toasts",
-    note: "Bottom-right status toasts fired from download flows.",
-    entries: [
-      {
-        name: "Toast / ToastStack",
-        summary: "Auto-dismissing success/failure/info toasts, persistent loading toast with spinner, and a stacking wrapper.",
-        storyPath: "Content / Toasts / Toast",
-      },
-    ],
-  },
-];
-
-export const Components: Story = {
-  render: () => (
-    <div class="max-w-5xl mx-auto space-y-8">
-      <header>
-        <h1 class="text-3xl font-bold text-fg tracking-tight">Components</h1>
-        <p class="text-sm text-muted mt-2 max-w-prose">
-          Every Preact component shipped in the extension, grouped by where it
-          lives. Each entry points to its interactive story in the sidebar.
-        </p>
-      </header>
-
-      {COMPONENT_GROUPS.map((group) => (
-        <section key={group.name}>
-          <h2 class="text-lg font-semibold text-fg">{group.name}</h2>
-          <p class="text-sm text-muted mb-4">{group.note}</p>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {group.entries.map((entry) => (
-              <div
-                key={entry.name}
-                class="bg-surface border border-border px-4 py-3"
-              >
-                <div class="text-sm font-semibold text-fg">{entry.name}</div>
-                <p class="text-xs text-muted mt-1">{entry.summary}</p>
-                <p class="text-xs text-muted mt-2">
-                  See{" "}
-                  <span class="font-mono text-xs text-fg">
-                    {entry.storyPath}
-                  </span>
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-      ))}
-    </div>
-  ),
-};

@@ -124,26 +124,27 @@ export const EnterKeySubmits: Story = {
   },
 };
 
-export const LightSurroundings: Story = {
-  parameters: {
-    forceTheme: "light"
+export const CancelsOnClose: Story = {
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const closeBtn = canvas.getByRole("button", { name: /close/i });
+    await userEvent.click(closeBtn);
+    await expect(args.onCancel).toHaveBeenCalledTimes(1);
   },
+};
 
-  globals: {
-    backgrounds: {
-      value: "light"
-    }
-  }
+export const LightSurroundings: Story = {
+  render: (args) => (
+    <div style={{ minHeight: "520px", background: "#ffffff" }}>
+      <NoDirPopup {...args} />
+    </div>
+  ),
 };
 
 export const DarkSurroundings: Story = {
-  parameters: {
-    forceTheme: "dark"
-  },
-
-  globals: {
-    backgrounds: {
-      value: "dark"
-    }
-  }
+  render: (args) => (
+    <div style={{ minHeight: "520px", background: "#121212" }}>
+      <NoDirPopup {...args} />
+    </div>
+  ),
 };

@@ -65,7 +65,7 @@ export function ConfirmDialog({
         <button
           type="button"
           onClick={onConfirm}
-          class={`px-4 py-2 ${confirmClasses} transition-colors duration-150 hover:scale-[1.02] active:scale-[0.98]`}
+          class={`px-4 py-2 ${confirmClasses} transition-colors duration-150`}
         >
           {confirmLabel}
         </button>

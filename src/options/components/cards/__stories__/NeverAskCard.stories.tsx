@@ -46,6 +46,19 @@ export const Empty: Story = { args: { entries: [] } };
 
 export const WithEntries: Story = { args: { entries: SAMPLE_ENTRIES } };
 
+export const FilterByUsername: Story = {
+  name: "Filter By Username",
+  args: { entries: SAMPLE_ENTRIES },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const search = canvas.getByRole("searchbox", { name: /search never-ask profiles/i });
+    await userEvent.type(search, "alice");
+    await expect(canvas.getByTestId("never-ask-row-alice")).toBeInTheDocument();
+    await expect(canvas.queryByTestId("never-ask-row-bob")).not.toBeInTheDocument();
+    await expect(canvas.queryByTestId("never-ask-row-threads_only_user")).not.toBeInTheDocument();
+  },
+};
+
 export const RemovesRow: Story = {
   args: { entries: SAMPLE_ENTRIES },
   play: async ({ canvasElement, args }) => {

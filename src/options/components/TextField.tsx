@@ -61,6 +61,9 @@ export function TextField({
           onBlur={onBlur}
           placeholder={placeholder}
           autoComplete={autoComplete}
+          data-1p-ignore
+          data-lpignore="true"
+          data-bwignore="true"
           aria-describedby={descriptionId}
           data-testid={testId}
           class="flex-1 min-w-0 bg-bg border border-border text-fg placeholder:text-muted px-3 py-2 outline-none focus:border-accent transition-[border-color,background-color] duration-200"

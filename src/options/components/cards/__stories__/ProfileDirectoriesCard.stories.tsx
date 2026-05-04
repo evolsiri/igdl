@@ -161,6 +161,32 @@ export const DarkMode: Story = {
   }
 };
 
+export const FilterByUsername: Story = {
+  name: "Filter By Username",
+  args: { profiles: SAMPLE_PROFILES },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const search = canvas.getByRole("searchbox", { name: /search profile directories/i });
+    await userEvent.type(search, "alice");
+    await expect(canvas.getByTestId("row-alice-username-cell")).toBeInTheDocument();
+    await expect(canvas.queryByTestId("row-bob-username-cell")).not.toBeInTheDocument();
+    await expect(canvas.queryByTestId("row-charlie-username-cell")).not.toBeInTheDocument();
+  },
+};
+
+export const FilterByDirectory: Story = {
+  name: "Filter By Directory",
+  args: { profiles: SAMPLE_PROFILES },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const search = canvas.getByRole("searchbox", { name: /search profile directories/i });
+    await userEvent.type(search, "bob-photos");
+    await expect(canvas.getByTestId("row-bob-username-cell")).toBeInTheDocument();
+    await expect(canvas.queryByTestId("row-alice-username-cell")).not.toBeInTheDocument();
+    await expect(canvas.queryByTestId("row-charlie-username-cell")).not.toBeInTheDocument();
+  },
+};
+
 export const SortedByUsernameAsc: Story = {
   args: {
     profiles: SAMPLE_PROFILES,
@@ -168,16 +194,24 @@ export const SortedByUsernameAsc: Story = {
   },
 };
 
-export const SortedByDownloadsDesc: Story = {
+export const SortedByUsernameDesc: Story = {
   args: {
     profiles: SAMPLE_PROFILES,
-    sort: { key: "downloadCount", direction: "desc" },
+    sort: { key: "username", direction: "desc" },
   },
 };
 
-export const SortedByLastDownloadAsc: Story = {
+export const SortedByAddedOnAsc: Story = {
   args: {
     profiles: SAMPLE_PROFILES,
-    sort: { key: "lastDownloadAt", direction: "asc" },
+    sort: { key: "addedAt", direction: "asc" },
   },
 };
+
+export const SortedByAddedOnDesc: Story = {
+  args: {
+    profiles: SAMPLE_PROFILES,
+    sort: { key: "addedAt", direction: "desc" },
+  },
+};
+
