@@ -15,7 +15,9 @@
 
 import { readFileSync } from "node:fs";
 
-const PATTERN = /#[0-9a-fA-F]{6}\b/;
+// Match a 6-char hex literal; reject 7+ char hex (alpha-channel form like
+// #aabbccff) by requiring the next char is not also hex.
+const PATTERN = /#[0-9a-fA-F]{6}(?![0-9a-fA-F])/g;
 
 const files = process.argv.slice(2);
 const findings = [];
@@ -25,8 +27,9 @@ for (const file of files) {
   const text = readFileSync(file, "utf8");
   const lines = text.split("\n");
   for (let i = 0; i < lines.length; i++) {
-    const match = lines[i].match(PATTERN);
-    if (match) findings.push({ file, line: i + 1, hex: match[0] });
+    for (const match of lines[i].matchAll(PATTERN)) {
+      findings.push({ file, line: i + 1, hex: match[0] });
+    }
   }
 }
 

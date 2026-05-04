@@ -15,10 +15,15 @@
  */
 
 import { readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const SERVICES_DIR = "src/services";
-const DOCS_DIR = "docs/services";
+// Resolve from the script's location, not CWD — husky usually runs from
+// repo root but `git -C subdir commit` and some IDEs don't.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(__dirname, "..");
+const SERVICES_DIR = join(REPO_ROOT, "src/services");
+const DOCS_DIR = join(REPO_ROOT, "docs/services");
 
 function listServices() {
   return readdirSync(SERVICES_DIR)
