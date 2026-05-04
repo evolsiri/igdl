@@ -27,6 +27,31 @@ for tokens, motion, typography, and the component inventory.
   `SPACING`) of `src/stories/DesignSystem.stories.tsx`. Missing sync is
   REQUEST CHANGES. Per-component story coverage is `storybook-curator`'s
   surface, not yours — escalate component-story drift there.
+- `IconsAndButtons` story sync. The `IconsAndButtons` export in
+  `src/stories/DesignSystem.stories.tsx` has three derived catalogs that
+  must stay in sync with their source on every diff:
+  - **`GLYPHS` array** — must list every named inline-SVG function in
+    the codebase. Recipe: grep for `^(export )?function [A-Z][a-zA-Z]*Glyph\b`
+    and `^(export )?function [A-Z][a-zA-Z]*Icon\b` across
+    `src/options/components/**`, `src/options/App.tsx`,
+    `src/content/modals/**`, and `src/content/toasts/**`; compare to
+    the `label` fields in `GLYPHS` in the story. The `\b` word-boundary
+    prevents matching composite wrappers like `InfoGlyphSpan`; the
+    `(export )?` prefix matches both module-private and exported
+    functions (e.g. `ChevronUpGlyph`). A named glyph function present
+    in source but absent from `GLYPHS` is REQUEST CHANGES.
+  - **Injected download buttons section** — must mirror
+    `src/content/button.ts`. Each `const *_SVG` string must have a
+    matching `InjectedBtnDemo` row; the `tooltip` prop must match the
+    `title=` attribute set in `createCustomBtn`; the conditional
+    injection notes (e.g. `zip-btn` desktop-only, `newtab-btn` excluded
+    on mobile stories) must match the guards in `addCustomBtn`. Drift
+    is REQUEST CHANGES.
+  - **Toast status icons section** — must mirror `TOAST_ICON` and
+    `TOAST_ACCENT` in `src/content/toasts/Toast.tsx`. Every `ToastKind`
+    must have a row; the `tokenKey` must resolve to the token used as
+    that kind's accent colour. A `ToastKind` without a row, or a row
+    whose `tokenKey` disagrees with `TOAST_ACCENT`, is REQUEST CHANGES.
 - Brand contrast. `--color-brand-green` pairs with black text (~15.7:1).
   `--color-brand-pink` pairs with white. New fills using these tokens
   inherit those pairings; new fills introduce new tokens that must clear

@@ -8,7 +8,7 @@ This document is an **index**. The source of truth is the `Design System/*` stor
 | --- | --- | --- |
 | `Design System / Color Palette` | Every colour token in both themes. Swatches read live values via `getComputedStyle`, so the Storybook theme toolbar flips them in real time. | `src/index.css`, `src/content/tokens.ts` |
 | `Design System / Design Tokens` | Non-colour primitives: radii (all `0`), motion durations and easings (with an interactive demo), typography ramp, and spacing. | `src/index.css`, `src/content/tokens.ts` |
-| `Design System / Components` | Hand-maintained inventory of every Preact component, grouped by directory, with a pointer to each component's own Storybook story. | `src/options/components/**`, `src/content/**` |
+| `Design System / Icons & Buttons` | Catalog of every inline SVG glyph, injected download button variants (dark + light surface), options-page ResetButton states, and toast status icons. | `src/content/button.ts`, `src/options/components/ResetButton.tsx`, `src/content/toasts/Toast.tsx`, `src/options/components/cards/**` |
 
 ## Token surfaces
 
@@ -28,7 +28,7 @@ Two surfaces, two source files:
 
 1. **New colour** → add the variable to `src/index.css` (`@theme` and `:root.dark` blocks) **and** a row in `OPTIONS_COLOR_GROUPS` in the design-system story.
 2. **New content-script colour** → extend the `TOKENS` object in `src/content/tokens.ts` **and** `CONTENT_TOKEN_DESCRIPTIONS` in the story.
-3. **New component** → ship a `__stories__/<Name>.stories.tsx` with `LightMode` + `DarkMode` variants and add a row to `COMPONENT_GROUPS` in the design-system story.
-4. **New motion / radius / spacing** → update `src/index.css` and the matching `RADII` / `TYPE_SCALE` / `SPACING` array in the story.
+3. **New component** → ship a `__stories__/<Name>.stories.tsx` with `LightMode` + `DarkMode` variants per the storybook-curator contract.
+4. **New motion / spacing** → update `src/index.css` and the matching `TYPE_SCALE` / `SPACING` array in the story. Radius is prose-only (the `Radii — all zero` section in `DesignTokens` has no backing array — all radii are zero by hard rule).
 
 All four of the project-local reviewer agents (`code-reviewer`, `ux-reviewer`, `documentation-reviewer`, `extension-auditor`) check this contract on review.

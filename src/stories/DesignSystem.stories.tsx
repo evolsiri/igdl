@@ -1,13 +1,19 @@
 import type { Meta, StoryObj } from "@storybook/preact-vite";
 import { useEffect, useState } from "preact/hooks";
 import { MOTION, TOKENS } from "../content/tokens";
+import { ResetButton } from "../options/components/ResetButton";
+import {
+  ChevronDownGlyph,
+  ChevronUpGlyph,
+} from "../options/components/SortableTableHeader";
 
 /**
  * Design System pages — visual reference for the igdl palette and primitives.
- * Two sibling stories under a shared `Design System/*` title:
+ * Three sibling stories under a shared `Design System/*` title:
  *
  *   Design System / Color Palette   (swatches, flip with the theme toolbar)
  *   Design System / Design Tokens   (radii, motion, typography)
+ *   Design System / Icons & Buttons (glyph catalog, injected buttons, ResetButton, toast icons)
  *
  * Swatches read live CSS vars via `getComputedStyle`, so the hex values
  * update whenever the theme decorator in .storybook/preview.ts toggles
@@ -373,7 +379,7 @@ export const DesignTokens: Story = {
       <header>
         <h1 class="text-3xl font-bold text-fg tracking-tight">Design Tokens</h1>
         <p class="text-sm text-muted mt-2 max-w-prose">
-          Non-colour primitives that the extension's UI rests on — radii,
+          Non-color primitives that the extension's UI rests on — radii,
           motion, typography, spacing.
         </p>
       </header>
@@ -480,6 +486,641 @@ export const DesignTokens: Story = {
                   <td class="px-4 py-2 font-mono text-xs text-fg">{s.token}</td>
                   <td class="px-4 py-2 font-mono text-xs text-muted">{s.px}</td>
                   <td class="px-4 py-2 text-xs text-muted">{s.usage}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  ),
+};
+
+// ---------------------------------------------------------------------------
+// Icons & Buttons
+// ---------------------------------------------------------------------------
+
+// SVG paths for the three content-script injected button icons (from src/content/button.ts)
+function DownloadGlyph() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      width="24"
+      height="24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M12 4v10.586l3.293-3.293 1.414 1.414L12 17.414 7.293 13.707l1.414-1.414L12 14.586V4h0zM4 20h16v2H4z" />
+    </svg>
+  );
+}
+
+function NewTabGlyph() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      width="24"
+      height="24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M14 3h7v7h-2V6.41l-8.29 8.3-1.42-1.42 8.3-8.29H14V3zM5 5h6v2H5v12h12v-6h2v8H3V5h2z" />
+    </svg>
+  );
+}
+
+function ZipGlyph() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      width="24"
+      height="24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M4 3h11l5 5v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm1 2v14h14V9h-4V5H5zm6 3h2v2h-2V8zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z" />
+    </svg>
+  );
+}
+
+function GitHubGlyph() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.341-3.369-1.341-.454-1.154-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+    </svg>
+  );
+}
+
+function InfoGlyph() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="11" x2="12" y2="16" />
+      <circle cx="12" cy="8" r="0.6" fill="currentColor" />
+    </svg>
+  );
+}
+
+function ToastSpinnerGlyph() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      fill="none"
+      style={{
+        width: "14px",
+        height: "14px",
+        animation: "igdl-spin 0.7s linear infinite",
+      }}
+    >
+      <style>{`@keyframes igdl-spin{to{transform:rotate(360deg)}}`}</style>
+      <circle
+        cx="8"
+        cy="8"
+        r="5.5"
+        stroke={TOKENS.muted}
+        stroke-width="2.5"
+        stroke-opacity="0.35"
+      />
+      <path
+        d="M8 2.5 A5.5 5.5 0 0 1 13.5 8"
+        stroke={TOKENS.info}
+        stroke-width="2.5"
+      />
+    </svg>
+  );
+}
+
+interface InjectedBtnDemoProps {
+  icon: preact.ComponentChildren;
+  label: string;
+  tooltip: string;
+  color: "white" | "black";
+}
+
+function InjectedBtnDemo({ icon, label, tooltip, color }: InjectedBtnDemoProps) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div class="flex flex-col items-center gap-2">
+      <span
+        title={tooltip}
+        style={{
+          cursor: "pointer",
+          padding: "8px",
+          display: "inline-flex",
+          color,
+          transform: hover ? "scale(1.08)" : "scale(1)",
+          transition: "transform 120ms ease-out",
+        }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      >
+        {icon}
+      </span>
+      <span class="font-mono text-xs text-muted">{label}</span>
+    </div>
+  );
+}
+
+const GLYPHS = [
+  {
+    label: "ResetGlyph",
+    usage: "Options page reset-to-default action",
+    file: "src/options/components/ResetButton.tsx",
+    node: (
+      <svg
+        viewBox="0 0 24 24"
+        width="14"
+        height="14"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="1 4 1 10 7 10" />
+        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+      </svg>
+    ),
+  },
+  {
+    label: "DeleteGlyph",
+    usage: "Options page delete-row action",
+    file: "src/options/components/ResetButton.tsx",
+    node: (
+      <svg
+        viewBox="0 0 24 24"
+        width="14"
+        height="14"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        <line x1="10" y1="11" x2="10" y2="17" />
+        <line x1="14" y1="11" x2="14" y2="17" />
+      </svg>
+    ),
+  },
+  {
+    label: "ChevronUpGlyph",
+    usage: "Sort ascending in ProfileDirectoriesCard table",
+    file: "src/options/components/SortableTableHeader.tsx",
+    node: <ChevronUpGlyph />,
+  },
+  {
+    label: "ChevronDownGlyph",
+    usage: "Sort descending in ProfileDirectoriesCard table",
+    file: "src/options/components/SortableTableHeader.tsx",
+    node: <ChevronDownGlyph />,
+  },
+  {
+    label: "GitHubIcon",
+    usage: "Footer link to the project repository",
+    file: "src/options/App.tsx",
+    node: <GitHubGlyph />,
+  },
+  {
+    label: "InfoGlyph",
+    usage: "Tooltip trigger inside NoDirPopup action buttons",
+    file: "src/content/modals/NoDirPopup.tsx",
+    node: <InfoGlyph />,
+  },
+  {
+    label: "ToastSpinner",
+    usage: "Animated spinner shown while a download is in progress",
+    file: "src/content/toasts/Toast.tsx",
+    node: <ToastSpinnerGlyph />,
+  },
+  {
+    label: "InstagramGlyph",
+    usage: "Instagram logo badge on profile-directory rows and never-ask rows",
+    file: "src/options/components/cards/ProfileDirectoriesCard.tsx, NeverAskCard.tsx",
+    node: (
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <rect x="3" y="3" width="18" height="18" rx="5" ry="5" />
+        <circle cx="12" cy="12" r="4" />
+        <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
+  {
+    label: "InfoIcon",
+    usage: "Inline info badge on NeverAskCard rows (distinct from NoDirPopup InfoGlyph)",
+    file: "src/options/components/cards/NeverAskCard.tsx",
+    node: (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="16" x2="12" y2="12" />
+        <line x1="12" y1="8" x2="12.01" y2="8" />
+      </svg>
+    ),
+  },
+  {
+    label: "FlaskIcon",
+    usage: "Experimental feature badge in DownloadsCard",
+    file: "src/options/components/cards/DownloadsCard.tsx",
+    node: (
+      <svg
+        width="13"
+        height="13"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M10 3h4M10 3v6L5 20h14L14 9V3" />
+      </svg>
+    ),
+  },
+  {
+    label: "MonitorIcon",
+    usage: "System/auto theme option in AppearanceCard",
+    file: "src/options/components/cards/AppearanceCard.tsx",
+    node: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="2" y="3" width="20" height="14" rx="2" />
+        <path d="M8 21h8M12 17v4" />
+      </svg>
+    ),
+  },
+  {
+    label: "SunIcon",
+    usage: "Light theme option in AppearanceCard",
+    file: "src/options/components/cards/AppearanceCard.tsx",
+    node: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+      </svg>
+    ),
+  },
+  {
+    label: "MoonIcon",
+    usage: "Dark theme option in AppearanceCard",
+    file: "src/options/components/cards/AppearanceCard.tsx",
+    node: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+      </svg>
+    ),
+  },
+];
+
+export const IconsAndButtons: Story = {
+  render: () => (
+    <div class="max-w-5xl mx-auto space-y-10">
+      <div class="flex justify-center">
+        <img src="/logo.svg" width="96" height="96" alt="igdl" />
+      </div>
+      <header>
+        <h1 class="text-3xl font-bold text-fg tracking-tight">
+          Icons &amp; Buttons
+        </h1>
+        <p class="text-sm text-muted mt-2 max-w-prose">
+          Every icon glyph and button pattern in the extension. Two surfaces:
+          the options page (Tailwind + CSS vars) and the injected content-script
+          UI (inline styles + Shadow DOM). No icon library — every glyph is a
+          hand-crafted inline SVG.
+        </p>
+      </header>
+
+      {/* ── Injected content-script buttons ────────────────────────────── */}
+      <section>
+        <h2 class="text-lg font-semibold text-fg mb-1">
+          Injected download buttons
+        </h2>
+        <p class="text-sm text-muted mb-4">
+          Defined in{" "}
+          <code class="font-mono text-xs">src/content/button.ts</code>. Injected
+          directly into Instagram / Threads DOM as{" "}
+          <code class="font-mono text-xs">&lt;a class="igdl-custom-btn …"&gt;</code>{" "}
+          anchors. Icons are 24×24,{" "}
+          <code class="font-mono text-xs">fill: currentColor</code>. Hover
+          animates <code class="font-mono text-xs">scale(1.08)</code> at{" "}
+          <code class="font-mono text-xs">120ms ease-out</code>. Icon color is
+          black (post / feed) or white (story / reel overlay) depending on the
+          surrounding Instagram surface.
+        </p>
+        <div class="bg-surface border border-border px-5 py-6 space-y-6">
+          <div>
+            <p class="text-xs font-medium uppercase tracking-wide text-muted mb-3">
+              On dark background (stories / reels)
+            </p>
+            <div
+              class="flex gap-2 items-center p-4"
+              style={{ background: TOKENS.bg }}
+            >
+              <InjectedBtnDemo
+                icon={<DownloadGlyph />}
+                label="download-btn"
+                tooltip="Download. Or, right-click to 'Save as'"
+                color="white"
+              />
+              <InjectedBtnDemo
+                icon={<NewTabGlyph />}
+                label="newtab-btn"
+                tooltip="Open in new tab"
+                color="white"
+              />
+              <InjectedBtnDemo
+                icon={<ZipGlyph />}
+                label="zip-btn"
+                tooltip="Download ZIP"
+                color="white"
+              />
+            </div>
+          </div>
+          <div>
+            <p class="text-xs font-medium uppercase tracking-wide text-muted mb-3">
+              On light background (posts / feed)
+            </p>
+            <div class="flex gap-2 items-center p-4 bg-white">
+              <InjectedBtnDemo
+                icon={<DownloadGlyph />}
+                label="download-btn"
+                tooltip="Download. Or, right-click to 'Save as'"
+                color="black"
+              />
+              <InjectedBtnDemo
+                icon={<NewTabGlyph />}
+                label="newtab-btn"
+                tooltip="Open in new tab"
+                color="black"
+              />
+              <InjectedBtnDemo
+                icon={<ZipGlyph />}
+                label="zip-btn"
+                tooltip="Download ZIP"
+                color="black"
+              />
+            </div>
+          </div>
+          <p class="text-xs text-muted">
+            <code class="font-mono">zip-btn</code> is only injected on desktop
+            (non-mobile) Instagram posts — never on stories, reels, or Threads.{" "}
+            <code class="font-mono">newtab-btn</code> is hidden on mobile
+            stories.
+          </p>
+        </div>
+      </section>
+
+      {/* ── Options-page icon buttons ───────────────────────────────────── */}
+      <section>
+        <h2 class="text-lg font-semibold text-fg mb-1">
+          Options-page icon buttons — ResetButton
+        </h2>
+        <p class="text-sm text-muted mb-4">
+          Defined in{" "}
+          <code class="font-mono text-xs">
+            src/options/components/ResetButton.tsx
+          </code>
+          . 32×32 border-box, icon-only, two variants. Hover transitions
+          background, text, and border to the variant's accent color and nudges{" "}
+          <code class="font-mono text-xs">scale(1.05)</code>; active presses to{" "}
+          <code class="font-mono text-xs">scale(0.95)</code>.
+        </p>
+        <div class="bg-surface border border-border px-5 py-6">
+          <div class="overflow-hidden">
+            <table class="w-full text-sm">
+              <thead class="text-xs uppercase tracking-wide text-muted border-b border-border">
+                <tr>
+                  <th class="text-left px-4 py-2 font-medium w-[18%]">
+                    Variant
+                  </th>
+                  <th class="text-left px-4 py-2 font-medium w-[16%]">
+                    Default
+                  </th>
+                  <th class="text-left px-4 py-2 font-medium w-[16%]">
+                    Disabled
+                  </th>
+                  <th class="text-left px-4 py-2 font-medium">Usage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-t border-border">
+                  <td class="px-4 py-3 font-mono text-xs text-fg align-middle">
+                    reset
+                  </td>
+                  <td class="px-4 py-3 align-middle">
+                    <ResetButton
+                      onClick={() => {}}
+                      title="Reset to default"
+                      variant="reset"
+                    />
+                  </td>
+                  <td class="px-4 py-3 align-middle">
+                    <ResetButton
+                      onClick={() => {}}
+                      title="Reset to default"
+                      variant="reset"
+                      disabled
+                    />
+                  </td>
+                  <td class="px-4 py-3 text-xs text-muted align-middle">
+                    Reverts a single profile row's directory to the global
+                    default. Hover accent:{" "}
+                    <code class="font-mono text-xs">--color-accent</code>.
+                  </td>
+                </tr>
+                <tr class="border-t border-border">
+                  <td class="px-4 py-3 font-mono text-xs text-fg align-middle">
+                    delete
+                  </td>
+                  <td class="px-4 py-3 align-middle">
+                    <ResetButton
+                      onClick={() => {}}
+                      title="Delete row"
+                      variant="delete"
+                    />
+                  </td>
+                  <td class="px-4 py-3 align-middle">
+                    <ResetButton
+                      onClick={() => {}}
+                      title="Delete row"
+                      variant="delete"
+                      disabled
+                    />
+                  </td>
+                  <td class="px-4 py-3 text-xs text-muted align-middle">
+                    Removes a profile-directory row permanently. Hover accent:{" "}
+                    <code class="font-mono text-xs">--color-destructive</code>.
+                    Opens a ConfirmDialog before acting.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* ── All icon glyphs ─────────────────────────────────────────────── */}
+      <section>
+        <h2 class="text-lg font-semibold text-fg mb-1">Icon glyph catalog</h2>
+        <p class="text-sm text-muted mb-4">
+          Every inline SVG glyph in the codebase. All use{" "}
+          <code class="font-mono text-xs">currentColor</code> so they inherit
+          their parent's text color. No external icon font or sprite sheet.
+        </p>
+        <div class="bg-surface border border-border overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="text-xs uppercase tracking-wide text-muted border-b border-border">
+              <tr>
+                <th class="text-left px-4 py-2 font-medium w-[10%]">Glyph</th>
+                <th class="text-left px-4 py-2 font-medium w-[28%]">Name</th>
+                <th class="text-left px-4 py-2 font-medium w-[30%]">Source</th>
+                <th class="text-left px-4 py-2 font-medium">Usage</th>
+              </tr>
+            </thead>
+            <tbody>
+              {GLYPHS.map((g) => (
+                <tr key={g.label} class="border-t border-border">
+                  <td class="px-4 py-3 text-fg align-middle">{g.node}</td>
+                  <td class="px-4 py-3 font-mono text-xs text-fg align-middle">
+                    {g.label}
+                  </td>
+                  <td class="px-4 py-3 font-mono text-xs text-muted align-middle">
+                    {g.file}
+                  </td>
+                  <td class="px-4 py-3 text-xs text-muted align-middle">
+                    {g.usage}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* ── Toast status icons ──────────────────────────────────────────── */}
+      <section>
+        <h2 class="text-lg font-semibold text-fg mb-1">Toast status icons</h2>
+        <p class="text-sm text-muted mb-4">
+          Defined in{" "}
+          <code class="font-mono text-xs">src/content/toasts/Toast.tsx</code>.
+          The <code class="font-mono text-xs">loading</code> kind renders the
+          animated spinner above; the other three use Unicode characters so they
+          render in the shadow-DOM context without an external font.
+        </p>
+        <div class="bg-surface border border-border overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="text-xs uppercase tracking-wide text-muted border-b border-border">
+              <tr>
+                <th class="text-left px-4 py-2 font-medium w-[12%]">Kind</th>
+                <th class="text-left px-4 py-2 font-medium w-[14%]">Icon</th>
+                <th class="text-left px-4 py-2 font-medium w-[20%]">
+                  Accent color
+                </th>
+                <th class="text-left px-4 py-2 font-medium">Semantics</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(
+                [
+                  {
+                    kind: "success",
+                    icon: "✓",
+                    tokenKey: "success" as keyof typeof TOKENS,
+                    note: "role=status — download completed",
+                  },
+                  {
+                    kind: "failure",
+                    icon: "✕",
+                    tokenKey: "failure" as keyof typeof TOKENS,
+                    note: "role=alert — download or network error",
+                  },
+                  {
+                    kind: "info",
+                    icon: "i",
+                    tokenKey: "info" as keyof typeof TOKENS,
+                    note: "role=status — user-canceled or informational",
+                  },
+                  {
+                    kind: "loading",
+                    icon: null,
+                    tokenKey: "info" as keyof typeof TOKENS,
+                    note: "role=status — download in progress",
+                  },
+                ] as const
+              ).map(({ kind, icon, tokenKey, note }) => (
+                <tr key={kind} class="border-t border-border">
+                  <td class="px-4 py-3 font-mono text-xs text-fg align-middle">
+                    {kind}
+                  </td>
+                  <td class="px-4 py-3 align-middle">
+                    {icon !== null ? (
+                      <span
+                        style={{
+                          color: TOKENS[tokenKey],
+                          fontSize: "16px",
+                          lineHeight: "1",
+                        }}
+                      >
+                        {icon}
+                      </span>
+                    ) : (
+                      <ToastSpinnerGlyph />
+                    )}
+                  </td>
+                  <td class="px-4 py-3 align-middle">
+                    <span class="inline-flex items-center gap-2">
+                      <span
+                        class="inline-block w-3 h-3 border border-border"
+                        style={{ background: TOKENS[tokenKey] }}
+                      />
+                      <span class="font-mono text-xs text-muted">
+                        TOKENS.{tokenKey}
+                      </span>
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-xs text-muted align-middle">
+                    {note}
+                  </td>
                 </tr>
               ))}
             </tbody>
