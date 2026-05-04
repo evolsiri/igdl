@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { handleDownloadMedia } from "../downloads";
+import { handleDownloadMedia, handleDownloadZip } from "../downloads";
 import { createMediaCacheService } from "../../../services/media-cache/media-cache";
 import { createSettingsService } from "../../../services/settings/settings";
 import { inMemoryStorage } from "../../../services/settings/storage";
@@ -125,5 +125,89 @@ describe("handleDownloadMedia", () => {
       deps,
     );
     expect(response).toEqual({ ok: false, error: "disk full" });
+  });
+
+  it("rejects blob: URLs with an actionable error before invoking chrome.downloads", async () => {
+    const { deps } = setup();
+    const response = await handleDownloadMedia(
+      {
+        type: "DOWNLOAD_MEDIA",
+        resource: {
+          url: "blob:https://www.instagram.com/abc-123",
+          id: "ABC",
+          type: "story",
+          username: "alice",
+          extension: "mp4",
+          isVideo: true,
+        },
+      },
+      deps,
+    );
+
+    expect(response.ok).toBe(false);
+    if (!response.ok) {
+      expect(response.error).toContain("blob:");
+      expect(response.error).toContain("data URL");
+    }
+    expect(chrome.downloads.download).not.toHaveBeenCalled();
+  });
+
+  it("accepts data: URLs from the content-script blob escape hatch", async () => {
+    const { deps } = setup();
+    const response = await handleDownloadMedia(
+      {
+        type: "DOWNLOAD_MEDIA",
+        resource: {
+          url: "data:video/mp4;base64,AAAAGGZ0eXA=",
+          id: "ABC",
+          type: "story",
+          username: "alice",
+          extension: "mp4",
+          isVideo: true,
+        },
+      },
+      deps,
+    );
+
+    expect(response.ok).toBe(true);
+    expect(chrome.downloads.download).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "data:video/mp4;base64,AAAAGGZ0eXA=" }),
+    );
+  });
+});
+
+describe("handleDownloadZip", () => {
+  it("rejects blob: URLs with an actionable error before invoking chrome.downloads", async () => {
+    const response = await handleDownloadZip({
+      type: "DOWNLOAD_ZIP",
+      dataUrl: "blob:https://www.instagram.com/abc-123",
+      filename: "instagram/alice/zip.zip",
+      saveAs: true,
+    });
+
+    expect(response.ok).toBe(false);
+    if (!response.ok) {
+      expect(response.error).toContain("blob:");
+      expect(response.error).toContain("data URL");
+    }
+    expect(chrome.downloads.download).not.toHaveBeenCalled();
+  });
+
+  it("accepts data: URLs and forwards to chrome.downloads.download", async () => {
+    const response = await handleDownloadZip({
+      type: "DOWNLOAD_ZIP",
+      dataUrl: "data:application/zip;base64,UEsDBA==",
+      filename: "instagram/alice/zip.zip",
+      saveAs: true,
+    });
+
+    expect(response.ok).toBe(true);
+    expect(chrome.downloads.download).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "data:application/zip;base64,UEsDBA==",
+        filename: "instagram/alice/zip.zip",
+        saveAs: true,
+      }),
+    );
   });
 });

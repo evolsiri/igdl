@@ -7,7 +7,7 @@ vi.mock("../../downloadBridge", () => ({
 
 vi.mock("../../extractors/fn", () => ({
   getUrlFromInfoApi: vi.fn(async () => null),
-  openInNewTab: vi.fn(async () => undefined),
+  openInNewTab: vi.fn(() => undefined),
 }));
 
 vi.mock("../../extractors/storage", () => ({
@@ -19,7 +19,8 @@ vi.mock("../../extractors/storage", () => ({
 }));
 
 import { storyOnClicked } from "../stories";
-import { downloadViaFlow } from "../../downloadBridge";
+import { downloadViaFlow, reportFailure } from "../../downloadBridge";
+import { openInNewTab } from "../../extractors/fn";
 
 function setPathname(pathname: string) {
   Object.defineProperty(window, "location", {
@@ -151,5 +152,129 @@ describe("storyOnClicked — <section> ancestor present (profile story, 3-part U
       expect.objectContaining({ url: "https://cdn.example.com/profile-story.mp4" }),
       false,
     );
+  });
+});
+
+describe("storyOnClicked — blob: URL conversion (Instagram MSE/HLS)", () => {
+  it("fetches the blob, converts to a data URL, and dispatches with UUID-derived id", async () => {
+    setPathname("/stories/eve/");
+
+    const blob = new Blob([new Uint8Array([0x00, 0x00, 0x00, 0x18])], { type: "video/mp4" });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      blob: async () => blob,
+    } as Response);
+
+    const wrapper = document.createElement("div");
+    const button = document.createElement("a") as HTMLAnchorElement;
+    button.className = "download-btn";
+    const video = document.createElement("video");
+    Object.defineProperty(video, "src", {
+      get: () => "blob:https://www.instagram.com/abc-123",
+      configurable: true,
+    });
+
+    wrapper.appendChild(button);
+    wrapper.appendChild(video);
+    document.body.appendChild(wrapper);
+
+    await storyOnClicked(button, false);
+
+    expect(fetchSpy).toHaveBeenCalledWith("blob:https://www.instagram.com/abc-123");
+    expect(downloadViaFlow).toHaveBeenCalledTimes(1);
+    const [params] = (downloadViaFlow as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(params.url).toMatch(/^data:video\/mp4;base64,/);
+    expect(params.username).toBe("eve");
+    expect(params.type).toBe("story");
+    // UUID preserved from the original blob URL — see storyGetDownloadableUrl.
+    expect(params.id).toBe("abc-123");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("reports failure when the blob fetch rejects", async () => {
+    setPathname("/stories/frank/");
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("network down"));
+
+    const wrapper = document.createElement("div");
+    const button = document.createElement("a") as HTMLAnchorElement;
+    button.className = "download-btn";
+    const video = document.createElement("video");
+    Object.defineProperty(video, "src", {
+      get: () => "blob:https://www.instagram.com/dead-blob",
+      configurable: true,
+    });
+
+    wrapper.appendChild(button);
+    wrapper.appendChild(video);
+    document.body.appendChild(wrapper);
+
+    await storyOnClicked(button, false);
+
+    expect(downloadViaFlow).not.toHaveBeenCalled();
+    expect(reportFailure).toHaveBeenCalledWith(expect.stringContaining("MSE video stream"));
+
+    fetchSpy.mockRestore();
+  });
+
+  it("prefers a non-blob <source src> over a blob <video>.src on the same node", async () => {
+    setPathname("/stories/grace/");
+
+    const wrapper = document.createElement("div");
+    const button = document.createElement("a") as HTMLAnchorElement;
+    button.className = "download-btn";
+
+    const video = document.createElement("video");
+    Object.defineProperty(video, "src", {
+      get: () => "blob:https://www.instagram.com/should-not-be-used",
+      configurable: true,
+    });
+    const source = document.createElement("source");
+    source.setAttribute("src", "https://cdn.example.com/declarative.mp4");
+    video.appendChild(source);
+
+    wrapper.appendChild(button);
+    wrapper.appendChild(video);
+    document.body.appendChild(wrapper);
+
+    await storyOnClicked(button, false);
+
+    expect(downloadViaFlow).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://cdn.example.com/declarative.mp4" }),
+      false,
+    );
+  });
+
+  it("does NOT convert a blob URL on the open-in-new-tab path (non-download-btn click)", async () => {
+    setPathname("/stories/henry/");
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const wrapper = document.createElement("div");
+    // The button does NOT have the "download-btn" class — this is the
+    // open-in-new-tab branch. saveAs is also false.
+    const button = document.createElement("a") as HTMLAnchorElement;
+    button.className = "view-btn";
+
+    const video = document.createElement("video");
+    Object.defineProperty(video, "src", {
+      get: () => "blob:https://www.instagram.com/preview-blob",
+      configurable: true,
+    });
+
+    wrapper.appendChild(button);
+    wrapper.appendChild(video);
+    document.body.appendChild(wrapper);
+
+    await storyOnClicked(button, false);
+
+    // No conversion happened, no download dispatched, original blob URL
+    // forwarded to openInNewTab.
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(downloadViaFlow).not.toHaveBeenCalled();
+    expect(openInNewTab).toHaveBeenCalledWith("blob:https://www.instagram.com/preview-blob");
+
+    fetchSpy.mockRestore();
   });
 });

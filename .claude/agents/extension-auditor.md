@@ -69,6 +69,14 @@ session: `src/manifest/{chrome,firefox}.manifest.json`,
 - All cross-context messages go through `src/utils/messages.ts` typed
   against `src/types/messages.ts`.
 - No direct `chrome.storage.*` outside `src/services/settings/storage.ts`.
+- Every URL flowing into `chrome.downloads.download` MUST be HTTPS
+  (Instagram CDN / external) or `data:` (content-script-converted blob).
+  `blob:` URLs are origin-scoped to the page document and the SW context
+  cannot dereference them — Chromium rejects with "Type error for
+  parameter options". The two download handlers in
+  `src/background/shared/downloads.ts` must defend the URL shape;
+  content scripts are responsible for the conversion via
+  `src/content/extractors/blob.ts:resolveBlobUrlToDataUrl`.
 
 ### Injected-UI safety
 
@@ -126,6 +134,19 @@ which permission) are your judgment; the *test commands* are these:
 - **`innerHTML` / `eval` / dynamic `<script>` audit.** `grep -rn
   'innerHTML\|new Function\|eval(' src/` — every match on Instagram-
   derived content is a Blocker.
+- **Blob-URL boundary check.** `grep -rEn 'await chrome\.downloads\.download\(' src/`
+  should return exactly two live invocations, both in
+  `src/background/shared/downloads.ts` (`handleDownloadMedia` and
+  `handleDownloadZip`). Each must reject `blob:` URLs before invoking —
+  a `blob:` URL crossing the SW boundary is a Blocker. Then
+  `grep -rEn '\.src\b|\.srcset\b|getAttribute\("src"\)' src/content/handlers/`
+  surfaces every DOM-level URL read; cross-check that any path that
+  flows into `downloadViaFlow` / `DOWNLOAD_MEDIA` either filters
+  `blob:` URLs out (per-tier `isBlobUrl` skip) or routes them through
+  `src/content/extractors/blob.ts:resolveBlobUrlToDataUrl` before
+  dispatch. (The looser pattern `'chrome\.downloads\.download'` will
+  match TSDoc and tests too — use the `await ...(` form for the boundary
+  check itself.)
 
 If a recipe doesn't fit, write your own — but report what you ran in the
 output so the orchestrator can spot-check.

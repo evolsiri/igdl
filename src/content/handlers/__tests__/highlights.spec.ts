@@ -17,6 +17,7 @@ vi.mock("../../extractors/storage", () => ({
 
 import { highlightsOnClicked } from "../highlights";
 import { downloadViaFlow, reportFailure } from "../../downloadBridge";
+import { openInNewTab } from "../../extractors/fn";
 import { CACHE_KEYS } from "../../../services/media-cache/keys";
 import type { HighlightMedia } from "../../../types/media-cache";
 
@@ -293,5 +294,105 @@ describe("highlightsOnClicked — DOM fallback (tier C)", () => {
     expect(reportFailure).toHaveBeenCalledWith(
       expect.stringContaining("could not locate active media"),
     );
+  });
+});
+
+/**
+ * Builds a highlights modal whose only visible video has a `blob:` `.src`.
+ * Uses `Object.defineProperty` to install a getter — this simulates real
+ * Instagram MSE/HLS, where the player sets `videoEl.src` imperatively at
+ * runtime (not via static markup) and may bypass the attribute-reflection
+ * path entirely. The handler reads via the property-then-attribute fallback
+ * at `findVisibleHighlightMedia` (see `highlights.ts`); this fixture
+ * exercises the property-only branch.
+ */
+function buildHighlightsModalWithBlobVideo(opts: { blobUrl: string; sectionWidth?: number }): HTMLAnchorElement {
+  const sectionWidth = opts.sectionWidth ?? 600;
+  const section = document.createElement("section");
+  Object.defineProperty(section, "getBoundingClientRect", {
+    value: () => ({ left: 0, top: 0, right: sectionWidth, bottom: 800, width: sectionWidth, height: 800 }),
+  });
+  const header = document.createElement("div");
+  const dotRow = document.createElement("div");
+  const dot = document.createElement("div");
+  dot.appendChild(document.createElement("div"));
+  dotRow.appendChild(dot);
+  header.appendChild(dotRow);
+  const button = document.createElement("a") as HTMLAnchorElement;
+  button.className = "download-btn";
+  header.appendChild(button);
+  section.appendChild(header);
+
+  const video = document.createElement("video");
+  Object.defineProperty(video, "src", { get: () => opts.blobUrl, configurable: true });
+  Object.defineProperty(video, "getBoundingClientRect", {
+    value: () => ({ left: 0, top: 0, right: sectionWidth, bottom: 800, width: sectionWidth, height: 800 }),
+  });
+  section.appendChild(video);
+
+  document.body.appendChild(section);
+  return button;
+}
+
+describe("highlightsOnClicked — blob: URL conversion (tier C)", () => {
+  it("fetches the blob, converts to a data URL, and dispatches with UUID-derived id", async () => {
+    setPathname("/stories/highlights/2222/");
+    installChromeStorage();
+
+    const blob = new Blob([new Uint8Array([0x00, 0x00, 0x00, 0x20])], { type: "video/mp4" });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      blob: async () => blob,
+    } as Response);
+
+    const button = buildHighlightsModalWithBlobVideo({
+      blobUrl: "blob:https://www.instagram.com/highlight-uuid-1",
+    });
+    await highlightsOnClicked(button, false);
+
+    expect(fetchSpy).toHaveBeenCalledWith("blob:https://www.instagram.com/highlight-uuid-1");
+    expect(downloadViaFlow).toHaveBeenCalledTimes(1);
+    const [params] = (downloadViaFlow as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(params.url).toMatch(/^data:video\/mp4;base64,/);
+    expect(params.type).toBe("highlight");
+    expect(params.id).toBe("highlight-uuid-1");
+
+    fetchSpy.mockRestore();
+  });
+
+  it("reports failure when the blob fetch rejects", async () => {
+    setPathname("/stories/highlights/2222/");
+    installChromeStorage();
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("blob revoked"));
+
+    const button = buildHighlightsModalWithBlobVideo({
+      blobUrl: "blob:https://www.instagram.com/highlight-uuid-2",
+    });
+    await highlightsOnClicked(button, false);
+
+    expect(downloadViaFlow).not.toHaveBeenCalled();
+    expect(reportFailure).toHaveBeenCalledWith(expect.stringContaining("MSE video stream"));
+
+    fetchSpy.mockRestore();
+  });
+
+  it("does NOT convert a blob URL on the open-in-new-tab path (non-download-btn click)", async () => {
+    setPathname("/stories/highlights/2222/");
+    installChromeStorage();
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const button = buildHighlightsModalWithBlobVideo({
+      blobUrl: "blob:https://www.instagram.com/highlight-preview-blob",
+    });
+    button.className = "view-btn"; // not "download-btn" — open-in-new-tab path
+    await highlightsOnClicked(button, false);
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(downloadViaFlow).not.toHaveBeenCalled();
+    expect(openInNewTab).toHaveBeenCalledWith("blob:https://www.instagram.com/highlight-preview-blob");
+
+    fetchSpy.mockRestore();
   });
 });

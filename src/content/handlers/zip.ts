@@ -6,6 +6,7 @@ import type { MediaResource } from "../../types/instagram";
 import type { Settings } from "../../types/settings";
 import { sendMessage } from "../../utils/messages";
 import { reportFailure } from "../downloadBridge";
+import { blobToDataUrl } from "../extractors/blob";
 import { getParentArticleNode } from "../extractors/dom";
 import { getDataFromAPI, getImgOrVideoUrl } from "../extractors/fn";
 import { inferExtension } from "../extractors/filename";
@@ -205,11 +206,3 @@ function buildOuterFilename(
   return buildFilename(zipResource, settings, takenAt.toDate());
 }
 
-async function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-}

@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import { downloadViaFlow, reportFailure } from "../downloadBridge";
+import { isBlobUrl, resolveBlobUrlToDataUrl } from "../extractors/blob";
 import { getMediaName } from "../extractors/filename";
 import { getUrlFromInfoApi, openInNewTab } from "../extractors/fn";
 import { getParentSectionNode } from "../extractors/dom";
@@ -19,23 +20,59 @@ interface StoriesReelsMedum {
   items: StoryItem[];
 }
 
+/**
+ * Returns the best-available URL for the active story media. Prefers the info
+ * API (HTTPS CDN), the declarative `<video><source src>` (HTTPS — never set by
+ * MSE), and the `<img>` srcset (HTTPS) over the imperative `<video>.src`
+ * (which on MSE/HLS streams is a `blob:` URL).
+ *
+ * The returned URL may be a `blob:` URL — the download path converts via
+ * `convertBlobUrlForDownload` before crossing the SW boundary, while the
+ * open-in-new-tab path passes the blob URL straight to `window.open` (allowed
+ * — the content script is same-origin to the page that minted the blob).
+ */
 async function storyGetUrl(target: HTMLElement, sectionNode: Element): Promise<string | null> {
   const res = await getUrlFromInfoApi(target);
-  let url = (res?.url as string | undefined) ?? null;
-  if (!url) {
-    const videoSource = sectionNode.querySelector<HTMLSourceElement>("video > source");
-    if (videoSource) {
-      url = videoSource.getAttribute("src");
-    } else if (sectionNode.querySelector('img[decoding="sync"]')) {
-      const img = sectionNode.querySelector<HTMLImageElement>('img[decoding="sync"]')!;
-      url = img.srcset.split(/ \d+w/g)[0].trim();
-      if (!url || url.length === 0) url = img.getAttribute("src");
-    } else if (sectionNode.querySelector("video")) {
-      const vid = sectionNode.querySelector<HTMLVideoElement>("video")!;
-      url = vid.src.length > 0 ? vid.src : vid.getAttribute("src");
-    }
+  const apiUrl = (res?.url as string | undefined) ?? null;
+  if (apiUrl) return apiUrl;
+
+  const videoSource = sectionNode.querySelector<HTMLSourceElement>("video > source");
+  if (videoSource) {
+    const src = videoSource.getAttribute("src");
+    if (src && !isBlobUrl(src)) return src;
   }
-  return url;
+
+  const syncImg = sectionNode.querySelector<HTMLImageElement>('img[decoding="sync"]');
+  if (syncImg) {
+    const fromSrcset = syncImg.srcset.split(/ \d+w/g)[0]?.trim();
+    if (fromSrcset && !isBlobUrl(fromSrcset)) return fromSrcset;
+    const fromSrc = syncImg.getAttribute("src");
+    if (fromSrc && !isBlobUrl(fromSrc)) return fromSrc;
+  }
+
+  const vid = sectionNode.querySelector<HTMLVideoElement>("video");
+  if (vid) return vid.src.length > 0 ? vid.src : vid.getAttribute("src");
+
+  return null;
+}
+
+/**
+ * Converts a `blob:` URL to a `data:` URL so it can cross the SW boundary.
+ * Reports a user-facing failure and returns `null` on conversion error so the
+ * caller can short-circuit. HTTPS / data URLs pass through unchanged.
+ *
+ * Only used on the download path — the open-in-new-tab path passes the blob
+ * URL straight to `window.open`, which works because the content script is
+ * same-origin to the page document that minted the blob.
+ */
+async function convertBlobUrlForDownload(url: string): Promise<string | null> {
+  if (!isBlobUrl(url)) return url;
+  const dataUrl = await resolveBlobUrlToDataUrl(url);
+  if (!dataUrl) {
+    reportFailure("story: cannot read MSE video stream — try refreshing");
+    return null;
+  }
+  return dataUrl;
 }
 
 export async function storyOnClicked(target: HTMLAnchorElement, saveAs = false): Promise<void> {
@@ -123,9 +160,14 @@ export async function storyOnClicked(target: HTMLAnchorElement, saveAs = false):
     if (!url) return;
     const postTime = sectionNode.querySelector("time")?.getAttribute("datetime");
     if (target.className.includes("download-btn") || saveAs) {
+      const downloadUrl = await convertBlobUrlForDownload(url);
+      if (!downloadUrl) return; // failure already toasted
       await downloadViaFlow(
         {
-          url,
+          // Send the SW-safe URL (HTTPS or `data:`); the original `url`
+          // (possibly `blob:`) feeds `getMediaName` so the filename id is
+          // a stable UUID rather than a base64 chunk.
+          url: downloadUrl,
           username: posterName,
           datetime: postTime ? dayjs(postTime) : undefined,
           id: getMediaName(url),
@@ -134,6 +176,10 @@ export async function storyOnClicked(target: HTMLAnchorElement, saveAs = false):
         saveAs,
       );
     } else {
+      // open-in-new-tab path: pass the original URL — `window.open(blob:)` is
+      // allowed because the content script is same-origin to the page that
+      // minted the blob; converting to a data URL would make the URL bar
+      // show base64 and break Firefox top-level navigation to data:.
       openInNewTab(url);
     }
   } catch (err) {

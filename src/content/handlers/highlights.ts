@@ -5,6 +5,7 @@ import type {
   HighlightReelEntry,
 } from "../../types/media-cache";
 import { downloadViaFlow, reportFailure } from "../downloadBridge";
+import { isBlobUrl, resolveBlobUrlToDataUrl } from "../extractors/blob";
 import { getMediaName } from "../extractors/filename";
 import { openInNewTab } from "../extractors/fn";
 import { storageCache } from "../extractors/storage";
@@ -124,8 +125,28 @@ export async function highlightsOnClicked(target: HTMLAnchorElement, saveAs = fa
     }
   };
 
+  /**
+   * Routes a Tier-C-discovered URL to the appropriate sink. On the download
+   * path, a `blob:` URL (Instagram MSE/HLS player) is converted to a data
+   * URL so the SW can dereference it; the original URL is preserved as the
+   * `getMediaName` source so the filename id is a stable UUID rather than a
+   * base64 chunk. On the open-in-new-tab path the original URL is used as-is
+   * — `window.open(blob:)` is allowed because the content script is
+   * same-origin to the page that minted the blob, and a data URL would show
+   * the base64 payload in the URL bar (and is blocked at top level on
+   * Firefox 86+).
+   */
   const downloadFromBareUrl = async (url: string): Promise<void> => {
     if (target.className.includes("download-btn") || saveAs) {
+      let downloadUrl = url;
+      if (isBlobUrl(downloadUrl)) {
+        const dataUrl = await resolveBlobUrlToDataUrl(downloadUrl);
+        if (!dataUrl) {
+          reportFailure("highlight: cannot read MSE video stream — try refreshing");
+          return;
+        }
+        downloadUrl = dataUrl;
+      }
       let posterName = "highlights";
       for (const item of Array.from(sectionNode.querySelectorAll("a[role=link]"))) {
         const hrefArr = item
@@ -142,7 +163,7 @@ export async function highlightsOnClicked(target: HTMLAnchorElement, saveAs = fa
         ?.getAttribute("datetime");
       await downloadViaFlow(
         {
-          url,
+          url: downloadUrl,
           username: posterName,
           datetime: postTime ? dayjs(postTime) : undefined,
           id: getMediaName(url),
@@ -223,7 +244,9 @@ export async function highlightsOnClicked(target: HTMLAnchorElement, saveAs = fa
     }
 
     // Tier C — DOM fallback. Restricted to the visible carousel slide so we
-    // don't accidentally pick up a preloaded sibling reel's media.
+    // don't accidentally pick up a preloaded sibling reel's media. Blob
+    // handling for MSE/HLS videos lives inside `downloadFromBareUrl` so the
+    // open-in-new-tab branch keeps the original URL.
     const visible = findVisibleHighlightMedia(sectionNode);
     if (visible) {
       await downloadFromBareUrl(visible.url);

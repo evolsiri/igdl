@@ -65,7 +65,8 @@ The button class is `igdl-custom-btn` (`button.ts:CLASS_CUSTOM_BUTTON`). Clicks 
 - `video.ts` — `handleVideo()` re-enables HTML5 controls on `<video>` elements; volume sync between feed and stories/reels.
 - `storage.ts` — synchronous settings cache. The button click handler can't `await`, so this projects `chrome.storage.local["igdl_settings"]` into a `storageCache.canonical` object on init and keeps it updated via `chrome.storage.onChanged`.
 - `dom.ts` — recursive parent walker for finding the enclosing `<article>` / `<section>`.
-- `filename.ts` — URL stem and extension inference.
+- `filename.ts` — URL stem and extension inference (handles HTTPS, `data:`, and `blob:` URL shapes).
+- `blob.ts` — `isBlobUrl()` typeguard plus `resolveBlobUrlToDataUrl()` for converting page-document-scoped `blob:` URLs into `data:` URLs the service worker can dereference; used by story / highlight Tier C DOM fallbacks (see [`docs/services/download.md`](./services/download.md) URL contract).
 
 For surfaces where the API call would be redundant or lossy (carousel posts where Instagram has already shipped the URLs in a GraphQL response, or highlight reels), the handler instead resolves through `MediaCacheService` — populated by the XHR-interception layer.
 

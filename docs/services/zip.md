@@ -38,7 +38,7 @@ None.
 
 ## Call sites
 
-- `src/content/handlers/zip.ts` — fetches every carousel item, calls `build()`, converts the blob to a data URL via `FileReader.readAsDataURL`, and dispatches a `DOWNLOAD_ZIP` message so the background can call `chrome.downloads.download(saveAs: true)`. (`triggerAnchorDownload()` in `src/services/zip/download.ts` is reachable but currently used only by tests.)
+- `src/content/handlers/zip.ts` — fetches every carousel item, calls `build()`, converts the blob to a data URL via `blobToDataUrl()` (from `src/content/extractors/blob.ts`, the shared helper that wraps `FileReader.readAsDataURL`), and dispatches a `DOWNLOAD_ZIP` message so the background can call `chrome.downloads.download(saveAs: true)`. (`triggerAnchorDownload()` in `src/services/zip/download.ts` is reachable but currently used only by tests.)
 
 ## Invariants
 

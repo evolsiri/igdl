@@ -50,7 +50,13 @@ handlers, XHR interception, and the Threads bridge fit together.
 4. Add a regression test under
    `src/content/handlers/__tests__/<handler>.spec.ts` that mounts a
    minimal fixture HTML and asserts `addCustomBtn` reaches the right
-   container.
+   container. For video-bearing surfaces (story, highlight, reels),
+   include a blob-URL fixture: mock a `<video>` whose `.src` getter
+   returns `"blob:https://www.instagram.com/..."` and assert the
+   handler invokes `fetch(blobUrl)` then dispatches a
+   `data:video/mp4;base64,...` URL through `downloadViaFlow`, with the
+   resource `id` derived from the original blob URL (not the data
+   URL).
 5. Verify by running `pnpm run build:chrome` and reloading the
    unpacked extension in `chrome://extensions`. Then `pnpm run
    build:firefox` and reload via `about:debugging`.
@@ -114,3 +120,19 @@ selectors, parent-walks, and capture predicates are yours.
 6. After every change, build both targets and load both extensions.
    Selector regressions on Firefox are silent (the manifest gotcha) —
    you can't trust Chrome alone.
+7. Any `.src` / `.srcset` / `getAttribute("src")` read on a `<video>` or
+   `<img>` in a story-like surface (story, highlight, reels) MUST go
+   through the blob-handling path before flowing into a download
+   message. Instagram serves story video via MSE/HLS — `<video>.src` is
+   a `blob:https://www.instagram.com/<uuid>` URL that the service worker
+   cannot dereference. Use `isBlobUrl()` + `resolveBlobUrlToDataUrl()`
+   from `src/content/extractors/blob.ts`. The declarative
+   `<video><source src>` is reliably HTTPS; prefer it over
+   `<video>.src` when both exist. When converting, preserve the
+   original blob URL as a `nameSource` and pass it to `getMediaName`
+   so the filename id stays a stable UUID instead of degrading to a
+   base64 chunk. Failing to convert produces a "Type error for
+   parameter options" toast — the SW boundary check
+   (`src/background/shared/downloads.ts:handleDownloadMedia`) now
+   rejects blob URLs with an actionable error, but content-script
+   code should never rely on that as a primary defense.

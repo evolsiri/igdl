@@ -52,3 +52,16 @@ The filename is computed in the **background**, not the content script — so th
 
 - Content scripts MUST NOT call `chrome.downloads.*` directly. The two declared calls are in `src/background/shared/downloads.ts` (`handleDownloadMedia` and `handleDownloadZip`).
 - The carousel ZIP path is a separate message variant: `DOWNLOAD_ZIP` carries a base64 data URL, skips per-profile routing, and always opens the Save As dialog. Profile counters are not incremented. See `../download-flow.md` and `zip.md`.
+
+## URL contract — what `chrome.downloads.download` accepts
+
+`handleDownloadMedia` enforces that `resource.url` is HTTPS or `data:`. `blob:` URLs are rejected with an actionable error because they are scoped to the document that minted them — the service worker is in a different context and `chrome.downloads.download({ url: "blob:..." })` returns Chromium's cryptic "Type error for parameter options".
+
+When a content script holds a blob URL (Instagram MSE/HLS players expose `<video>.src` as `blob:https://www.instagram.com/<uuid>` for some story and highlight videos), it must convert via `src/content/extractors/blob.ts:resolveBlobUrlToDataUrl` before dispatching `DOWNLOAD_MEDIA`. This mirrors the carousel ZIP path (see [`zip.md`](./zip.md)) which uses the same data-URL escape hatch.
+
+The two converted-blob paths today:
+
+- Story video MSE fallback — `src/content/handlers/stories.ts:storyGetDownloadableUrl`.
+- Highlight video MSE fallback — `src/content/handlers/highlights.ts` Tier C.
+
+When converting, callers preserve the original blob URL as a `nameSource` separate from the download URL: `getMediaName` is fed the blob URL (whose pathname carries a stable UUID), while the data URL is what reaches the SW. Without that split, `getMediaName(dataUrl)` would return a chunk of the base64 payload — the `getMediaName` helper short-circuits `data:` URLs to `""` as a defensive backstop.
