@@ -64,6 +64,12 @@ async function storyGetUrl(target: HTMLElement, sectionNode: Element): Promise<s
  * Only used on the download path — the open-in-new-tab path passes the blob
  * URL straight to `window.open`, which works because the content script is
  * same-origin to the page document that minted the blob.
+ *
+ * **Limitation.** When `<video>.src` is set from a `MediaSource` (Instagram's
+ * MSE/HLS player), the blob URL references the MediaSource — not a real Blob —
+ * and `fetch()` cannot dereference it. The caller should reach Tier B (inline
+ * JSON SSR) before falling through to the DOM tier so this conversion is
+ * rarely the only option.
  */
 async function convertBlobUrlForDownload(url: string): Promise<string | null> {
   if (!isBlobUrl(url)) return url;
@@ -73,6 +79,86 @@ async function convertBlobUrlForDownload(url: string): Promise<string | null> {
     return null;
   }
   return dataUrl;
+}
+
+/**
+ * Walks an arbitrary parsed JSON object looking for the
+ * `xdt_api__v1__feed__reels_media` key Instagram embeds in inline `<script>`
+ * tags on story pages. Direct navigation to a story URL bypasses the
+ * feed-level XHR that populates Tier A, but the SSR JSON is always present
+ * — that's how the page boots without a network round-trip.
+ */
+function findReelsMediaInJson(
+  obj: Record<string, unknown>,
+): { reels_media: StoriesReelsMedum[] } | undefined {
+  for (const key in obj) {
+    if (key === "xdt_api__v1__feed__reels_media") {
+      const value = obj[key];
+      if (
+        typeof value === "object" &&
+        value !== null &&
+        Array.isArray((value as { reels_media?: unknown }).reels_media)
+      ) {
+        return value as { reels_media: StoriesReelsMedum[] };
+      }
+    }
+    const value = obj[key];
+    if (typeof value === "object" && value !== null) {
+      const result = findReelsMediaInJson(value as Record<string, unknown>);
+      if (result) return result;
+    }
+  }
+  return undefined;
+}
+
+interface ScriptTagMatch {
+  reel: StoriesReelsMedum;
+  mediaIndex: number;
+}
+
+/**
+ * Tier B story-URL resolution: scans inline `<script>` tags for
+ * `xdt_api__v1__feed__reels_media` SSR data and returns the matching reel +
+ * media index for the active story. Sits between Tier A (XHR cache) and
+ * Tier C (DOM fallback) so that direct-navigation cases still resolve to an
+ * HTTPS CDN URL — Tier C's MSE blob is unfetchable, and the cleanest defense
+ * is to never reach it when SSR data is available.
+ *
+ * For 3-part URLs `/stories/<user>/<id>/`, matches by `item.pk === id`. For
+ * 2-part URLs `/stories/<user>/`, matches by `reel.user.username === poster`
+ * with a count-vs-DOM safety check (`expectedItemCount`) to reject stale SSR.
+ */
+function getReelMediumFromScriptTags(
+  posterName: string,
+  mediaId: string | undefined,
+  fallbackIndex: number,
+  expectedItemCount: number,
+): ScriptTagMatch | null {
+  for (const script of Array.from(window.document.scripts)) {
+    const innerHTML = script.innerHTML;
+    if (!innerHTML.includes("xdt_api__v1__feed__reels_media")) continue;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(innerHTML);
+    } catch {
+      continue;
+    }
+    if (typeof parsed !== "object" || parsed === null) continue;
+    const res = findReelsMediaInJson(parsed as Record<string, unknown>);
+    if (!res?.reels_media) continue;
+
+    for (const reel of res.reels_media) {
+      if (mediaId !== undefined) {
+        const idx = reel.items.findIndex((i) => i.pk === mediaId);
+        if (idx >= 0) return { reel, mediaIndex: idx };
+      } else if (reel.user.username === posterName) {
+        // Reject stale SSR: dot count must match item count for 2-part URLs.
+        if (expectedItemCount > 0 && reel.items.length !== expectedItemCount) continue;
+        return { reel, mediaIndex: fallbackIndex };
+      }
+    }
+  }
+  return null;
 }
 
 export async function storyOnClicked(target: HTMLAnchorElement, saveAs = false): Promise<void> {
@@ -111,26 +197,35 @@ export async function storyOnClicked(target: HTMLAnchorElement, saveAs = false):
   try {
     const storiesMap = storageCache.storiesReelsMedia as Map<string, StoriesReelsMedum>;
 
+    // Compute the active media index once — used by Tier A and Tier B for
+    // 2-part URLs.
+    let activeMediaIndex = 0;
+    let stepCount = 0;
     if (pathnameArr.length === 2) {
-      let mediaIndex = 0;
       const steps =
         target.parentElement?.firstElementChild?.querySelectorAll(":scope>div") ?? [];
-      if (steps.length > 1) {
+      stepCount = steps.length;
+      if (stepCount > 1) {
         steps.forEach((item, index) => {
-          if (item.childNodes.length === 1) mediaIndex = index;
+          if (item.childNodes.length === 1) activeMediaIndex = index;
         });
       }
+    }
+    const mediaIdFromUrl = pathnameArr.length === 3 ? pathnameArr.at(-1) : undefined;
 
+    // Tier A — XHR-intercepted GraphQL data. Populated by `src/inject.ts` /
+    // `src/xhr.ts` when the user navigates through the feed/profile.
+    if (pathnameArr.length === 2) {
       const userId = storageCache.storiesUserIds.get(posterName);
       if (typeof userId === "string") {
         const item = storiesMap.get(userId) as StoriesReelsMedum | undefined;
-        if (item && steps.length === item.items.length) {
-          const handled = await handleMedia(item, mediaIndex);
+        if (item && stepCount === item.items.length) {
+          const handled = await handleMedia(item, activeMediaIndex);
           if (handled) return;
         }
       }
     } else {
-      const mediaId = pathnameArr.at(-1)!;
+      const mediaId = mediaIdFromUrl!;
       for (const item of Array.from(storiesMap.values()) as StoriesReelsMedum[]) {
         for (let i = 0; i < item.items.length; i++) {
           if (item.items[i].pk === mediaId) {
@@ -141,7 +236,26 @@ export async function storyOnClicked(target: HTMLAnchorElement, saveAs = false):
       }
     }
 
-    // DOM fallback
+    // Tier B — inline-JSON SSR data. Available even when the XHR cache is
+    // empty (direct navigation to a story URL skips the feed pre-load).
+    // Returns HTTPS CDN URLs, so a hit here bypasses the unfetchable-MSE-
+    // blob trap that Tier C would otherwise expose users to.
+    const ssrMatch = getReelMediumFromScriptTags(
+      posterName,
+      mediaIdFromUrl,
+      activeMediaIndex,
+      stepCount,
+    );
+    if (ssrMatch) {
+      const handled = await handleMedia(ssrMatch.reel, ssrMatch.mediaIndex);
+      if (handled) return;
+    }
+
+    // Tier C — DOM fallback. Only reachable when Tiers A and B miss; may
+    // return a `blob:` URL for MSE-played videos. The conversion attempt
+    // (`convertBlobUrlForDownload`) succeeds when the blob is a real Blob
+    // and fails when it's a `MediaSource` reference — Tier B is designed
+    // to catch the MSE case before we get here.
     let sectionNode: Element | null = getParentSectionNode(target);
     if (!sectionNode) {
       // Feed story: <section> is a descendant, not an ancestor of the button.

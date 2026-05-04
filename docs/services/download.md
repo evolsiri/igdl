@@ -59,9 +59,12 @@ The filename is computed in the **background**, not the content script — so th
 
 When a content script holds a blob URL (Instagram MSE/HLS players expose `<video>.src` as `blob:https://www.instagram.com/<uuid>` for some story and highlight videos), it must convert via `src/content/extractors/blob.ts:resolveBlobUrlToDataUrl` before dispatching `DOWNLOAD_MEDIA`. This mirrors the carousel ZIP path (see [`zip.md`](./zip.md)) which uses the same data-URL escape hatch.
 
-The two converted-blob paths today:
+The conversion is **last resort**, not the primary defense. When `<video>.src` is set from a `MediaSource` (the common Instagram case), the blob URL references the MediaSource — not a real `Blob` — and `fetch()` cannot dereference it. Story / highlight handlers therefore have a tier hierarchy that resolves to an HTTPS CDN URL whenever possible:
 
-- Story video MSE fallback — `src/content/handlers/stories.ts:storyGetDownloadableUrl`.
-- Highlight video MSE fallback — `src/content/handlers/highlights.ts` Tier C.
+- **Tier A** — XHR-intercepted GraphQL cache (`storageCache.storiesReelsMedia`, `CACHE_KEYS.highlightMedia`). Populated by `src/inject.ts` / `src/xhr.ts` when the user navigates through the feed/profile.
+- **Tier B** — inline-JSON SSR data parsed from `<script>` tags. Available even when the XHR cache is empty (direct navigation skips the feed pre-load). Returns HTTPS CDN URLs and bypasses the unfetchable-MSE-blob trap entirely.
+  - Stories: `xdt_api__v1__feed__reels_media` — `src/content/handlers/stories.ts:findReelsMediaInJson`.
+  - Highlights: `xdt_api__v1__feed__reels_media__connection` — `src/content/handlers/highlights.ts:findReelsConnection`.
+- **Tier C** — DOM scrape (`<video>.src`, `<img>.src`). Last resort. May yield a `blob:` URL; the conversion path tries to dereference, fails on MediaSource-backed blobs, and surfaces a "cannot read MSE video stream" failure toast.
 
 When converting, callers preserve the original blob URL as a `nameSource` separate from the download URL: `getMediaName` is fed the blob URL (whose pathname carries a stable UUID), while the data URL is what reaches the SW. Without that split, `getMediaName(dataUrl)` would return a chunk of the base64 payload — the `getMediaName` helper short-circuits `data:` URLs to `""` as a defensive backstop.

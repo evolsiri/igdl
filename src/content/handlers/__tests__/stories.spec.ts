@@ -278,3 +278,249 @@ describe("storyOnClicked — blob: URL conversion (Instagram MSE/HLS)", () => {
     fetchSpy.mockRestore();
   });
 });
+
+/**
+ * Embeds a JSON `<script>` containing `xdt_api__v1__feed__reels_media` SSR
+ * data — the same shape Instagram emits on the initial story-page render.
+ * Wrapped in a deeply nested envelope to exercise the recursive walker.
+ *
+ * `type="application/json"` matches Instagram's real markup (their SSR
+ * scripts carry that type plus a `data-sjs` attribute) and prevents jsdom
+ * from evaluating the content as JavaScript.
+ */
+function installSsrScript(reelsMedia: Array<Record<string, unknown>>): HTMLScriptElement {
+  const payload = {
+    require: [
+      [
+        "RelayPrefetchedStreamCache",
+        "next",
+        [],
+        { __bbox: { result: { data: { xdt_api__v1__feed__reels_media: { reels_media: reelsMedia } } } } },
+      ],
+    ],
+  };
+  const script = document.createElement("script");
+  script.setAttribute("type", "application/json");
+  script.textContent = JSON.stringify(payload);
+  document.body.appendChild(script);
+  return script;
+}
+
+describe("storyOnClicked — Tier B (xdt_api__v1__feed__reels_media SSR)", () => {
+  const future = Math.floor(Date.now() / 1000) + 3600;
+  const taken = Math.floor(Date.now() / 1000) - 60;
+
+  it("(3-part URL) extracts URL by item.pk match before falling through to DOM", async () => {
+    setPathname("/stories/alice/9999/");
+
+    installSsrScript([
+      {
+        id: "highlight:reel-1",
+        user: { username: "alice" },
+        items: [
+          {
+            pk: "8888",
+            expiring_at: future,
+            taken_at: taken,
+            image_versions2: { candidates: [{ url: "https://cdn.example.com/wrong.jpg" }] },
+          },
+          {
+            pk: "9999",
+            expiring_at: future,
+            taken_at: taken,
+            image_versions2: { candidates: [{ url: "https://cdn.example.com/right.jpg" }] },
+            video_versions: [{ url: "https://cdn.example.com/right.mp4" }],
+          },
+        ],
+      },
+    ]);
+
+    // DOM has only a blob video — Tier C would normally fail. Tier B should
+    // catch first.
+    const wrapper = document.createElement("div");
+    const button = document.createElement("a") as HTMLAnchorElement;
+    button.className = "download-btn";
+    const video = document.createElement("video");
+    Object.defineProperty(video, "src", {
+      get: () => "blob:https://www.instagram.com/should-be-bypassed",
+      configurable: true,
+    });
+    wrapper.appendChild(button);
+    wrapper.appendChild(video);
+    document.body.appendChild(wrapper);
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    await storyOnClicked(button, false);
+
+    // No conversion attempt should have been made — Tier B short-circuited.
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(downloadViaFlow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "https://cdn.example.com/right.mp4",
+        username: "alice",
+        type: "story",
+        id: "highlight:reel-1",
+      }),
+      false,
+    );
+
+    fetchSpy.mockRestore();
+  });
+
+  it("(2-part URL) matches by username + dot-count, uses active dot index", async () => {
+    setPathname("/stories/bob/");
+
+    installSsrScript([
+      {
+        id: "highlight:reel-2",
+        user: { username: "bob" },
+        items: [
+          {
+            pk: "1",
+            expiring_at: future,
+            taken_at: taken,
+            image_versions2: { candidates: [{ url: "https://cdn.example.com/item-1.jpg" }] },
+          },
+          {
+            pk: "2",
+            expiring_at: future,
+            taken_at: taken,
+            image_versions2: { candidates: [{ url: "https://cdn.example.com/item-2.jpg" }] },
+          },
+        ],
+      },
+    ]);
+
+    // Build the DOM structure the handler expects: button.parentElement has
+    // a firstElementChild whose `:scope>div` children are the dot indicators.
+    // The dot with exactly one child is the active media index.
+    const wrapper = document.createElement("div");
+    const dotRow = document.createElement("div");
+    const dot0 = document.createElement("div");
+    const dot1 = document.createElement("div");
+    dot1.appendChild(document.createElement("div")); // dot1 is active → mediaIndex = 1
+    dotRow.appendChild(dot0);
+    dotRow.appendChild(dot1);
+    wrapper.appendChild(dotRow);
+
+    const button = document.createElement("a") as HTMLAnchorElement;
+    button.className = "download-btn";
+    wrapper.appendChild(button);
+
+    // DOM also has a video so the handler doesn't bail at the section walk.
+    const video = document.createElement("video");
+    Object.defineProperty(video, "src", {
+      get: () => "blob:https://www.instagram.com/should-be-bypassed",
+      configurable: true,
+    });
+    wrapper.appendChild(video);
+    document.body.appendChild(wrapper);
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    await storyOnClicked(button, false);
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(downloadViaFlow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "https://cdn.example.com/item-2.jpg",
+        username: "bob",
+        type: "story",
+      }),
+      false,
+    );
+
+    fetchSpy.mockRestore();
+  });
+
+  it("rejects stale SSR (item count !== dot count) for 2-part URLs and falls through", async () => {
+    setPathname("/stories/carol/");
+
+    // SSR has 1 item, but DOM shows 3 dots — stale SSR.
+    installSsrScript([
+      {
+        id: "highlight:reel-3",
+        user: { username: "carol" },
+        items: [
+          {
+            pk: "old",
+            expiring_at: future,
+            taken_at: taken,
+            image_versions2: { candidates: [{ url: "https://cdn.example.com/stale.jpg" }] },
+          },
+        ],
+      },
+    ]);
+
+    const wrapper = document.createElement("div");
+    const dotRow = document.createElement("div");
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement("div");
+      if (i === 0) dot.appendChild(document.createElement("div"));
+      dotRow.appendChild(dot);
+    }
+    wrapper.appendChild(dotRow);
+
+    const button = document.createElement("a") as HTMLAnchorElement;
+    button.className = "download-btn";
+    wrapper.appendChild(button);
+
+    // DOM fallback URL for assertion — non-blob so we can verify the tier
+    // fell through cleanly instead of erroring.
+    const video = document.createElement("video");
+    video.src = "https://cdn.example.com/dom-fallback.mp4";
+    wrapper.appendChild(video);
+    document.body.appendChild(wrapper);
+
+    await storyOnClicked(button, false);
+
+    // SSR should have been rejected. DOM fallback served instead.
+    expect(downloadViaFlow).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://cdn.example.com/dom-fallback.mp4" }),
+      false,
+    );
+    // The stale SSR URL must NOT appear.
+    const allCalls = (downloadViaFlow as ReturnType<typeof vi.fn>).mock.calls;
+    for (const [params] of allCalls) {
+      expect(params.url).not.toBe("https://cdn.example.com/stale.jpg");
+    }
+  });
+
+  it("(3-part URL) skips expired items and falls through to DOM", async () => {
+    setPathname("/stories/dave/12345/");
+
+    const past = Math.floor(Date.now() / 1000) - 3600; // expired
+    installSsrScript([
+      {
+        id: "highlight:reel-4",
+        user: { username: "dave" },
+        items: [
+          {
+            pk: "12345",
+            expiring_at: past,
+            taken_at: taken,
+            image_versions2: { candidates: [{ url: "https://cdn.example.com/expired.jpg" }] },
+          },
+        ],
+      },
+    ]);
+
+    const wrapper = document.createElement("div");
+    const button = document.createElement("a") as HTMLAnchorElement;
+    button.className = "download-btn";
+    const video = document.createElement("video");
+    video.src = "https://cdn.example.com/dom-fresh.mp4";
+    wrapper.appendChild(button);
+    wrapper.appendChild(video);
+    document.body.appendChild(wrapper);
+
+    await storyOnClicked(button, false);
+
+    // Expired SSR rejected by handleMedia, DOM fallback fires.
+    expect(downloadViaFlow).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://cdn.example.com/dom-fresh.mp4" }),
+      false,
+    );
+  });
+});

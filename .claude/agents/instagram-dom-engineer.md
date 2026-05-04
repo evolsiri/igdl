@@ -136,3 +136,19 @@ selectors, parent-walks, and capture predicates are yours.
    (`src/background/shared/downloads.ts:handleDownloadMedia`) now
    rejects blob URLs with an actionable error, but content-script
    code should never rely on that as a primary defense.
+
+8. Blob-URL conversion is the **last resort, not the primary defense**.
+   When `<video>.src` is set from a `MediaSource` (Instagram's MSE/HLS
+   player), the blob URL references the MediaSource — not a real Blob —
+   and `fetch()` cannot dereference it; `resolveBlobUrlToDataUrl`
+   correctly returns `null` and the user sees the "MSE video stream"
+   failure toast. For story-like surfaces this means the handler MUST
+   have a non-DOM-scrape tier (XHR cache from `src/inject.ts`, info API
+   from `getUrlFromInfoApi`, OR inline JSON SSR — `xdt_api__v1__feed__reels_media`
+   for stories, `xdt_api__v1__feed__reels_media__connection` for
+   highlights) ahead of the DOM tier. The script-tag JSON tier is
+   especially load-bearing: it works for direct-navigation cases where
+   the XHR cache is empty AND the info API has no media id to query
+   against. The walker pattern is shared between handlers — see
+   `src/content/handlers/highlights.ts:findReelsConnection` and
+   `src/content/handlers/stories.ts:findReelsMediaInJson`.
