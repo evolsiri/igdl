@@ -43,6 +43,9 @@ const storybookProject = {
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
   plugins: [preact()],
+  optimizeDeps: {
+    include: ["storybook/theming", "storybook/manager-api"],
+  },
   test: {
     projects: process.env.STORYBOOK_TESTS === '1'
       ? [unitProject, storybookProject]

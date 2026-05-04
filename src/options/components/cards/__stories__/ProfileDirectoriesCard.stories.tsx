@@ -162,7 +162,6 @@ export const DarkMode: Story = {
 };
 
 export const FilterByUsername: Story = {
-  name: "Filter By Username",
   args: { profiles: SAMPLE_PROFILES },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -175,7 +174,6 @@ export const FilterByUsername: Story = {
 };
 
 export const FilterByDirectory: Story = {
-  name: "Filter By Directory",
   args: { profiles: SAMPLE_PROFILES },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

@@ -47,7 +47,6 @@ export const Empty: Story = { args: { entries: [] } };
 export const WithEntries: Story = { args: { entries: SAMPLE_ENTRIES } };
 
 export const FilterByUsername: Story = {
-  name: "Filter By Username",
   args: { entries: SAMPLE_ENTRIES },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
