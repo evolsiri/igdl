@@ -21,9 +21,13 @@ Violating any of these will fail review:
   goes through the `KvStorage` adapter. `SettingsService` and
   `MediaCacheService` are the only two clients.
 - **Downloads are owned by `src/background/shared/downloads.ts`.** Content
-  scripts and the options page send `DOWNLOAD_MEDIA` via `DownloadService`.
-  The carousel ZIP path (`src/services/zip/`, anchor-click on a blob) is the
-  one deliberate exception.
+  scripts and the options page send `DOWNLOAD_MEDIA` (single resource) or
+  `DOWNLOAD_ZIP` (carousel) — both reach `chrome.downloads.download` only
+  inside that one background module. No content-script code calls
+  `chrome.downloads.*` directly. `blob:` URLs are converted to `data:` in
+  the content script (`src/content/extractors/blob.ts`) before crossing the
+  SW boundary, since blob URLs are origin-scoped and the SW context cannot
+  dereference them.
 - **Cross-context messaging goes through `src/utils/messages.ts`** (sender)
   and `src/background/shared/router.ts` (receiver), typed against the union
   in `src/types/messages.ts`. Never raw `chrome.runtime.sendMessage`. Never

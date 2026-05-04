@@ -173,8 +173,8 @@ export function onClickHandler(currentTarget: Element, saveAs = false): void {
   }
 
   // ZIP button has a completely different pipeline (fetches every carousel
-  // item, builds a .zip in content, anchor-click downloads). Short-circuit
-  // before the per-surface routing table below.
+  // item, builds a .zip in content, dispatches DOWNLOAD_ZIP with a data
+  // URL). Short-circuit before the per-surface routing table below.
   if (currentTarget.classList.contains("zip-btn")) {
     void zipOnClicked(currentTarget);
     return;
