@@ -4,6 +4,8 @@
 
 # igdl
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/dc0f0110-0baa-4aa2-aa75-00bbf9b5877f/deploy-status)](https://app.netlify.com/projects/igdl/deploys)
+
 Chrome and Firefox extension that adds a download button to Instagram and Threads.
 
 <p align="center">
