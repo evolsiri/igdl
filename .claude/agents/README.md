@@ -153,3 +153,5 @@ For the concern-keyed summary (which agent handles which kind of work), see [`CL
 Before merging any change to `.claude/` or `CLAUDE.md`, run `claude-config-reviewer` to catch path drift, broken cross-references, stale tool fields, and contradictions between this README and the per-agent files. It is read-only — findings come back as Blocking / Suggestion, and the file's author makes the fix.
 
 For ordinary code diffs, the four reviewers compose: on a non-trivial diff, run `code-reviewer`, `ux-reviewer`, `documentation-reviewer`, and `extension-auditor` in parallel. The hand-off graph above resolves any specialist that needs to fan out further.
+
+For the formal pre-commit review and post-mortem-on-misses rules that govern this workflow, see [`CLAUDE.md`](../../CLAUDE.md) "Review discipline".

@@ -1,6 +1,6 @@
 ---
 name: claude-config-reviewer
-description: "Audits the .claude/ surface — agent files, rule files, hook scripts, settings.json, and CLAUDE.md — for path drift, contradictions, broken references, and stale tool fields. Read-only. Run before merging any change to .claude/ or CLAUDE.md."
+description: Audits the .claude/ surface — agent files, rule files, hook scripts, settings.json, and CLAUDE.md — for path drift, contradictions, broken references, and stale tool fields. Read-only. Run before merging any change to .claude/ or CLAUDE.md.
 tools: Read, Glob, Grep, Bash
 model: sonnet
 ---
@@ -74,6 +74,29 @@ For each `.md` agent / rule file:
 - `tools:` lists only real tool names (Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch — plus any MCP tools the orchestrator supports).
 - `model:` is one of the recognized values (sonnet, opus, haiku) when present.
 - `description:` is non-empty and reasonably short (orchestrator dispatch may truncate long descriptions — cap suggested at ~250 chars).
+- `description:` is **unquoted** when it has no YAML-special leading character. This project hit a real registration failure with a double-quoted description containing em-dashes — the harness silently failed to register the agent. Match the convention of the other agents (unquoted scalar) unless the content genuinely requires quoting.
+
+### 7. Dispatchability of referenced agents
+
+When `CLAUDE.md` (or any rule/skill file) names an agent in a routing rule (`X → some-agent`) or a workflow (`run /review-all`), verify that agent is actually dispatchable in the current harness — i.e. its file frontmatter parses and the agent appears in the orchestrator's tool list. A routing rule that points at an unregistered agent is a Blocking finding because the rule is unenforceable.
+
+Static checks (do these on every audit):
+
+- Confirm the agent file exists at `.claude/agents/<name>.md`.
+- Confirm the frontmatter parses (the previous sub-rule under Section 6).
+- Flag any shape known to break registration: double-quoted descriptions with multibyte characters (em-dashes, smart quotes, etc.), missing `name:`, `name:` mismatched against filename.
+
+Runtime probe (recommend the orchestrator run this when adding or renaming a routing rule):
+
+```
+Agent({
+  subagent_type: "<agent-name>",
+  description: "dispatchability probe",
+  prompt: "Reply 'ok' and exit."
+})
+```
+
+Treat the result as: "agent type not found" → unregistered (Blocking — fix the registration before merging the routing rule); successful dispatch or InputValidationError on parameters → registered (the rule is dispatchable).
 
 ## Workflow
 

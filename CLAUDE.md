@@ -127,3 +127,11 @@ Two standing rules that govern how diffs reach `main`:
   response is forbidden — the same miss recurs next month otherwise.
   Style and cosmetic findings don't trigger this rule; substantive
   ones do.
+
+  **Out-of-scope escape hatch.** If the structural fix lives outside
+  the repo's surface (Claude Code harness, an external plugin, third-
+  party infrastructure), record the gap explicitly in the commit
+  message (what the miss was, where the structural fix would have to
+  land, what stop-gap was applied locally) and consider the rule
+  satisfied. The discipline is to encode the lesson, not to demand
+  fixes the project can't ship.
