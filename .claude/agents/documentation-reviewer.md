@@ -97,6 +97,12 @@ are your judgment; the *test commands* are these:
   "$p"; done`.
 - **TSDoc presence.** `grep -B1 '^export function' src/services/<name>/<name>.ts`
   to scan; `Read` the surrounding context to confirm `@example` lines.
+- **Hardcoded source line numbers.** `grep -nE '\.(ts|tsx|mjs|js|jsx|css|json):[0-9]+' docs/*.md docs/services/*.md`
+  — every `file:N` citation in a doc is drift waiting to happen. Flag each
+  as Suggestion to replace with a symbol reference (`file:functionName`)
+  unless the citation is genuinely about a stable line (rare). The
+  codeowners README and reviewer agents legitimately use `file:line`
+  in their *output examples* — those are not citations of source.
 
 If a recipe doesn't fit, write your own — but report what you ran in the
 output so the orchestrator can spot-check.

@@ -94,3 +94,36 @@ single-purpose — pick one, then run the relevant reviewers afterward.
 For the canonical path → agent map, co-ownership rules, and the hand-off
 graph, see [`.claude/agents/README.md`](./.claude/agents/README.md). The
 table above is concern-keyed; the README is path-keyed.
+
+## Review discipline
+
+Two standing rules that govern how diffs reach `main`:
+
+- **Pre-commit review.** Non-trivial diffs run through the relevant
+  reviewer(s) before commit, not after. For docs-touching changes:
+  `documentation-reviewer`. For `.claude/` or `CLAUDE.md` changes:
+  `claude-config-reviewer`. For multi-surface changes: the
+  `/review-all` skill. Self-review is necessary but not sufficient —
+  this project's history shows single-eye review misses material drift
+  (the ZIP-cluster, the toast `loading` gap, the Reset-card phantom
+  all landed because a reviewer wasn't dispatched in time).
+
+- **Post-mortem on misses.** A "miss" is a substantive finding
+  (correctness, contract drift, security, performance, architecture)
+  that should have been caught earlier — by an agent, a hook, or a
+  documented process — but wasn't, and surfaces only later. Every
+  confirmed miss requires a structural fix in the same session that
+  resolves the underlying issue:
+
+  - If an agent could have caught it → update the agent's brief
+    (new check, new verification recipe, new rule).
+  - If a hook could have caught it → add the hook (or extend an
+    existing one).
+  - If the orchestrator should have routed it → update the relevant
+    skill or this file's routing rules.
+
+  "Fix the bug" is half the work. "Fix the bug AND prevent the type
+  of miss from recurring" is the discipline. A single-fix-only
+  response is forbidden — the same miss recurs next month otherwise.
+  Style and cosmetic findings don't trigger this rule; substantive
+  ones do.
