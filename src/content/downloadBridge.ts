@@ -100,3 +100,17 @@ export function reportFailure(message: string): void {
 export function reportSuccess(message: string): void {
   getFlowDeps().toast.success(message);
 }
+
+/**
+ * Persistent loading toast — shown while we wait for asynchronous data
+ * (e.g. Instagram's XHR populating the storage cache after a SPA story
+ * navigation). Does NOT auto-dismiss — call the returned function once
+ * the wait completes or times out.
+ *
+ * @example
+ * const dismiss = reportLoading("Loading story data…");
+ * try { await waitForData(); } finally { dismiss(); }
+ */
+export function reportLoading(message: string): () => void {
+  return getFlowDeps().toast.loading(message);
+}

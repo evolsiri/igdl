@@ -1,10 +1,33 @@
 import dayjs from "dayjs";
-import { downloadViaFlow, reportFailure } from "../downloadBridge";
+import { downloadViaFlow, reportFailure, reportLoading } from "../downloadBridge";
 import { isBlobUrl, resolveBlobUrlToDataUrl } from "../extractors/blob";
 import { getMediaName } from "../extractors/filename";
 import { getUrlFromInfoApi, openInNewTab } from "../extractors/fn";
 import { getParentSectionNode } from "../extractors/dom";
 import { storageCache } from "../extractors/storage";
+
+/**
+ * How long to wait for Instagram's XHR to populate the storage cache after
+ * a SPA navigation when both Tier A and Tier B miss synchronously. Tuned by
+ * observation: Instagram's reels-media GraphQL fetch typically returns in
+ * 200-600ms after navigation, so 2s gives a comfortable margin without
+ * making the user feel stuck. Mutable via `__setTierATimingsForTesting` so
+ * unit tests don't have to wait 2s for the polling fall-through.
+ */
+let tierAWaitMs = 2000;
+let tierAPollMs = 200;
+
+/**
+ * Test-only: override Tier A polling timings so tests don't have to wait
+ * the full retry window. Production code never calls this.
+ *
+ * @example
+ * beforeEach(() => __setTierATimingsForTesting(0, 0));
+ */
+export function __setTierATimingsForTesting(waitMs: number, pollMs: number): void {
+  tierAWaitMs = waitMs;
+  tierAPollMs = pollMs;
+}
 
 interface StoryItem {
   pk: string;
@@ -111,9 +134,41 @@ function findReelsMediaInJson(
   return undefined;
 }
 
-interface ScriptTagMatch {
+interface ReelMatch {
   reel: StoriesReelsMedum;
   mediaIndex: number;
+}
+
+/**
+ * Tier A story-URL resolution: synchronous lookup against the XHR-populated
+ * storage cache (`storageCache.storiesReelsMedia`).
+ *
+ * For 3-part URLs `/stories/<user>/<id>/`, scans every cached reel for an
+ * item whose `pk` matches the URL id. For 2-part URLs `/stories/<user>/`,
+ * looks up the cached user-id by `posterName`, then enforces a dot-count
+ * safety check to reject stale cache entries (different number of items
+ * than the active carousel).
+ */
+function tryTierAReelMatch(
+  storiesMap: Map<string, StoriesReelsMedum>,
+  posterName: string,
+  mediaId: string | undefined,
+  fallbackIndex: number,
+  expectedItemCount: number,
+): ReelMatch | null {
+  if (mediaId !== undefined) {
+    for (const item of Array.from(storiesMap.values())) {
+      const idx = item.items.findIndex((i) => i.pk === mediaId);
+      if (idx >= 0) return { reel: item, mediaIndex: idx };
+    }
+    return null;
+  }
+  const userId = storageCache.storiesUserIds.get(posterName);
+  if (typeof userId !== "string") return null;
+  const item = storiesMap.get(userId);
+  if (!item) return null;
+  if (expectedItemCount > 0 && expectedItemCount !== item.items.length) return null;
+  return { reel: item, mediaIndex: fallbackIndex };
 }
 
 /**
@@ -133,7 +188,7 @@ function getReelMediumFromScriptTags(
   mediaId: string | undefined,
   fallbackIndex: number,
   expectedItemCount: number,
-): ScriptTagMatch | null {
+): ReelMatch | null {
   for (const script of Array.from(window.document.scripts)) {
     const innerHTML = script.innerHTML;
     if (!innerHTML.includes("xdt_api__v1__feed__reels_media")) continue;
@@ -157,6 +212,29 @@ function getReelMediumFromScriptTags(
         return { reel, mediaIndex: fallbackIndex };
       }
     }
+  }
+  return null;
+}
+
+/**
+ * Polls a synchronous predicate at `intervalMs` cadence for up to
+ * `maxWaitMs`, returning the first non-null result. Used to recover from
+ * the race where a user clicks the download button before Instagram's XHR
+ * populates the storage cache (SPA navigation between stories doesn't
+ * embed an SSR script tag, so Tier B can't catch this case).
+ */
+async function pollForReelMatch(
+  predicate: () => ReelMatch | null,
+  maxWaitMs: number,
+  intervalMs: number,
+): Promise<ReelMatch | null> {
+  const deadline = Date.now() + maxWaitMs;
+  let result = predicate();
+  if (result) return result;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, intervalMs));
+    result = predicate();
+    if (result) return result;
   }
   return null;
 }
@@ -215,25 +293,16 @@ export async function storyOnClicked(target: HTMLAnchorElement, saveAs = false):
 
     // Tier A — XHR-intercepted GraphQL data. Populated by `src/inject.ts` /
     // `src/xhr.ts` when the user navigates through the feed/profile.
-    if (pathnameArr.length === 2) {
-      const userId = storageCache.storiesUserIds.get(posterName);
-      if (typeof userId === "string") {
-        const item = storiesMap.get(userId) as StoriesReelsMedum | undefined;
-        if (item && stepCount === item.items.length) {
-          const handled = await handleMedia(item, activeMediaIndex);
-          if (handled) return;
-        }
-      }
-    } else {
-      const mediaId = mediaIdFromUrl!;
-      for (const item of Array.from(storiesMap.values()) as StoriesReelsMedum[]) {
-        for (let i = 0; i < item.items.length; i++) {
-          if (item.items[i].pk === mediaId) {
-            const handled = await handleMedia(item, i);
-            if (handled) return;
-          }
-        }
-      }
+    const tierAResult = tryTierAReelMatch(
+      storiesMap,
+      posterName,
+      mediaIdFromUrl,
+      activeMediaIndex,
+      stepCount,
+    );
+    if (tierAResult) {
+      const handled = await handleMedia(tierAResult.reel, tierAResult.mediaIndex);
+      if (handled) return;
     }
 
     // Tier B — inline-JSON SSR data. Available even when the XHR cache is
@@ -251,11 +320,42 @@ export async function storyOnClicked(target: HTMLAnchorElement, saveAs = false):
       if (handled) return;
     }
 
-    // Tier C — DOM fallback. Only reachable when Tiers A and B miss; may
-    // return a `blob:` URL for MSE-played videos. The conversion attempt
-    // (`convertBlobUrlForDownload`) succeeds when the blob is a real Blob
-    // and fails when it's a `MediaSource` reference — Tier B is designed
-    // to catch the MSE case before we get here.
+    // Tier A retry — recovers from the SPA-navigation race. Instagram's
+    // XHR populates `storiesReelsMedia` async; on a fresh story navigation
+    // the user can click the download button before that XHR returns.
+    // Tier B can't catch this case because SPA navigations don't embed a
+    // new SSR script tag. Show a loading toast so the user sees that we're
+    // working on it, poll until cache populates or the deadline elapses.
+    if (target.className.includes("download-btn") || saveAs) {
+      const dismissLoading = reportLoading("Loading story…");
+      let racedResult: ReelMatch | null = null;
+      try {
+        racedResult = await pollForReelMatch(
+          () =>
+            tryTierAReelMatch(
+              storageCache.storiesReelsMedia as Map<string, StoriesReelsMedum>,
+              posterName,
+              mediaIdFromUrl,
+              activeMediaIndex,
+              stepCount,
+            ),
+          tierAWaitMs,
+          tierAPollMs,
+        );
+      } finally {
+        dismissLoading();
+      }
+      if (racedResult) {
+        const handled = await handleMedia(racedResult.reel, racedResult.mediaIndex);
+        if (handled) return;
+      }
+    }
+
+    // Tier C — DOM fallback. Only reachable when Tiers A (sync + retry) and
+    // B miss; may return a `blob:` URL for MSE-played videos. The conversion
+    // attempt (`convertBlobUrlForDownload`) succeeds when the blob is a
+    // real Blob and fails when it's a `MediaSource` reference — Tier B is
+    // designed to catch the MSE case before we get here.
     let sectionNode: Element | null = getParentSectionNode(target);
     if (!sectionNode) {
       // Feed story: <section> is a descendant, not an ancestor of the button.
@@ -269,9 +369,15 @@ export async function storyOnClicked(target: HTMLAnchorElement, saveAs = false):
         el = el.parentElement;
       }
     }
-    if (!sectionNode) return;
+    if (!sectionNode) {
+      reportFailure("story: page not fully loaded — try clicking again");
+      return;
+    }
     const url = await storyGetUrl(target, sectionNode);
-    if (!url) return;
+    if (!url) {
+      reportFailure("story: cannot extract media URL — try refreshing");
+      return;
+    }
     const postTime = sectionNode.querySelector("time")?.getAttribute("datetime");
     if (target.className.includes("download-btn") || saveAs) {
       const downloadUrl = await convertBlobUrlForDownload(url);

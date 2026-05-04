@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../downloadBridge", () => ({
   downloadViaFlow: vi.fn(async () => undefined),
   reportFailure: vi.fn(),
+  reportLoading: vi.fn(() => vi.fn()),
 }));
 
 vi.mock("../../extractors/fn", () => ({
@@ -18,9 +19,10 @@ vi.mock("../../extractors/storage", () => ({
   },
 }));
 
-import { storyOnClicked } from "../stories";
-import { downloadViaFlow, reportFailure } from "../../downloadBridge";
+import { storyOnClicked, __setTierATimingsForTesting } from "../stories";
+import { downloadViaFlow, reportFailure, reportLoading } from "../../downloadBridge";
 import { openInNewTab } from "../../extractors/fn";
+import { storageCache } from "../../extractors/storage";
 
 function setPathname(pathname: string) {
   Object.defineProperty(window, "location", {
@@ -30,8 +32,17 @@ function setPathname(pathname: string) {
   });
 }
 
+beforeEach(() => {
+  // Make the Tier A retry instant so tests don't wait the production 2s.
+  __setTierATimingsForTesting(0, 0);
+});
+
 afterEach(() => {
   document.body.innerHTML = "";
+  // Reset shared module state between tests so cache pollution from one
+  // test (e.g., the polling-success test) doesn't leak into another.
+  (storageCache.storiesReelsMedia as Map<string, unknown>).clear();
+  (storageCache.storiesUserIds as Map<string, string>).clear();
   vi.clearAllMocks();
 });
 
@@ -89,7 +100,7 @@ describe("storyOnClicked — DOM fallback (feed story, 2-part URL)", () => {
     );
   });
 
-  it("returns silently when no ancestor contains story media", async () => {
+  it("reports failure when no ancestor contains story media", async () => {
     setPathname("/stories/carol/");
 
     const button = document.createElement("a") as HTMLAnchorElement;
@@ -99,6 +110,9 @@ describe("storyOnClicked — DOM fallback (feed story, 2-part URL)", () => {
     await storyOnClicked(button, false);
 
     expect(downloadViaFlow).not.toHaveBeenCalled();
+    expect(reportFailure).toHaveBeenCalledWith(
+      expect.stringContaining("page not fully loaded"),
+    );
   });
 
   it("extracts video URL via .src property when getAttribute('src') would be absent", async () => {
@@ -521,6 +535,135 @@ describe("storyOnClicked — Tier B (xdt_api__v1__feed__reels_media SSR)", () =>
     expect(downloadViaFlow).toHaveBeenCalledWith(
       expect.objectContaining({ url: "https://cdn.example.com/dom-fresh.mp4" }),
       false,
+    );
+  });
+});
+
+describe("storyOnClicked — Tier A polling retry (race recovery)", () => {
+  const future = Math.floor(Date.now() / 1000) + 3600;
+  const taken = Math.floor(Date.now() / 1000) - 60;
+
+  it("shows the loading toast and resolves when the cache populates after click", async () => {
+    setPathname("/stories/eve/77777/");
+    __setTierATimingsForTesting(500, 50);
+
+    // Empty cache at click time — simulates Instagram's XHR not yet returned.
+    expect((storageCache.storiesReelsMedia as Map<string, unknown>).size).toBe(0);
+
+    // Schedule cache population after 100ms (mid-poll).
+    setTimeout(() => {
+      const reel = {
+        id: "reel-eve",
+        user: { username: "eve" },
+        items: [
+          {
+            pk: "77777",
+            expiring_at: future,
+            taken_at: taken,
+            image_versions2: { candidates: [{ url: "https://cdn.example.com/eve.jpg" }] },
+            video_versions: [{ url: "https://cdn.example.com/eve.mp4" }],
+          },
+        ],
+      };
+      (storageCache.storiesReelsMedia as Map<string, unknown>).set("eve-uid", reel);
+    }, 100);
+
+    // DOM has only a blob video — Tier C would fail. Tier A retry should
+    // catch the populated cache before we get there.
+    const wrapper = document.createElement("div");
+    const button = document.createElement("a") as HTMLAnchorElement;
+    button.className = "download-btn";
+    const video = document.createElement("video");
+    Object.defineProperty(video, "src", {
+      get: () => "blob:https://www.instagram.com/should-not-fire",
+      configurable: true,
+    });
+    wrapper.appendChild(button);
+    wrapper.appendChild(video);
+    document.body.appendChild(wrapper);
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    await storyOnClicked(button, false);
+
+    // Loading toast surfaced during the wait.
+    expect(reportLoading).toHaveBeenCalledWith(expect.stringContaining("Loading story"));
+    // No blob conversion attempt — Tier A retry resolved first.
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(downloadViaFlow).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://cdn.example.com/eve.mp4", username: "eve" }),
+      false,
+    );
+
+    fetchSpy.mockRestore();
+  });
+
+  it("falls through to DOM tier when the cache never populates", async () => {
+    setPathname("/stories/finn/88888/");
+    __setTierATimingsForTesting(80, 20);
+
+    const wrapper = document.createElement("div");
+    const button = document.createElement("a") as HTMLAnchorElement;
+    button.className = "download-btn";
+    const video = document.createElement("video");
+    video.src = "https://cdn.example.com/dom-final.mp4";
+    wrapper.appendChild(button);
+    wrapper.appendChild(video);
+    document.body.appendChild(wrapper);
+
+    await storyOnClicked(button, false);
+
+    // Polling toast appeared, then deadline elapsed and we fell to DOM.
+    expect(reportLoading).toHaveBeenCalled();
+    expect(downloadViaFlow).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://cdn.example.com/dom-final.mp4" }),
+      false,
+    );
+  });
+
+  it("does NOT poll on the open-in-new-tab path (no loading toast)", async () => {
+    setPathname("/stories/gina/");
+
+    const wrapper = document.createElement("div");
+    const button = document.createElement("a") as HTMLAnchorElement;
+    button.className = "view-btn"; // not download-btn — open-in-new-tab path
+    const video = document.createElement("video");
+    Object.defineProperty(video, "src", {
+      get: () => "blob:https://www.instagram.com/preview-blob",
+      configurable: true,
+    });
+    wrapper.appendChild(button);
+    wrapper.appendChild(video);
+    document.body.appendChild(wrapper);
+
+    await storyOnClicked(button, false);
+
+    // No polling on the preview path — open with the original URL immediately.
+    expect(reportLoading).not.toHaveBeenCalled();
+    expect(openInNewTab).toHaveBeenCalledWith("blob:https://www.instagram.com/preview-blob");
+  });
+});
+
+describe("storyOnClicked — silent-exit replacements", () => {
+  it("reports failure when storyGetUrl returns null (no media URL anywhere)", async () => {
+    setPathname("/stories/holly/");
+
+    // section node exists (so we don't bail at the section walk) but it
+    // contains no <video>, no <img[decoding=sync]>, and the info API mock
+    // returns null — storyGetUrl yields null.
+    const wrapper = document.createElement("div");
+    const button = document.createElement("a") as HTMLAnchorElement;
+    button.className = "download-btn";
+    const placeholder = document.createElement("video"); // present but with no src
+    wrapper.appendChild(button);
+    wrapper.appendChild(placeholder);
+    document.body.appendChild(wrapper);
+
+    await storyOnClicked(button, false);
+
+    expect(downloadViaFlow).not.toHaveBeenCalled();
+    expect(reportFailure).toHaveBeenCalledWith(
+      expect.stringContaining("cannot extract media URL"),
     );
   });
 });
