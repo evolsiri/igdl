@@ -1,6 +1,6 @@
 # Agent codeowners
 
-Canonical map of which agent owns which paths in the `igdl` repo, and how reviews compose. The eight agents in `.claude/agents/*.md` carry their own briefs and escalation rules; this file is the bird's-eye view that a contributor (or any agent) can open to answer **"who has to APPROVE a diff to this path?"**
+Canonical map of which agent owns which paths in the `igdl` repo, and how reviews compose. The nine agents in `.claude/agents/*.md` carry their own briefs and escalation rules; this file is the bird's-eye view that a contributor (or any agent) can open to answer **"who has to APPROVE a diff to this path?"**
 
 This file is canonical. Per-agent `## Codeownership` sections are local restatements; if the two ever disagree, this file wins. [`claude-config-reviewer`](./claude-config-reviewer.md) audits drift between the two on every change to `.claude/` (see its "Cross-artifact consistency" check).
 
@@ -26,6 +26,7 @@ These are external Claude Code plugins resolved at session-start by the harness.
 | --- | --- | --- | --- |
 | [`code-reviewer`](./code-reviewer.md) | Five-axis review + igdl invariants. Final merge gate. | review | (default) |
 | [`ux-reviewer`](./ux-reviewer.md) | Visual / interaction / design-system parity. | review | (default) |
+| [`storybook-curator`](./storybook-curator.md) | Story coverage, orphan pruning, interaction-test floor, autodocs descriptions. | implement + review | sonnet |
 | [`documentation-reviewer`](./documentation-reviewer.md) | Docs coverage + TSDoc contract. | review | (default) |
 | [`extension-auditor`](./extension-auditor.md) | MV3 manifest, SW lifecycle, Chrome/Firefox parity. | review | (default) |
 | [`instagram-dom-engineer`](./instagram-dom-engineer.md) | Selector / parent-walk / XHR-bridge fixes. | implement + review | (default) |
@@ -55,6 +56,8 @@ These are external Claude Code plugins resolved at session-start by the harness.
 | `src/options/components/modals/**` | `ux-reviewer` | `documentation-reviewer` (TSDoc block) | Options-page modals (Tailwind) |
 | `src/index.css` | `ux-reviewer` | — | Options-page tokens + global zero-radius reset |
 | `src/stories/DesignSystem.stories.tsx` | `ux-reviewer` | — | Design-system source of truth |
+| `src/options/components/**/__stories__/**` | `storybook-curator` | `ux-reviewer` (visual fidelity) | Coverage / orphans / play tests / autodocs description |
+| `src/content/{modals,toasts}/**/__stories__/**` | `storybook-curator` | `ux-reviewer` (visual fidelity) | Coverage / orphans / play tests / autodocs description |
 | `src/inject.ts` | `instagram-dom-engineer` | — | MAIN-world XHR / fetch interception |
 | `src/xhr.ts` | `instagram-dom-engineer` | — | XHR snapshot bridge |
 | `src/services/**` | `code-reviewer` | `documentation-reviewer` (TSDoc) | Scaffolded by `service-implementer`; each has a `docs/services/<name>.md` |
@@ -87,6 +90,8 @@ A diff that touches a co-owned path needs **both** agents to APPROVE before `cod
 - `src/services/**` — `code-reviewer` owns the service code; `documentation-reviewer` owns the TSDoc on every exported symbol (with `@example`) and the matching `docs/services/<name>.md`.
 - `src/content/{modals,toasts}/**` and `src/options/components/{cards,modals}/**` — `ux-reviewer` owns the component code; `documentation-reviewer` owns the TSDoc-style doc block above each `function ComponentName(...)` declaration.
 
+**Story / autodocs co-ownership** — `storybook-curator` is the final approver of `__stories__/<Name>.stories.tsx` and the autodocs `description.component` strings; `ux-reviewer` is co-owner for visual fidelity (token use, mockup parity, theme-variant rendering). Both must APPROVE a diff that changes a story's rendered output. The autodocs `description.component` string is curator-owned and does not overlap with the `documentation-reviewer`-owned TSDoc block above the component — they live in different files and both must be present.
+
 ### Read-only owners
 
 `documentation-reviewer` for `README.md` and `claude-config-reviewer` for `.claude/**` + `CLAUDE.md` are **read-only auditors**. They flag findings and block merge on Critical issues, but they don't write the fix — the file's author or the main session does.
@@ -100,6 +105,7 @@ flowchart BT
     ux["ux-reviewer<br/>visual / tokens / design-system"]
     ext["extension-auditor<br/>MV3 / SW / parity / message bus"]
     docs["documentation-reviewer<br/>docs / TSDoc / indexes"]
+    sb["storybook-curator<br/>story coverage / orphans / autodocs"]
     dom["instagram-dom-engineer<br/>selectors / XHR bridge / DOM walks"]
     cfg["claude-config-reviewer<br/>.claude/ + CLAUDE drift"]
     cr["code-reviewer<br/>final merge gate"]
@@ -107,11 +113,12 @@ flowchart BT
     ux --> cr
     ext --> cr
     docs --> cr
+    sb --> cr
     dom --> cr
     cfg --> cr
 ```
 
-On a non-trivial diff, run the relevant specialists in parallel (single message, multiple tool calls), then `code-reviewer`. On a release-candidate diff, run `code-reviewer` + `ux-reviewer` + `documentation-reviewer` + `extension-auditor` in parallel — a release passes all four (see `extension-auditor.md` "Rules").
+On a non-trivial diff, run the relevant specialists in parallel (single message, multiple tool calls), then `code-reviewer`. On a release-candidate diff, run `code-reviewer` + `ux-reviewer` + `documentation-reviewer` + `extension-auditor` in parallel — a release passes all four (see `extension-auditor.md` "Rules"). When the diff touches UI component code or any `*.stories.tsx`, `storybook-curator` joins that parallel set.
 
 ## Hand-off graph
 
@@ -123,6 +130,9 @@ code-reviewer            → ux-reviewer, documentation-reviewer, extension-audi
                            chrome-devtools
 
 ux-reviewer              → code-reviewer, documentation-reviewer, extension-auditor,
+                           storybook-curator, accessibility-tester, chrome-devtools
+
+storybook-curator        → ux-reviewer, documentation-reviewer, code-reviewer,
                            accessibility-tester, chrome-devtools
 
 documentation-reviewer   → code-reviewer, ux-reviewer, extension-auditor
@@ -134,7 +144,8 @@ instagram-dom-engineer   → extension-auditor, ux-reviewer, code-reviewer,
                            documentation-reviewer
 
 service-implementer      → code-reviewer, documentation-reviewer (always),
-                           ux-reviewer (UI work), extension-auditor (background-touching)
+                           ux-reviewer (UI work), storybook-curator (UI work),
+                           extension-auditor (background-touching)
 
 release-engineer         → extension-auditor, code-reviewer
 
@@ -142,7 +153,7 @@ claude-config-reviewer   → file's original author for fixes; tooling-gap findi
                            feed code-reviewer
 ```
 
-`service-implementer` and `release-engineer` are the only "implement" agents on this list; everything else is review (or, for `instagram-dom-engineer`, both — it edits the brittle DOM/selector layer it owns).
+`service-implementer` and `release-engineer` are the only single-mode "implement" agents on this list; `instagram-dom-engineer` and `storybook-curator` are hybrids that both audit and remediate within their owned surface.
 
 ## Concern → agent table
 
@@ -152,6 +163,6 @@ For the concern-keyed summary (which agent handles which kind of work), see [`CL
 
 Before merging any change to `.claude/` or `CLAUDE.md`, run `claude-config-reviewer` to catch path drift, broken cross-references, stale tool fields, and contradictions between this README and the per-agent files. It is read-only — findings come back as Blocking / Suggestion, and the file's author makes the fix.
 
-For ordinary code diffs, the four reviewers compose: on a non-trivial diff, run `code-reviewer`, `ux-reviewer`, `documentation-reviewer`, and `extension-auditor` in parallel. The hand-off graph above resolves any specialist that needs to fan out further.
+For ordinary code diffs, the four reviewers compose: on a non-trivial diff, run `code-reviewer`, `ux-reviewer`, `documentation-reviewer`, and `extension-auditor` in parallel. When the diff touches UI component code or any `*.stories.tsx`, add `storybook-curator` to that parallel set. The hand-off graph above resolves any specialist that needs to fan out further.
 
 For the formal pre-commit review and post-mortem-on-misses rules that govern this workflow, see [`CLAUDE.md`](../../CLAUDE.md) "Review discipline".

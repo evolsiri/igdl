@@ -4,9 +4,10 @@ description: >
   Run the canonical reviewer fan-out on the current branch's diff. Launches
   code-reviewer, ux-reviewer, documentation-reviewer, and extension-auditor in
   parallel; conditionally adds instagram-dom-engineer when src/content/ is
-  touched and claude-config-reviewer when .claude/ or CLAUDE.md is touched.
-  Use when the user says "run all reviewers", "review the branch", "ship
-  check", or invokes /review-all. Use before any non-trivial merge.
+  touched, storybook-curator when UI components or *.stories.tsx are touched,
+  and claude-config-reviewer when .claude/ or CLAUDE.md is touched. Use when
+  the user says "run all reviewers", "review the branch", "ship check", or
+  invokes /review-all. Use before any non-trivial merge.
 ---
 
 # /review-all
@@ -36,6 +37,8 @@ summary). Don't sequence them — parallelism is the entire point.
 
 - Add `instagram-dom-engineer` if any of: `src/content/**`, `src/inject.ts`,
   `src/xhr.ts`.
+- Add `storybook-curator` if any of: `src/options/components/**`,
+  `src/content/{modals,toasts}/**`, or any `*.stories.tsx`.
 - Add `claude-config-reviewer` if any of: `.claude/**`, `CLAUDE.md`.
 
 These don't replace the base four — they join them.

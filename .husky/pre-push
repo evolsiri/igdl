@@ -1,1 +1,1 @@
-pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run test:storybook
+pnpm run lint && pnpm run typecheck && pnpm run check:stories && pnpm run test && pnpm run test:storybook

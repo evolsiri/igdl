@@ -31,10 +31,12 @@ Read CLAUDE.md once per session. Component documentation lives **in the
   message flow, storage flow, and MV3 lifecycle differences. Cross-check
   against current `src/manifest/*` and `src/background/*`; flag drift.
 - **Design system.** `docs/design-system.md` exists and points at
-  `src/stories/DesignSystem.stories.tsx`. The matching arrays in the
-  story (one per token / component category) stay in sync with
-  `src/index.css`, `src/content/tokens.ts`, and the component
-  directories. Drift is a design-system gap — name the exact array.
+  `src/stories/DesignSystem.stories.tsx`. The token arrays in the
+  story (`OPTIONS_COLOR_GROUPS`, `CONTENT_TOKEN_DESCRIPTIONS`,
+  `TYPE_SCALE`, `SPACING`) stay in sync with `src/index.css` and
+  `src/content/tokens.ts`. Drift is a design-system gap — name the
+  exact array. Per-component story coverage is `storybook-curator`'s
+  surface, not yours — escalate component-story drift there.
 - **Project README.** Root `README.md` follows the shape and voice
   defined in `docs/project-readme.md` — flag any deviation from that
   rule (missing or extra sections, banned vocabulary, marketing language,

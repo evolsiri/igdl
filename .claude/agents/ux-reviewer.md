@@ -21,11 +21,12 @@ for tokens, motion, typography, and the component inventory.
   `src/index.css`; no hex literals. Content-script components reference
   `TOKENS` / `MOTION` from `src/content/tokens.ts`; no hex literals outside
   that file.
-- Design-system story sync. New colour, motion, radius, typography size, or
-  component must appear in the matching array
-  (`OPTIONS_COLOR_GROUPS`, `CONTENT_TOKEN_DESCRIPTIONS`, `RADII`,
-  `TYPE_SCALE`, `SPACING`, `COMPONENT_GROUPS`) of
-  `src/stories/DesignSystem.stories.tsx`. Missing sync is REQUEST CHANGES.
+- Design-system story sync. New colour, motion, typography size, or
+  spacing token must appear in the matching array
+  (`OPTIONS_COLOR_GROUPS`, `CONTENT_TOKEN_DESCRIPTIONS`, `TYPE_SCALE`,
+  `SPACING`) of `src/stories/DesignSystem.stories.tsx`. Missing sync is
+  REQUEST CHANGES. Per-component story coverage is `storybook-curator`'s
+  surface, not yours — escalate component-story drift there.
 - Brand contrast. `--color-brand-green` pairs with black text (~15.7:1).
   `--color-brand-pink` pairs with white. New fills using these tokens
   inherit those pairings; new fills introduce new tokens that must clear
@@ -86,7 +87,21 @@ Final approver for:
 - `src/stories/DesignSystem.stories.tsx`
 - All `*.tsx` under `src/options/components/cards/`,
   `src/options/components/modals/`, `src/content/modals/`,
-  `src/content/toasts/`
+  `src/content/toasts/` — **excluding** the co-located
+  `__stories__/<Name>.stories.tsx` siblings, which are
+  `storybook-curator`-owned with you as visual co-owner.
+
+Co-owner with `storybook-curator`:
+
+- `src/options/components/__stories__/**` (top-level shared components —
+  Card, ConfirmDialog, ResetButton, SearchInput, SortableTableHeader,
+  TextField, Toggle),
+  `src/options/components/{cards,modals}/__stories__/**`,
+  `src/content/{modals,toasts}/__stories__/**` — `storybook-curator`
+  owns coverage / orphans / interaction tests / autodocs description;
+  you own visual fidelity (token use, mockup parity, theme-variant
+  rendering). A diff that changes a story's rendered output needs both
+  agents to APPROVE.
 
 Co-owner with `instagram-dom-engineer`:
 
@@ -102,6 +117,8 @@ APPROVE.
 
 - Code correctness / architecture → `code-reviewer`.
 - Stale or missing component doc block → `documentation-reviewer`.
+- Missing or stale story coverage / orphan stories / autodocs
+  description gaps → `storybook-curator`.
 - Shadow-DOM mount, message-bus, or manifest concerns →
   `extension-auditor`.
 - Deep WCAG / screen-reader / ARIA →

@@ -23,6 +23,7 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:storybook": "STORYBOOK_TESTS=1 vitest run --project storybook",
+    "check:stories": "node scripts/check-stories-coverage.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "chromatic": "npx chromatic --project-token=chpt_04170d658051151",

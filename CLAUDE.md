@@ -54,6 +54,33 @@ Violating any of these will fail review:
   belong in commit messages, PR descriptions, or comments next to the code.
   No ADR directory.
 
+## Storybook story contract
+
+- Every UI component file under `src/options/components/**` and
+  `src/content/{modals,toasts}/**` has a co-located
+  `__stories__/<Name>.stories.tsx`.
+- Every interactive component has at least one story export with a
+  `play` function that drives the user-facing flow with `userEvent`
+  (or `fireEvent.input` where userEvent races a rAF) and asserts via
+  `expect()` from `storybook/test`. Components that validate input also
+  have a story that triggers validation and asserts the error appears.
+- No story exists for a removed component. A `*.stories.tsx` whose
+  imported component file is missing is an orphan and gets pruned in the
+  same diff that removes the component.
+- Every story file sets `meta.parameters.docs.description.component`
+  with three sections: a one-liner, then `**Uses:**` (when to reach for
+  this component), then `**Used in:**` (a specific UI location, with a
+  `file:line` reference when the use site is small).
+- Verify with `pnpm run check:stories` (Rules 1 + 2 — coverage + orphans;
+  exits non-zero on drift) and `pnpm test:storybook` (Rules 4 + 6 —
+  every play function passes). Both run in `.husky/pre-push`.
+
+Owner: `storybook-curator`. The full brief and verification recipes live
+in [`.claude/agents/storybook-curator.md`](./.claude/agents/storybook-curator.md);
+see that file for the state-coverage matrix and per-rule shell commands.
+This section is the canonical short rule — the agent file is the
+canonical long rule.
+
 ## Project README contract
 
 The top-level `README.md` is the product's storefront, not a contributor
@@ -77,6 +104,7 @@ story in the same PR. The canonical token values live in `src/index.css`
 | ------------------------------------------------- | -------------------------------------------- |
 | Five-axis review + igdl invariants                | `code-reviewer`                              |
 | Visual / interaction / design-system parity       | `ux-reviewer`                                |
+| Storybook story coverage / drift / autodocs       | `storybook-curator`                          |
 | Docs coverage + TSDoc                             | `documentation-reviewer`                     |
 | MV3 manifest, SW lifecycle, Chrome/Firefox parity | `extension-auditor`                          |
 | Scaffold a new service or component               | `service-implementer`                        |
@@ -91,8 +119,10 @@ story in the same PR. The canonical token values live in `src/index.css`
 | Implementation planning                           | `Plan`                                       |
 
 The four reviewers compose: on a non-trivial diff, run them in parallel
-(single message, multiple tool calls). The three implementers are
-single-purpose — pick one, then run the relevant reviewers afterward.
+(single message, multiple tool calls). When the diff touches UI component
+code or any `*.stories.tsx`, `storybook-curator` joins the parallel
+review. The implementers are single-purpose — pick one, then run the
+relevant reviewers afterward.
 
 For the canonical path → agent map, co-ownership rules, and the hand-off
 graph, see [`.claude/agents/README.md`](./.claude/agents/README.md). The

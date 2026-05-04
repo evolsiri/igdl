@@ -45,23 +45,31 @@ When creating a new service `<name>`:
 2. Co-located test at
    `src/options/components/cards/__tests__/<Name>Card.spec.tsx`.
 3. Co-located stories at
-   `src/options/components/cards/__stories__/<Name>Card.stories.tsx`
-   with `LightMode` and `DarkMode` variants.
+   `src/options/components/cards/__stories__/<Name>Card.stories.tsx`.
+   At scaffold time, ship Rule 1 + Rule 4 + Rule 5 from the
+   `storybook-curator` brief — at minimum a `Default` export, a `play`
+   function for the primary user action, and a meta
+   `parameters.docs.description.component` with the **Uses** + **Used in**
+   markers. Add `LightMode` + `DarkMode` variants. Then escalate to
+   `storybook-curator` for the deeper state-coverage audit.
 4. Wire into `src/options/App.tsx` in the canonical card order
    (Downloads → Profile Directories → Never-Ask → Appearance →
    Import/Export, plus the new card in its agreed slot). Reset is a
    button inside `ImportExportCard`, not a separate card.
-5. Add a `COMPONENT_GROUPS` row in
-   `src/stories/DesignSystem.stories.tsx`.
 
 ### New injected modal or toast
 
 1. Create `src/content/modals/<Name>.tsx` (or `src/content/toasts/`).
    Inline-token styles from `src/content/tokens.ts`. Mount via
    `createShadowMount()`.
-2. Co-located test + story under `__tests__/` and `__stories__/`.
-3. `COMPONENT_GROUPS` row in the design-system story.
-4. If a new colour token is needed, extend `TOKENS` in
+2. Co-located test + story under `__tests__/` and `__stories__/`. The
+   story ships Rule 1 + Rule 4 + Rule 5 from the `storybook-curator`
+   brief at scaffold time. Use `LightSurroundings` / `DarkSurroundings`
+   (not `LightMode` / `DarkMode`) — content-script UI is theme-
+   independent inside the Shadow DOM, so the variants simulate
+   light vs. dark Instagram backgrounds. Then escalate to
+   `storybook-curator` for the deeper state-coverage audit.
+3. If a new colour token is needed, extend `TOKENS` in
    `src/content/tokens.ts` AND add a row to
    `CONTENT_TOKEN_DESCRIPTIONS` in the story file.
 
@@ -73,12 +81,16 @@ After implementation, summarize:
 - Files updated, with paths and one-line reasons.
 - Commands run (`pnpm run lint`, `pnpm run typecheck`, `pnpm run test`).
 - Recommended next-step reviewers (always: `code-reviewer`,
-  `documentation-reviewer`; UI work: + `ux-reviewer`; service that
-  touches background: + `extension-auditor`).
+  `documentation-reviewer`; UI work: + `ux-reviewer` + `storybook-curator`;
+  service that touches background: + `extension-auditor`).
 
 ## Codeownership
 
-You don't own; you implement. The four reviewers gate your output.
+You don't own; you implement. The reviewers gate your output —
+`code-reviewer`, `ux-reviewer`, `documentation-reviewer`, and
+`extension-auditor` for the four standing surfaces, plus
+`storybook-curator` whenever the diff touches UI component code or any
+`*.stories.tsx`.
 
 ## Escalation
 
