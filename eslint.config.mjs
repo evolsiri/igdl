@@ -13,7 +13,7 @@ import prettier from "eslint-config-prettier/flat";
  */
 const config = defineConfig([
   {
-    ignores: ["dist/**", "artifacts/**", "node_modules/**", "coverage/**"],
+    ignores: ["dist/**", "artifacts/**", "node_modules/**", "coverage/**", "storybook-static/**"],
   },
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,tsx}"],
