@@ -15,7 +15,7 @@ The CLAUDE.md routing table and several agent `Escalation` sections reference pl
 
 - `voltagent-qa-sec:accessibility-tester` — deep WCAG / screen-reader audit.
 - `voltagent-qa-sec:security-auditor` — threat modeling, supply-chain audit.
-- `voltagent-qa-sec:performance-engineer` — runtime / memory regression review (escalate when content-script polling, XHR interception, or ZIP-blob handling changes).
+- `voltagent-qa-sec:performance-engineer` — runtime / memory regression review (escalate when content-script polling, XHR interception, ZIP-blob handling, or the background VP9 remux in `src/services/remux/` changes).
 - `chrome-devtools-mcp:chrome-devtools` — runtime verification in a real browser session.
 
 These are external Claude Code plugins resolved at session-start by the harness. If a plugin isn't installed (or gets renamed), every escalation that points at one silently fails to dispatch. Don't vendor or wrap them locally — keep them as escalation-only references and document the dependency here.
@@ -43,6 +43,7 @@ These are external Claude Code plugins resolved at session-start by the harness.
 | `src/background/**` | `extension-auditor` | — | SW lifecycle, message routing |
 | `src/utils/messages.ts` | `extension-auditor` | — | Typed message sender |
 | `src/utils/browser.ts` | `extension-auditor` | — | The only `chrome` ↔ `browser` bridge |
+| `src/utils/instagram-cdn.ts` | `extension-auditor` | — | Host allow-list for the streams the background fetches itself (the VP9 path); loosening it widens a trust boundary |
 | `src/types/messages.ts` | `extension-auditor` | — | Cross-context message discriminated union |
 | `src/content/index.ts` | `instagram-dom-engineer` | — | Polling loop, per-route dispatch |
 | `src/content/handlers/**` | `instagram-dom-engineer` | — | Per-surface handlers (post, reels, stories, …) |
@@ -52,7 +53,8 @@ These are external Claude Code plugins resolved at session-start by the harness.
 | `src/content/button.ts` | `instagram-dom-engineer` | `ux-reviewer` (visual), `ux-copy-auditor` (button `title=` strings) | DOM + click vs visual surface vs button copy; relevant agents must APPROVE on a diff that touches their respective surface |
 | `src/content/modals/**` | `ux-reviewer` | `documentation-reviewer` (TSDoc), `ux-copy-auditor` (user-facing strings) | Injected modals (Shadow DOM) |
 | `src/content/toasts/**` | `ux-reviewer` | `documentation-reviewer` (TSDoc), `ux-copy-auditor` (user-facing strings) | Injected toasts (Shadow DOM) |
-| `src/content/flow/**` | `code-reviewer` | `ux-copy-auditor` (toast templates: success / partial / cancel / failure / single+plural) | Content-script orchestration; user-facing copy is the toast templates |
+| `src/content/flow/**` | `code-reviewer` | `ux-copy-auditor` (toast templates: success / partial / cancel / failure / single+plural / VP9 loading, success and fallback) | Content-script orchestration; user-facing copy is the toast templates |
+| `src/content/downloadBridge.ts` | `code-reviewer` | `ux-copy-auditor` (the toasts the bridge raises itself: VP9 lookup, "already in progress", right-click Save As failure) | Turns handler output into a `MediaResource` and starts the flow; holds the VP9 in-flight guard |
 | `src/content/tokens.ts` | `ux-reviewer` | — | Injected-UI design tokens |
 | `src/options/components/cards/**` | `ux-reviewer` | `documentation-reviewer` (TSDoc), `ux-copy-auditor` (user-facing strings) | Options-page cards (Tailwind) |
 | `src/options/components/modals/**` | `ux-reviewer` | `documentation-reviewer` (TSDoc), `ux-copy-auditor` (user-facing strings) | Options-page modals (Tailwind) |

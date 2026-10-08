@@ -25,6 +25,8 @@ export interface Settings {
   enableThreadsSupport: boolean;
   enableVideoControls: boolean;
   enableExploreVideoClickthrough: boolean;
+  /** Download a reel's VP9 rendition when Instagram publishes one; off keeps the standard video. */
+  preferVp9Reels: boolean;
 
   // Profile Directories
   profileDirectories: ProfileDirEntry[];

@@ -24,7 +24,9 @@ handlers, XHR interception, and the Threads bridge fit together.
 - `src/content/extractors/*.ts` — `getDataFromAPI()` /
   `getUrlFromInfoApi()` parsing of `/api/v1/media/{id}/info/`,
   ID extraction, `pc`/`mobile` detection, video controls,
-  storage cache projection.
+  storage cache projection, and `dash.ts` (`pickVp9Rendition()` /
+  `resolveReelVp9()`: choosing a reel's VP9 streams out of
+  `video_dash_manifest`).
 - `src/content/threads/{index,post,button}.ts` — Threads pagelet
   detection and inline-JSON walk.
 - `src/inject.ts` + `src/xhr.ts` — MAIN-world XMLHttpRequest / fetch
@@ -139,11 +141,13 @@ selectors, parent-walks, and capture predicates are yours.
    `<video>.src` when both exist. When converting, preserve the
    original blob URL as a `nameSource` and pass it to `getMediaName`
    so the filename id stays a stable UUID instead of degrading to a
-   base64 chunk. Failing to convert produces a "Type error for
-   parameter options" toast — the SW boundary check
-   (`src/background/shared/downloads.ts:handleDownloadMedia`) now
-   rejects blob URLs with an actionable error, but content-script
-   code should never rely on that as a primary defense.
+   base64 chunk. A page `blob:` URL that reached the downloads API
+   would fail differently per browser — Firefox refuses the call
+   ("Type error for parameter options"), Chrome accepts it and the
+   download then fails without a word — so the SW boundary check
+   (`src/background/shared/downloads.ts:handleDownloadMedia`) rejects
+   blob URLs with an actionable error first. Content-script code
+   should never rely on that as a primary defense.
 
 8. When adding, removing, or modifying an injected button type in
    `src/content/button.ts` — a new `const *_SVG` string, a new
@@ -174,3 +178,16 @@ selectors, parent-walks, and capture predicates are yours.
    against. The walker pattern is shared between handlers — see
    `src/content/handlers/highlights.ts:findReelsConnection` and
    `src/content/handlers/stories.ts:findReelsMediaInJson`.
+
+10. Never work out *which* post a click meant from `window.location`
+    after an `await`. The reels feed rewrites the URL as the user
+    scrolls, so `findPostId()` can name the next reel by the time a
+    fetch returns — and a second lookup made that way pairs one reel's
+    metadata with another's media. Capture the shortcode at click time
+    and pass it on (`getDataFromAPI(node, knownPostId)`,
+    `getUrlFromInfoApi(node, index, knownPostId)`); when two lookups
+    feed one download, compare their shortcodes before combining them.
+    A regression spec for a handler that awaits before a lookup should
+    change `window.location` while the first fetch is pending, then
+    assert the lookup still names the clicked post
+    (`src/content/handlers/__tests__/reels.spec.ts` has both shapes).

@@ -73,7 +73,7 @@ Each ambient API has exactly one owner; every other module goes through the serv
 
 ## Messaging
 
-Cross-context messages are variants of the discriminated union in `src/types/messages.ts`. Send them through `sendMessage()` from `src/utils/messages.ts` — never raw `chrome.runtime.sendMessage`. Handlers return `MessageResponse<T> = { ok: true; data } | { ok: false; error }`. Never throw across the boundary; surface failures in the `ok: false` branch. Narrow inbound payloads at the edge with `asMessage()` before dispatching.
+Cross-context messages are variants of the discriminated union in `src/types/messages.ts`. Send them through `sendMessage()` from `src/utils/messages.ts` — never raw `chrome.runtime.sendMessage`. Handlers return `MessageResponse<T> = { ok: true; data } | { ok: false; error }`. Never throw across the boundary; surface failures in the `ok: false` branch. `sendMessage()` adds `transport: true` to a failure it produced itself — the background never answered, or answered with something malformed — so handlers never set that flag. Narrow inbound payloads at the edge with `asMessage()` before dispatching.
 
 To add a new message: add a variant to `Message`, write a handler under `src/background/shared/`, wire it into the `routeMessage` switch in `src/background/shared/router.ts`, and allow-list the type string in `asMessage`.
 

@@ -36,18 +36,31 @@ describe("sendMessage", () => {
       new Error("no receiver"),
     );
     const result = await sendMessage({ type: "OPEN_URL", url: "https://x" });
-    expect(result).toEqual({ ok: false, error: "no receiver" });
+    expect(result).toEqual({ ok: false, error: "no receiver", transport: true });
   });
 
-  it("returns { ok: false } when the response is malformed", async () => {
+  it("returns { ok: false } flagged as a transport failure when the response is malformed", async () => {
     (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValue("garbage");
     const result = await sendMessage({ type: "OPEN_URL", url: "https://x" });
-    expect(result.ok).toBe(false);
+    expect(result).toEqual({
+      ok: false,
+      error: "malformed response from background",
+      transport: true,
+    });
+  });
+
+  it("does not flag an error reported by a handler as a transport failure", async () => {
+    (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: false,
+      error: "disk full",
+    });
+    const result = await sendMessage({ type: "OPEN_URL", url: "https://x" });
+    expect(result).toEqual({ ok: false, error: "disk full" });
   });
 
   it("coerces non-Error rejections to string", async () => {
     (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockRejectedValue("oops");
     const result = await sendMessage({ type: "OPEN_URL", url: "https://x" });
-    expect(result).toEqual({ ok: false, error: "oops" });
+    expect(result).toEqual({ ok: false, error: "oops", transport: true });
   });
 });

@@ -19,6 +19,21 @@ interface SettingItem {
   render: () => preact.JSX.Element;
 }
 
+/**
+ * The Downloads card of the Settings page: every download setting, plus the
+ * few Instagram page tweaks, as one searchable list.
+ *
+ * - Each setting is an entry in `items`. Its `tokens` string — not its label —
+ *   is what the search box matches against, so a row is found only by words
+ *   listed there. A query that matches nothing shows the whole list rather
+ *   than an empty one.
+ * - The card is controlled: it renders `settings` and reports changes through
+ *   `onPatch`. Toggles, the filename template and the datetime format patch on
+ *   every change. The default directory and the prefix buffer what is typed
+ *   and patch on blur, so a trailing slash survives while typing and is
+ *   stripped once the field loses focus.
+ * - Every row has a reset button that patches the field back to its default.
+ */
 export function DownloadsCard({ settings, onPatch }: DownloadsCardProps) {
   const [query, setQuery] = useState("");
 
@@ -146,7 +161,7 @@ export function DownloadsCard({ settings, onPatch }: DownloadsCardProps) {
       render: () => (
         <Toggle
           label="Replace .jpeg with .jpg"
-          description="Normalises the file suffix on downloaded images."
+          description="Normalizes the file suffix on downloaded images."
           checked={settings.replaceJpegWithJpg}
           onChange={(v) => onPatch({ replaceJpegWithJpg: v })}
           resetValue={SETTINGS_DEFAULTS.replaceJpegWithJpg}
@@ -163,6 +178,19 @@ export function DownloadsCard({ settings, onPatch }: DownloadsCardProps) {
           checked={settings.useCarouselIndexing}
           onChange={(v) => onPatch({ useCarouselIndexing: v })}
           resetValue={SETTINGS_DEFAULTS.useCarouselIndexing}
+        />
+      ),
+    },
+    {
+      key: "preferVp9Reels",
+      tokens: "download reels in vp9 video highest quality resolution 1080p hd codec",
+      render: () => (
+        <Toggle
+          label="Download reels in VP9"
+          description="Downloads a reel's highest-resolution VP9 version when Instagram has one. Takes longer than a standard download. Some video players can't open VP9 files."
+          checked={settings.preferVp9Reels}
+          onChange={(v) => onPatch({ preferVp9Reels: v })}
+          resetValue={SETTINGS_DEFAULTS.preferVp9Reels}
         />
       ),
     },

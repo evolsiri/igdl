@@ -33,7 +33,10 @@ When creating a new service `<name>`:
 5. Create `docs/services/<name>.md` modeled on
    `docs/services/settings.md`. Cover: public API, lifecycle, storage
    surface, call sites, invariants.
-6. Add a row to the Services list in `docs/README.md`.
+6. Add the service to every place that enumerates them: the Services
+   list in `docs/README.md`, the Services section of
+   `docs/architecture.md`, and the `services/` line of the "Where things
+   live" tree in `docs/development.md`.
 7. If the service is consumed by the background, register it in
    `src/background/{chrome,firefox}.ts` and update `BackgroundDeps` in
    `src/background/shared/deps.ts`.

@@ -61,11 +61,12 @@ The button class is `igdl-custom-btn` (`button.ts:CLASS_CUSTOM_BUTTON`). Clicks 
 
 `src/content/extractors/` turns a clicked button + the page state into a `MediaResource`:
 
-- `fn.ts` — `getDataFromAPI()` calls `/api/v1/media/{id}/info/` directly; `getUrlFromInfoApi()` parses the response. ID extraction from `pathname` or `<a href>`. Page-type detection (`pc`/`mobile`).
+- `fn.ts` — `getDataFromAPI()` calls `/api/v1/media/{id}/info/` directly; `getUrlFromInfoApi()` parses the response. ID extraction from `pathname` or `<a href>`. Page-type detection (`pc`/`mobile`). `findPostId()` reads the page URL, which the reels feed rewrites as the user scrolls — so a caller that already knows which post it means, and has awaited anything since the click, passes that shortcode as `getDataFromAPI(node, knownPostId)` or `getUrlFromInfoApi(node, index, knownPostId)` instead of letting the URL be read again. The reels handler does this for both of its info-API lookups. A known shortcode is also not overridden by a story URL, and `findMediaId()` refuses an id that isn't plain word characters, since the id becomes a path segment of a same-origin request.
 - `video.ts` — `handleVideo()` re-enables HTML5 controls on `<video>` elements; volume sync between feed and stories/reels.
 - `storage.ts` — synchronous settings cache. The button click handler can't `await`, so this projects `chrome.storage.local["igdl_settings"]` into a `storageCache.canonical` object on init and keeps it updated via `chrome.storage.onChanged`.
 - `dom.ts` — recursive parent walker for finding the enclosing `<article>` / `<section>`.
 - `filename.ts` — URL stem and extension inference (handles HTTPS, `data:`, and `blob:` URL shapes).
+- `dash.ts` — `pickVp9Rendition()` parses a media item's `video_dash_manifest` (Instagram's DASH manifest) and returns the best VP9 video stream plus the original audio stream, or nothing when that wouldn't be an upgrade; `resolveReelVp9()` applies the `preferVp9Reels` setting and the "is this a reel" check. See the VP9 section of [`download-flow.md`](./download-flow.md).
 - `blob.ts` — `isBlobUrl()` typeguard plus `resolveBlobUrlToDataUrl()` for converting page-document-scoped `blob:` URLs into `data:` URLs the service worker can dereference; used by story / highlight Tier C DOM fallbacks (see [`docs/services/download.md`](./services/download.md) URL contract).
 
 For surfaces where the API call would be redundant or lossy (carousel posts where Instagram has already shipped the URLs in a GraphQL response, or highlight reels), the handler instead resolves through `MediaCacheService` — populated by the XHR-interception layer.
@@ -175,6 +176,7 @@ The content script runs on every Instagram and Threads pageview, so its CPU and 
 - Polling cadence in `processPage()`.
 - The XHR / fetch interception in `src/inject.ts` and `src/xhr.ts`.
 - ZIP-blob assembly in `src/services/zip/zip.ts` (large carousels can hold tens of MB on the main thread).
+- The VP9 remux in `src/services/remux/` and its caller in `src/background/shared/downloads.ts`. It runs in the background, not here, but holds both streams, the output and (on Chrome) its base64 copy in memory at once. The 128 MiB limit is on the two streams combined; the output is about that size again, and the base64 copy a third larger.
 - Shadow-DOM mount counts or pre-warming in `src/content/modals/mount.ts` and `src/content/downloadBridge.ts`.
 
 `code-reviewer` covers correctness; this routing is for the runtime budget specifically.

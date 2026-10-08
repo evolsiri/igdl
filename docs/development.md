@@ -63,12 +63,13 @@ src/
   options/         Preact options page (multi-card layout). Cards in components/cards/,
                    modals in components/modals/.
   services/        SettingsService (storage monopoly), MediaCacheService, DownloadService,
-                   ZipService, ThemeService, ToastService. One folder per service. See
-                   services/<name>.md for each.
+                   ZipService, RemuxService, ThemeService, ToastService. One folder per
+                   service. See services/<name>.md for each.
   stories/         Storybook source-of-truth for the design system.
   types/           Shared TypeScript types — Settings, MediaResource, Message union,
                    media-cache cache-entry shapes.
-  utils/           Cross-context helpers — sendMessage wrapper, path/date utils.
+  utils/           Cross-context helpers — sendMessage wrapper, path/date utils,
+                   blob → data URL, the Instagram CDN host check.
 ```
 
 Tests live next to source in `__tests__/` (`*.spec.ts(x)`). Stories live in `__stories__/`.

@@ -3,7 +3,8 @@ import type { Message, MessageResponse } from "../types/messages";
 /**
  * Typed wrapper around `chrome.runtime.sendMessage`. Always resolves with a
  * discriminated `MessageResponse` — never throws. Surfaces transport errors
- * (extension reloaded, no receiver, etc.) as `{ ok: false, error }`.
+ * (extension reloaded, no receiver, etc.) as `{ ok: false, error, transport: true }`,
+ * so a caller can tell "the handler failed" from "no handler answered".
  *
  * @example
  * const response = await sendMessage({ type: "DOWNLOAD_MEDIA", resource });
@@ -22,11 +23,12 @@ export async function sendMessage<T = unknown>(
     ) {
       return response as MessageResponse<T>;
     }
-    return { ok: false, error: "malformed response from background" };
+    return { ok: false, error: "malformed response from background", transport: true };
   } catch (err) {
     return {
       ok: false,
       error: err instanceof Error ? err.message : String(err),
+      transport: true,
     };
   }
 }

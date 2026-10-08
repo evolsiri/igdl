@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import { downloadViaFlow, reportFailure } from "../downloadBridge";
+import { resolveReelVp9 } from "../extractors/dash";
 import { getMediaName } from "../extractors/filename";
 import { checkType, getUrlFromInfoApi, openInNewTab } from "../extractors/fn";
 
@@ -134,6 +135,7 @@ export async function handleProfileReel(target: HTMLAnchorElement, saveAs = fals
           datetime: postTime ? dayjs(postTime as string | number) : undefined,
           id: getMediaName(url),
           type: "reel",
+          vp9: resolveReelVp9(res),
         },
         saveAs,
       );

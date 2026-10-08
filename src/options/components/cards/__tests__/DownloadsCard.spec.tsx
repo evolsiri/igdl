@@ -11,9 +11,9 @@ function makeSettings(overrides: Partial<Settings> = {}): Settings {
 }
 
 describe("DownloadsCard", () => {
-  it("renders all 13 settings by default", () => {
+  it("renders all 14 settings by default", () => {
     render(<DownloadsCard settings={makeSettings()} onPatch={() => {}} />);
-    // 13 settings = 3 text fields + 10 toggles (labels appear exactly once each)
+    // 14 settings = 4 text fields + 10 toggles (labels appear exactly once each)
     expect(screen.getByLabelText("Default download directory")).toBeTruthy();
     expect(screen.getByLabelText("Prefix")).toBeTruthy();
     expect(screen.getByLabelText("Always prompt Save As")).toBeTruthy();
@@ -22,6 +22,7 @@ describe("DownloadsCard", () => {
     expect(screen.getByLabelText("Include datetime in filenames")).toBeTruthy();
     expect(screen.getByLabelText("Replace .jpeg with .jpg")).toBeTruthy();
     expect(screen.getByLabelText("Index carousel items")).toBeTruthy();
+    expect(screen.getByLabelText("Download reels in VP9")).toBeTruthy();
     expect(screen.getByLabelText('Show "open in new tab" icon')).toBeTruthy();
     expect(screen.getByLabelText('Show "ZIP download" icon')).toBeTruthy();
     expect(screen.getByLabelText("Threads.com support")).toBeTruthy();
@@ -95,4 +96,35 @@ describe("DownloadsCard", () => {
     fireEvent.click(toggle);
     expect(onPatch).toHaveBeenCalledWith({ enableThreadsSupport: false });
   });
+
+  it("leaves 'Download reels in VP9' off by default and patches preferVp9Reels when switched on", () => {
+    const onPatch = vi.fn();
+    render(<DownloadsCard settings={makeSettings()} onPatch={onPatch} />);
+    const toggle = screen.getByLabelText("Download reels in VP9") as HTMLInputElement;
+    expect(toggle.checked).toBe(false);
+    fireEvent.click(toggle);
+    expect(onPatch).toHaveBeenCalledWith({ preferVp9Reels: true });
+  });
+
+  it("resets 'Download reels in VP9' back to off", () => {
+    const onPatch = vi.fn();
+    render(<DownloadsCard settings={makeSettings({ preferVp9Reels: true })} onPatch={onPatch} />);
+    const toggle = screen.getByLabelText("Download reels in VP9") as HTMLInputElement;
+    expect(toggle.checked).toBe(true);
+    const row = toggle.closest("div.flex.items-start.gap-3.py-3") as HTMLElement;
+    fireEvent.click(within(row).getByTitle("Reset to default: off"));
+    expect(onPatch).toHaveBeenCalledWith({ preferVp9Reels: false });
+  });
+
+  it.each(["vp9", "download reels", "reels in vp9", "Download reels in VP9", "1080p", "highest", "high quality"])(
+    "finds the VP9 setting when searching for %j",
+    (query) => {
+      render(<DownloadsCard settings={makeSettings()} onPatch={() => {}} />);
+      const search = screen.getByRole("searchbox", { name: /search downloads/i });
+      fireEvent.input(search, { target: { value: query } });
+      const list = screen.getByTestId("downloads-list");
+      expect(within(list).getByLabelText("Download reels in VP9")).toBeTruthy();
+      expect(within(list).queryByLabelText("Index carousel items")).toBeNull();
+    },
+  );
 });

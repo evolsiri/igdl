@@ -1,5 +1,5 @@
 import { render } from "preact";
-import type { DownloadService } from "../../services/download/download";
+import type { DownloadService, QueueResult } from "../../services/download/download";
 import type { SettingsService } from "../../services/settings/settings";
 import type { ToastService } from "../../services/toast/toast";
 import type { MediaResource } from "../../types/instagram";
@@ -88,6 +88,57 @@ export async function handleDownloadClick(
   }
 }
 
+/**
+ * Queues one resource through `DownloadService`. A resource with a VP9
+ * rendition is fetched and remuxed before its download starts, which takes
+ * seconds rather than milliseconds — a persistent loading toast covers the
+ * wait and is dismissed however the call ends.
+ *
+ * The background falls back to the standard video by itself when it can't
+ * build the VP9 file. If it never answers at all — its context was torn down
+ * mid-remux — that fallback died with it, so the standard video is requested
+ * here instead, once.
+ *
+ * "Never answered" is not proof that nothing was saved: a background stopped
+ * after it started the download, but before it replied, leaves a file behind,
+ * and the retry would add a second one. Without a Save As dialog that window
+ * is a few milliseconds, and the retry is worth it. With one, the request
+ * stays open for as long as the dialog does, so a Save As download is never
+ * retried — the failure is reported instead.
+ *
+ * @example
+ * const result = await queueResource(resource, deps, { saveAs: true });
+ * if (result.ok && result.usedVp9 === false) deps.toast.info(vp9FallbackMessage(resource.username));
+ */
+export async function queueResource(
+  resource: MediaResource,
+  deps: Pick<DownloadFlowDeps, "download" | "toast">,
+  options?: { saveAs?: boolean },
+): Promise<QueueResult> {
+  if (!resource.vp9) return deps.download.queue(resource, options);
+  const dismiss = deps.toast.loading("Preparing VP9 download…");
+  try {
+    const result = await deps.download.queue(resource, options);
+    if (result.ok || !result.transport || options?.saveAs) return result;
+    const { vp9: _vp9, ...standard } = resource;
+    const retried = await deps.download.queue(standard, options);
+    return retried.ok ? { ...retried, usedVp9: false } : retried;
+  } finally {
+    dismiss();
+  }
+}
+
+/**
+ * Toast copy for a download that asked for VP9 but got the standard video
+ * because the VP9 file couldn't be built. Leads with the outcome, like the
+ * success toasts, so it doesn't read as a failed download.
+ *
+ * @example
+ * deps.toast.info(vp9FallbackMessage("alice")); // "Downloaded @alice in standard quality — VP9 failed"
+ */
+export function vp9FallbackMessage(username: string): string {
+  return `Downloaded @${username} in standard quality — VP9 failed`;
+}
 
 async function downloadAll(
   resources: MediaResource[],
@@ -97,10 +148,13 @@ async function downloadAll(
   let successes = 0;
   let canceled = 0;
   let firstError = "";
+  // Only reels carry a VP9 rendition, and a reel is always a single resource.
+  let usedVp9: boolean | undefined;
   for (const resource of resources) {
-    const result = await deps.download.queue(resource, options.saveAs ? { saveAs: true } : undefined);
+    const result = await queueResource(resource, deps, options.saveAs ? { saveAs: true } : undefined);
     if (result.ok) {
       successes += 1;
+      usedVp9 = result.usedVp9 ?? usedVp9;
     } else if (isUserCanceled(result.error)) {
       canceled += 1;
     } else if (!firstError) {
@@ -120,11 +174,17 @@ async function downloadAll(
     deps.toast.info(canceled === 1 ? "Download canceled" : `${canceled} downloads canceled`);
     return;
   }
-  deps.toast.success(
-    resources.length === 1
-      ? `Downloaded @${username}`
-      : `Downloaded ${successes} items from @${username}`,
-  );
+  if (usedVp9 === false) {
+    deps.toast.info(vp9FallbackMessage(username));
+    return;
+  }
+  if (resources.length > 1) {
+    // Fewer than all can have succeeded: the rest were canceled in Save As.
+    const noun = successes === 1 ? "item" : "items";
+    deps.toast.success(`Downloaded ${successes} ${noun} from @${username}`);
+    return;
+  }
+  deps.toast.success(usedVp9 ? `Downloaded @${username} in VP9` : `Downloaded @${username}`);
 }
 
 // Chrome surfaces "User canceled" when the Save As dialog is dismissed;

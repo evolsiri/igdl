@@ -8,7 +8,11 @@ import { registerThreadsBridge } from "./threads";
  * additions (webRequest filters, ZIP handling) live in `background/firefox.ts`.
  *
  * @example
- * const deps = { settings: createSettingsService(), mediaCache: createMediaCacheService() };
+ * const deps = {
+ *   settings: createSettingsService(),
+ *   mediaCache: createMediaCacheService(),
+ *   remux: createRemuxService(),
+ * };
  * registerSharedBackground(deps);
  */
 export function registerSharedBackground(deps: BackgroundDeps): void {

@@ -35,6 +35,14 @@ export function isPostDetail(pathname: string): boolean {
 export function isReelDetail(pathname: string): boolean {
   return /^\/reel\/[^/]+\/?$/.test(pathname);
 }
+/**
+ * A page that shows one specific reel: `/reel/:id`, `/reels/:id` or
+ * `/:user/reel/:id`. Not the bare `/reels/` feed root, a profile's
+ * `/:user/reels/` tab, or `/reels/audio/:id`, which are lists.
+ */
+export function isReelRoute(pathname: string): boolean {
+  return /^\/(?:reels?\/(?!audio\/)[^/]+|[^/]+\/reel\/[^/]+)/.test(pathname);
+}
 export function isReelsFeed(pathname: string): boolean {
   return pathname === "/reels/" || pathname.startsWith("/reels/");
 }

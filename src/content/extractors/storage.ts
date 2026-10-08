@@ -71,6 +71,7 @@ class StorageCache {
       enableThreadsSupport: true,
       enableVideoControls: true,
       enableExploreVideoClickthrough: false,
+      preferVp9Reels: false,
       profileDirectories: [],
       profileDirectoriesSort: { key: "addedAt", direction: "desc" },
       neverAskProfiles: [],

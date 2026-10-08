@@ -9,7 +9,18 @@ const meta: Meta<typeof DownloadsCard> = {
   title: "Options/Cards/DownloadsCard",
   component: DownloadsCard,
   tags: ["autodocs"],
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component: `The Downloads card of the Settings page: a searchable list of the download settings and Instagram page tweaks — text fields for directories and filename formats, toggles for download behavior, the injected buttons and the video-player tweaks — each with a per-row reset to its default.
+
+**Uses:** Reach for DownloadsCard to render and edit the download and page-tweak fields of the \`Settings\` blob. It is controlled by the \`settings\` prop and reports changes through \`onPatch\` — immediately for toggles and the two filename-format fields, on blur for the directory and prefix fields, which buffer what the user types. A new download setting is a new entry in its \`items\` array, not a new card; per-profile directories belong to \`ProfileDirectoriesCard\` and the theme to \`AppearanceCard\`.
+
+**Used in:** The first card on the options page, rendered by \`App\` (src/options/App.tsx) with \`SettingsService.patch\` as \`onPatch\`.`,
+      },
+    },
+  },
   args: { onPatch: fn() },
   render: (args) => {
     const [settings, setSettings] = useState<Settings>(args.settings);
@@ -47,6 +58,7 @@ export const CustomizedSettings: Story = {
       enableThreadsSupport: false,
       enableVideoControls: false,
       enableExploreVideoClickthrough: true,
+      preferVp9Reels: true,
     },
   },
 };
@@ -70,6 +82,20 @@ export const TogglesAlwaysPromptSaveAs: Story = {
     const label = canvas.getByText(/always prompt save as/i);
     await userEvent.click(label);
     await expect(args.onPatch).toHaveBeenCalledWith({ alwaysPromptSaveAs: true });
+  },
+};
+
+export const EnablesVp9Reels: Story = {
+  name: "Enables VP9 Reels",
+  args: { settings: { ...SETTINGS_DEFAULTS } },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const toggle = canvas.getByRole("checkbox", { name: /download reels in vp9/i });
+    // Off until the user opts in: the standard video stays the default download.
+    await expect(toggle).not.toBeChecked();
+    await userEvent.click(toggle);
+    await expect(args.onPatch).toHaveBeenCalledWith({ preferVp9Reels: true });
+    await expect(toggle).toBeChecked();
   },
 };
 
@@ -127,6 +153,11 @@ export const CustomizeAndReset: Story = {
 
     await step("Disable index carousel items", async () => {
       await userEvent.click(canvas.getByRole("checkbox", { name: /index carousel items/i }));
+      await sleep(150);
+    });
+
+    await step("Enable download reels in VP9", async () => {
+      await userEvent.click(canvas.getByRole("checkbox", { name: /download reels in vp9/i }));
       await sleep(150);
     });
 

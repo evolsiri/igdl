@@ -1,4 +1,5 @@
 import type { MediaCacheService } from "../../services/media-cache/media-cache";
+import type { RemuxService } from "../../services/remux/remux";
 import type { SettingsService } from "../../services/settings/settings";
 
 /**
@@ -8,4 +9,5 @@ import type { SettingsService } from "../../services/settings/settings";
 export interface BackgroundDeps {
   settings: SettingsService;
   mediaCache: MediaCacheService;
+  remux: RemuxService;
 }

@@ -10,6 +10,7 @@ function setup() {
     deps: {
       settings: createSettingsService({ storage }),
       mediaCache: createMediaCacheService({ storage }),
+      remux: { build: vi.fn(async () => new Blob(["remuxed"], { type: "video/mp4" })) },
     },
     storage,
   };
@@ -60,7 +61,10 @@ describe("routeMessage()", () => {
   beforeEach(() => {
     vi.stubGlobal("chrome", {
       runtime: { id: "test-ext" },
-      downloads: { download: vi.fn(async () => 42) },
+      downloads: {
+        download: vi.fn(async () => 42),
+        onChanged: { addListener: vi.fn(), removeListener: vi.fn() },
+      },
       tabs: { create: vi.fn(async () => ({ id: 99 })) },
     });
   });
@@ -82,6 +86,39 @@ describe("routeMessage()", () => {
       deps,
     );
     expect(response).toEqual({ ok: true, data: { downloadId: 42 } });
+  });
+
+  it("carries a VP9 rendition through DOWNLOAD_MEDIA and reports which video was downloaded", async () => {
+    const { deps } = setup();
+    await deps.settings.patch({ preferVp9Reels: true });
+    const vp9 = {
+      videoUrl: "https://scontent.cdninstagram.com/o1/v/vp9.mp4",
+      audioUrl: "https://scontent.cdninstagram.com/o1/v/aac.mp4",
+    };
+    const raw = {
+      type: "DOWNLOAD_MEDIA",
+      resource: {
+        url: "https://example.com/standard.mp4",
+        id: "REEL1",
+        type: "reel",
+        username: "alice",
+        extension: "mp4",
+        isVideo: true,
+        vp9,
+      },
+    };
+    const message = asMessage(raw);
+    expect(message).not.toBeNull();
+
+    const response = await routeMessage(message!, deps);
+
+    expect(deps.remux.build).toHaveBeenCalledWith(vp9);
+    expect(response).toEqual({ ok: true, data: { downloadId: 42, usedVp9: true } });
+    // The remuxed file, not the standard video — as a data: or blob: URL
+    // depending on what the runtime can mint.
+    expect(chrome.downloads.download).toHaveBeenCalledWith(
+      expect.objectContaining({ url: expect.stringMatching(/^(data|blob):/) }),
+    );
   });
 
   it("dispatches OPEN_URL to the open-url handler", async () => {

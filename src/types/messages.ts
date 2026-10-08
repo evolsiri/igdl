@@ -16,7 +16,28 @@ export type Message =
 
 export type MessageResponse<T = unknown> =
   | { ok: true; data: T }
-  | { ok: false; error: string };
+  | {
+      ok: false;
+      error: string;
+      /**
+       * Set by `sendMessage` when the failure is the channel itself — the
+       * background never answered (it was reloaded, or unloaded mid-request)
+       * or answered with something that isn't a response. Absent when a
+       * handler ran and reported an error.
+       */
+      transport?: true;
+    };
+
+/** Success payload of `DOWNLOAD_MEDIA`. */
+export interface DownloadMediaResult {
+  downloadId: number;
+  /**
+   * Set only when the resource carried a `vp9` rendition: `true` when the
+   * remuxed VP9 file was downloaded, `false` when the remux failed and the
+   * standard video (`resource.url`) was downloaded instead.
+   */
+  usedVp9?: boolean;
+}
 
 /** Payload shape posted by the page-context xhr.ts via window.postMessage. */
 export interface XhrPageMessage {

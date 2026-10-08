@@ -25,4 +25,22 @@ export interface MediaResource {
   extension: string;
   /** True if the resource is a video; lets callers branch on muting / controls behavior. */
   isVideo: boolean;
+  /**
+   * The reel's VP9 rendition, set only when the user opted in and Instagram
+   * publishes one. The background remuxes it into a single MP4 and downloads
+   * that instead of `url`, which stays the fallback if the remux fails.
+   */
+  vp9?: DashRendition;
+}
+
+/**
+ * One rendition from Instagram's DASH manifest. DASH serves video and audio as
+ * separate single-track files, so a playable download needs both remuxed into
+ * one container (see `RemuxService`).
+ */
+export interface DashRendition {
+  /** HTTPS URL of the video-only stream. */
+  videoUrl: string;
+  /** HTTPS URL of the audio-only stream. Omitted for reels that have no audio track. */
+  audioUrl?: string;
 }

@@ -21,6 +21,7 @@ One doc per service in [`src/services/`](../src/services/). Each describes the p
 
 - [services/download.md](./services/download.md) — `DownloadService`
 - [services/media-cache.md](./services/media-cache.md) — `MediaCacheService`
+- [services/remux.md](./services/remux.md) — `RemuxService`
 - [services/settings.md](./services/settings.md) — `SettingsService` (the storage monopoly)
 - [services/theme.md](./services/theme.md) — `ThemeService`
 - [services/toast.md](./services/toast.md) — `ToastService`

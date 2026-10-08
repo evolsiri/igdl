@@ -68,6 +68,6 @@ The schema lives in `src/services/settings/schema.ts`:
 
 ## Invariants
 
-- One blob, one key. Don't add new top-level `chrome.storage.local` keys for settings — extend the `Settings` interface and bump `schemaVersion` instead.
+- One blob, one key. Don't add new top-level `chrome.storage.local` keys for settings — extend the `Settings` interface instead. A new field with a default needs no version bump: `normalize()` fills it in for blobs saved before it existed (`preferVp9Reels` and `profileDirectoriesSort` were added this way). Bump `schemaVersion` and add a migration only when existing values have to change shape or meaning.
 - Username equality is case-insensitive everywhere. `addProfile`, `updateProfile`, `deleteProfile`, `incrementDownload`, `addNeverAsk`, `removeNeverAsk` all `trim().toLowerCase()` the input.
 - Never-ask and profile-directory state are orthogonal. Adding to one doesn't remove from the other; the options-page UI handles the mutually-exclusive presentation.

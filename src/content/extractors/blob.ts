@@ -1,22 +1,4 @@
-/**
- * Converts a `Blob` to a base64 data URL via `FileReader`. Used by content-script
- * code paths that need a download URL the service worker can dereference —
- * `blob:` URLs are origin-scoped to the document that minted them and cannot
- * cross the SW boundary. The data-URL detour is the project's canonical fix
- * (see `docs/services/download.md` and `docs/services/zip.md`).
- *
- * @example
- * const dataUrl = await blobToDataUrl(new Blob(["x"], { type: "video/mp4" }));
- * // → "data:video/mp4;base64,eA=="
- */
-export async function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-}
+import { blobToDataUrl } from "../../utils/blob";
 
 /**
  * Resolves a `blob:` URL the content script holds (i.e. minted by the page's

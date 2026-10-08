@@ -31,7 +31,11 @@ English voice carries to in-app copy).
 - `src/content/button.ts` — the four `title=` strings on the download,
   new-tab, ZIP, and video-cover buttons.
 - `src/content/flow/download.tsx` — the toast templates (success, partial,
-  cancel, failure, single / plural).
+  cancel, failure, single / plural, plus the VP9 set: the loading toast,
+  the "in VP9" success and the standard-quality fallback).
+- `src/content/downloadBridge.ts` — the toasts the bridge raises itself:
+  the VP9 lookup and "already in progress" notices, and the failure toast
+  on the right-click Save As path.
 - `src/**/__stories__/*.stories.tsx` and `src/stories/*.stories.tsx` —
   story args (`message`, `label`, `title`, etc.) and inline JSX strings
   rendered inside stories.
@@ -64,7 +68,7 @@ Your primary entry point is the diff, not the codebase. On every dispatch:
 
 ```bash
 git diff main...HEAD --name-only \
-  | grep -E '^(src/options/|src/content/(modals|toasts|flow)/|src/content/button\.ts|src/.*__stories__/.*\.stories\.tsx|src/stories/.*\.stories\.tsx|src/manifest/.*\.manifest\.json)'
+  | grep -E '^(src/options/|src/content/(modals|toasts|flow)/|src/content/button\.ts|src/content/downloadBridge\.ts|src/.*__stories__/.*\.stories\.tsx|src/stories/.*\.stories\.tsx|src/manifest/.*\.manifest\.json)'
 ```
 
 Walk hunks of each touched in-scope file rather than walking whole files.
@@ -148,7 +152,8 @@ A small canonical glossary, kept short on purpose so it stays maintainable:
   `ProfileDirectoriesCard.tsx:150` and `NoDirPopup.tsx:130`.
 - `download` (not `save`, `export`, `grab`) — for the primary action.
   `Save As` is allowed only when referring to the browser's native dialog
-  by its actual UI label (see `DownloadsCard.tsx:84`).
+  by its actual UI label (see the "Always prompt Save As" row in
+  `DownloadsCard.tsx`).
 - `profile` (not `account`, `user`) — for an Instagram handle. See
   `ProfileDirectoriesCard.tsx:150`, `NeverAskCard.tsx:90`.
 - `posts`, `reels`, `stories`, `highlights`, `carousels` — the canonical
@@ -158,6 +163,20 @@ A small canonical glossary, kept short on purpose so it stays maintainable:
   see `App.tsx:80`.
 - `Never-Ask` (capitalised, hyphenated) — the proper name of the list;
   see `NeverAskCard.tsx:90`.
+- `VP9` / `standard` — the two versions of a reel download. Results
+  describe the saved file: "in VP9", "in standard quality". Descriptions
+  describe the feature: "VP9 version", "a standard download". Progress
+  and status toasts name the job: "VP9 download". Don't name the default
+  version by codec or size (`H.264`, `720p`) or rank it (`normal`,
+  `low quality`). A comparative or superlative about VP9
+  ("higher-quality", "sharper", "highest-resolution") must hold for every
+  reel that takes the VP9 path, so it needs a guarantee in the code:
+  confirm it against the stream picker (`pickVp9Rendition`, reviewed by
+  `instagram-dom-engineer`) in the same diff, and treat it as
+  ungroundable until someone has. See the "Download reels in VP9" row in
+  `DownloadsCard.tsx`, the toast templates in
+  `src/content/flow/download.tsx`, and the notices in
+  `src/content/downloadBridge.ts`.
 
 Drift is Medium. When a new feature introduces a new canonical noun
 (e.g. a future "preset" feature), add it to this glossary in the same diff
@@ -167,9 +186,9 @@ that introduces the noun.
 
 ```bash
 shopt -s globstar
-grep -nE '\b(colour|behaviour|cancelled|centre|optimise|customise|organise|licence|defence|analyse|dialogue|grey|normalise|normalises|normalising|normalisation|catalogue|favourite|honour|labour|recognise|apologise)\b' \
+grep -niE '\b(colour|behaviour|cancelled|centre|optimise|customise|organise|licence|defence|analyse|dialogue|grey|normalise|normalises|normalising|normalisation|catalogue|favourite|honour|labour|recognise|apologise)\b' \
   src/options/**/*.tsx src/content/modals/**/*.tsx src/content/toasts/**/*.tsx \
-  src/content/button.ts src/content/flow/**/*.tsx \
+  src/content/button.ts src/content/downloadBridge.ts src/content/flow/**/*.tsx \
   src/**/__stories__/*.stories.tsx src/stories/*.stories.tsx \
   src/manifest/*.manifest.json 2>/dev/null
 ```
@@ -207,7 +226,7 @@ the user is Severe — the literal braces will reach the screen.
 ```bash
 shopt -s globstar
 grep -nE '"\{[a-zA-Z_]+\}|\{[a-zA-Z_]+\}"' \
-  src/options/**/*.tsx src/content/**/*.tsx 2>/dev/null
+  src/options/**/*.tsx src/content/**/*.tsx src/content/downloadBridge.ts 2>/dev/null
 ```
 
 For every hit, walk the surrounding component and confirm the matching
@@ -225,15 +244,18 @@ verify the surrounding code switches to a singular form when `n === 1`.
 ```bash
 shopt -s globstar
 grep -nE '\{[a-zA-Z_]+\} (item|file|profile|directory|story|reel|post|highlight|download|setting)s\b' \
-  src/options/**/*.tsx src/content/**/*.tsx 2>/dev/null
+  src/options/**/*.tsx src/content/**/*.tsx src/content/downloadBridge.ts 2>/dev/null
 ```
 
 For every hit, walk to the surrounding component and confirm a singular
 branch exists — a ternary on count, a separate template for `1`, or a
-helper like `pluralize`. The download-flow at
-`src/content/flow/download.tsx:125-126` is the canonical example:
+helper like `pluralize`. `downloadAll` in
+`src/content/flow/download.tsx` is the canonical example:
 `Downloaded @{username}` (single) versus
-`Downloaded {n} items from @{username}` (multiple). A hardcoded plural
+`Downloaded {n} items from @{username}` (multiple). Key the singular
+branch on the count that is interpolated, not on a neighbouring one:
+`downloadAll` picks the template by how many items were requested but
+prints how many succeeded, and has to pick "item" / "items" by the latter. A hardcoded plural
 form on a dynamic count is a Medium finding.
 
 ### Check 9 — Punctuation and capitalisation (Medium / Low)
@@ -245,6 +267,7 @@ House style enforced as a fixed table:
 | Button label | sentence-case | none | `"Save & download"` |
 | Modal title | sentence-case (proper nouns ok) | none, unless a question | `"Reset all settings?"`, `"Add profile directory"` |
 | Toast message | sentence-case | none | `"Downloaded @alice"` |
+| Short status in a `loading` toast | sentence-case | one trailing ellipsis character (`…`) | `"Preparing VP9 download…"` |
 | Help text / description | sentence-case | full sentence with period | `"Where downloads land when no per-profile directory is set."` |
 | Placeholder | sentence-case | none (trailing ellipsis ok for search) | `"Search downloads settings…"` |
 | Card title | title-case | none | `"Profile Download Directories"` |
@@ -323,7 +346,7 @@ file's author writes the fix. Final auditor for:
 - User-facing strings in `src/options/**/*.tsx`
 - User-facing strings in `src/content/modals/**/*.tsx`,
   `src/content/toasts/**/*.tsx`, `src/content/flow/**/*.tsx`,
-  `src/content/button.ts`
+  `src/content/button.ts`, `src/content/downloadBridge.ts`
 - Story args + inline JSX copy in `src/**/__stories__/*.stories.tsx` and
   `src/stories/*.stories.tsx`
 - The `name`, `description`, and `action.default_title` fields in

@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import { downloadViaFlow, reportFailure } from "../downloadBridge";
+import { resolveReelVp9 } from "../extractors/dash";
 import { getParentArticleNode } from "../extractors/dom";
 import { getMediaName } from "../extractors/filename";
 import { checkType, getUrlFromInfoApi, openInNewTab } from "../extractors/fn";
@@ -187,6 +188,8 @@ export async function postOnClicked(target: HTMLAnchorElement, saveAs = false): 
               ? mediaIndex + 1
               : undefined,
           type: "post",
+          // Reels also surface as feed posts and in post dialogs.
+          vp9: resolveReelVp9(res),
         },
         saveAs,
       );

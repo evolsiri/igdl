@@ -41,8 +41,9 @@ summary). Don't sequence them — parallelism is the entire point.
 - Add `storybook-curator` if any of: `src/options/components/**`,
   `src/content/{modals,toasts}/**`, or any `*.stories.tsx`.
 - Add `ux-copy-auditor` if any of: `src/options/**`,
-  `src/content/{modals,toasts,flow}/**`, `src/content/button.ts`, any
-  `*.stories.tsx`, `src/manifest/*.manifest.json`. Its findings split
+  `src/content/{modals,toasts,flow}/**`, `src/content/button.ts`,
+  `src/content/downloadBridge.ts`, any `*.stories.tsx`,
+  `src/manifest/*.manifest.json`. Its findings split
   cleanly into the existing Critical / Suggestion buckets — Severe + High
   block, Medium + Low log — so Step 5 needs no special-casing.
 - Add `claude-config-reviewer` if any of: `.claude/**`, `CLAUDE.md`.

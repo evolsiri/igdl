@@ -1,4 +1,5 @@
 import { createMediaCacheService } from "../services/media-cache/media-cache";
+import { createRemuxService } from "../services/remux/remux";
 import { createSettingsService } from "../services/settings/settings";
 import { registerSharedBackground } from "./shared/register";
 
@@ -19,6 +20,7 @@ import { registerSharedBackground } from "./shared/register";
 const deps = {
   settings: createSettingsService(),
   mediaCache: createMediaCacheService(),
+  remux: createRemuxService(),
 };
 
 registerSharedBackground(deps);

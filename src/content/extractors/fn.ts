@@ -44,6 +44,10 @@ export function findPostId(articleNode: HTMLElement | null): string | null {
   if (pathname.startsWith("/reels/")) return pathname.split("/")[2];
   if (pathname.startsWith("/stories/")) return pathname.split("/")[3];
   if (pathname.startsWith("/reel/")) return pathname.split("/")[2];
+  // /:user/reel/:id — the reel's own links on that page are /reel/ links, so
+  // the /p/ anchor scan below finds nothing, or another post's link.
+  const namedReel = pathname.match(/^\/[^/]+\/reel\/([^/]+)/);
+  if (namedReel) return namedReel[1];
 
   if (!articleNode) return null;
   const postIdPattern = /\/p\/([^/]+)\//;
@@ -58,10 +62,21 @@ export function findPostId(articleNode: HTMLElement | null): string | null {
   return null;
 }
 
-export async function findMediaId(postId: string): Promise<string | null> {
+/**
+ * Resolves a post's shortcode to the numeric media id the info API wants. On
+ * a story page the id is read straight from the URL — unless `isKnownPost`
+ * says the caller named the post itself, in which case the page is not
+ * consulted: it may have moved on to something else since the click.
+ */
+export async function findMediaId(postId: string, isKnownPost = false): Promise<string | null> {
   const mediaIdPattern = /instagram:\/\/media\?id=(\d+)|["' ]media_id["' ]:["' ](\d+)["' ]/;
-  const match = window.location.href.match(/www\.instagram\.com\/stories\/[^/]+\/(\d+)/);
-  if (match) return match[1];
+  if (!isKnownPost) {
+    const match = window.location.href.match(/www\.instagram\.com\/stories\/[^/]+\/(\d+)/);
+    if (match) return match[1];
+  }
+  // The id becomes a path segment of a same-origin request, and it can come
+  // from page data. Shortcodes and story ids are plain word characters.
+  if (!/^[\w-]+$/.test(postId)) return null;
   if (!mediaIdCache.has(postId)) {
     const postUrl = `https://www.instagram.com/p/${postId}/`;
     const resp = await fetch(postUrl);
@@ -87,15 +102,23 @@ export function getImgOrVideoUrl(item: Record<string, unknown>): string | null {
   return image?.candidates[0]?.url ?? null;
 }
 
+/**
+ * Fetches the info-API item for a post. The post is found from the page —
+ * the URL, or the links inside `articleNode` — unless `knownPostId` names it.
+ * Pass `knownPostId` whenever the caller already knows which post it means
+ * and an `await` has happened since: on the reels feed the URL moves on as
+ * the user scrolls.
+ */
 export async function getDataFromAPI(
   articleNode: HTMLElement | null,
+  knownPostId?: string,
 ): Promise<Record<string, unknown> | null> {
   try {
     const appId = findAppId();
     if (!appId) return null;
-    const postId = findPostId(articleNode);
+    const postId = knownPostId ?? findPostId(articleNode);
     if (!postId) return null;
-    const mediaId = await findMediaId(postId);
+    const mediaId = await findMediaId(postId, knownPostId !== undefined);
     if (!mediaId) return null;
 
     if (!mediaInfoCache.has(mediaId)) {
@@ -126,11 +149,17 @@ export async function getDataFromAPI(
   }
 }
 
+/**
+ * `getDataFromAPI`, flattened for a download: a carousel yields the item at
+ * `mediaIdx`, and `url`, `owner` and `coauthor_producers` are filled in.
+ * `knownPostId` works as it does there.
+ */
 export async function getUrlFromInfoApi(
   articleNode: HTMLElement | null,
   mediaIdx = 0,
+  knownPostId?: string,
 ): Promise<Record<string, unknown> | null> {
-  const data = await getDataFromAPI(articleNode);
+  const data = await getDataFromAPI(articleNode, knownPostId);
   if (!data) return null;
 
   if ("carousel_media" in data) {

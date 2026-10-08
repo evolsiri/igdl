@@ -1,5 +1,5 @@
 import type { Dayjs } from "dayjs";
-import type { MediaType } from "../../types/instagram";
+import type { DashRendition, MediaType } from "../../types/instagram";
 
 export interface DownloadParams {
   url: string;
@@ -8,6 +8,8 @@ export interface DownloadParams {
   id?: string;
   index?: number;
   type?: MediaType;
+  /** VP9 rendition to download in place of `url` — see `resolveReelVp9`. */
+  vp9?: DashRendition;
 }
 
 /**

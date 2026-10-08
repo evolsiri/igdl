@@ -4,9 +4,9 @@ import { createToastService, type ToastService } from "../../services/toast/toas
 import { createZipService, type ZipEntry, type ZipService } from "../../services/zip/zip";
 import type { MediaResource } from "../../types/instagram";
 import type { Settings } from "../../types/settings";
+import { blobToDataUrl } from "../../utils/blob";
 import { sendMessage } from "../../utils/messages";
 import { reportFailure } from "../downloadBridge";
-import { blobToDataUrl } from "../extractors/blob";
 import { getParentArticleNode } from "../extractors/dom";
 import { getDataFromAPI, getImgOrVideoUrl } from "../extractors/fn";
 import { inferExtension } from "../extractors/filename";

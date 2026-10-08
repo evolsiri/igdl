@@ -2,7 +2,7 @@
 
 Bundles a carousel's media into a single `application/zip` blob using `fflate`. Used by the carousel ZIP-download button (`src/content/handlers/zip.ts`) so users can save a multi-image carousel as one file.
 
-The handler converts the blob to a base64 data URL and sends it to the background as `DOWNLOAD_ZIP` with `saveAs: true`. The background hands the data URL to `chrome.downloads.download`, which opens the Save As dialog so the user picks the destination. Per-profile routing is skipped (no directory prefix on the filename) and profile counters are not bumped. See `../download-flow.md`.
+The handler converts the blob to a base64 data URL and sends it to the background as `DOWNLOAD_ZIP` with `saveAs: true`. The background hands it to `chrome.downloads.download` — as is on Chrome, re-minted as a `blob:` URL on Firefox, which rejects `data:` URLs there — and the Save As dialog opens so the user picks the destination. Per-profile routing is skipped (no directory prefix on the filename) and profile counters are not bumped. See `../download-flow.md`.
 
 ## Public API
 
@@ -38,7 +38,7 @@ None.
 
 ## Call sites
 
-- `src/content/handlers/zip.ts` — fetches every carousel item, calls `build()`, converts the blob to a data URL via `blobToDataUrl()` (from `src/content/extractors/blob.ts`, the shared helper that wraps `FileReader.readAsDataURL`), and dispatches a `DOWNLOAD_ZIP` message so the background can call `chrome.downloads.download(saveAs: true)`.
+- `src/content/handlers/zip.ts` — fetches every carousel item, calls `build()`, converts the blob to a data URL via `blobToDataUrl()` (from `src/utils/blob.ts`, the shared helper that wraps `FileReader.readAsDataURL`), and dispatches a `DOWNLOAD_ZIP` message so the background can call `chrome.downloads.download(saveAs: true)`.
 
 ## Invariants
 

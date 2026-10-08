@@ -455,6 +455,43 @@ describe("setProfileDirectoriesSort", () => {
   });
 });
 
+describe("preferVp9Reels", () => {
+  it("is off by default, so downloads stay the standard video until the user opts in", () => {
+    expect(SETTINGS_DEFAULTS.preferVp9Reels).toBe(false);
+  });
+
+  it("round-trips through patch() and is visible to other contexts via subscribe()", async () => {
+    const { service } = setup();
+    const listener = vi.fn();
+    service.subscribe(listener);
+
+    const patched = await service.patch({ preferVp9Reels: true });
+
+    expect(patched.preferVp9Reels).toBe(true);
+    expect((await service.get()).preferVp9Reels).toBe(true);
+    expect(listener).toHaveBeenLastCalledWith(expect.objectContaining({ preferVp9Reels: true }));
+  });
+
+  it("defaults to off for blobs saved before this field existed", async () => {
+    const { service } = setup({
+      initial: { schemaVersion: 1, theme: "dark" /* no preferVp9Reels */ },
+    });
+    expect((await service.get()).preferVp9Reels).toBe(false);
+  });
+
+  it("coerces a non-boolean value from a hand-edited import back to off", () => {
+    expect(normalize({ preferVp9Reels: "yes" } as unknown).preferVp9Reels).toBe(false);
+    expect(normalize({ preferVp9Reels: true } as unknown).preferVp9Reels).toBe(true);
+  });
+
+  it("is cleared by resetAll()", async () => {
+    const { service } = setup();
+    await service.patch({ preferVp9Reels: true });
+    await service.resetAll();
+    expect((await service.get()).preferVp9Reels).toBe(false);
+  });
+});
+
 describe("migrate()", () => {
   it("defaults for undefined input", () => {
     expect(migrate(undefined)).toEqual(SETTINGS_DEFAULTS);

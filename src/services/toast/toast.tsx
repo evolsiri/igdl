@@ -22,8 +22,11 @@ export interface ToastService {
   failure(message: string): () => void;
 
   /**
-   * Shows a neutral info toast — used for non-error user actions like a
-   * cancelled download. Auto-dismisses after ~4s. Returns a dismiss function.
+   * Shows a neutral info toast — for things that are neither a clean
+   * success nor an error: a canceled download, a reel saved in standard
+   * quality because its VP9 version failed, a click ignored because that
+   * download is already running. Auto-dismisses after ~4s. Returns a dismiss
+   * function.
    *
    * @example
    * toastService.info("Download canceled");
